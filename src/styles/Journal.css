@@ -1,53 +1,157 @@
 .journal-container {
-  min-height: 100vh;
-  padding: 2rem;
-  background-color: var(--bg-color);
-}
-
-.journal-header {
-  text-align: center;
-  font-size: 2rem;
-  margin-bottom: 2rem;
-  color: var(--text-color);
-}
-
-.journal-list {
-  max-width: 800px;
-  margin: 0 auto;
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background-color: transparent;
+  padding: 1rem;
 }
 
-.journal-entry-card {
-  background: white;
-  padding: 1.5rem;
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
+/* The book container */
+.book-wrapper {
+  margin-top: 1rem;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+  perspective: 1500px;
 }
 
-.entry-header {
+.page {
+  padding: 20px;
+  background-color: #fdfbf7; /* Off-white paper */
+  background-image: 
+    linear-gradient(#999 1px, transparent 1px), /* Horizontal lines */
+    linear-gradient(90deg, transparent 90%, transparent 90%);
+  background-size: 100% 1.5rem; /* Line height */
+  background-attachment: local;
+  border-left: 2px solid #e0e0e0; /* Spine shadow */
+  color: #555;
+  font-family: 'Patrick Hand', cursive; /* Handwritten font */
+  font-size: 1.2rem;
+  line-height: 1.5rem; /* Match background size */
+  overflow: hidden;
+  box-shadow: inset 0 0 30px rgba(0,0,0,0.05);
+}
+
+.page-content {
+  margin-top: 1.5rem; /* Align first line */
+}
+
+.page-header {
+  border-bottom: 2px solid #d45d79; /* Red margin line style */
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.5rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1rem;
-  border-bottom: 1px solid var(--border-color);
-  padding-bottom: 0.5rem;
+  font-family: 'Poppins', sans-serif; /* Header font can be cleaner */
 }
 
-.entry-date {
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: var(--text-color);
+.page-date {
+  font-weight: bold;
+  color: #d45d79;
+  font-size: 1rem;
 }
 
-.entry-stats {
-  font-size: 0.875rem;
-  color: var(--text-muted);
+.page-stats {
+  font-size: 0.8rem;
+  color: #888;
 }
 
-.entry-notes {
+.page-text {
   white-space: pre-wrap;
-  color: var(--text-color);
-  line-height: 1.6;
+}
+
+/* Old Hardcover Tome Cover */
+.cover-page {
+  background-color: #3e2723; /* Dark brown leather base */
+  /* Leather texture simulation using noise and gradients */
+  background-image: 
+    repeating-linear-gradient(to right, transparent 0, transparent 2px, rgba(0,0,0,0.2) 3px, transparent 4px), /* Vertical spine creases */
+    radial-gradient(circle at center, rgba(255,255,255,0.05) 0%, transparent 80%), /* Wear center light */
+    linear-gradient(to bottom, rgba(0,0,0,0.6), transparent 10%, transparent 90%, rgba(0,0,0,0.6)); /* Vignette top/bottom */
+  color: #c5a059; /* Faded gold text */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  border: 1px solid #281915;
+  box-shadow: 
+    inset 4px 0 10px rgba(0,0,0,0.5), /* Spine shadow left */
+    inset -2px 0 5px rgba(255,255,255,0.1), /* Highlight right */
+    5px 5px 15px rgba(0,0,0,0.6); /* Book shadow */
+  position: relative;
+  overflow: hidden; /* Ensure content stays in */
+}
+
+/* Debossed/Embossed Frame effect */
+.cover-page::after {
+  content: '';
+  position: absolute;
+  top: 15px;
+  left: 15px;
+  right: 15px;
+  bottom: 15px;
+  border: 4px double #5d4037;
+  pointer-events: none;
+  box-shadow: inset 0 0 5px rgba(0,0,0,0.8);
+}
+
+.cover-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between; /* Distribute space */
+  height: 100%;
+  padding: 3rem 1.5rem; /* Padding inside the frame */
+  z-index: 1;
+}
+
+/* Embroidered/Gold Text Effect - Aged */
+.cover-title {
+  font-family: 'Poppins', serif;
+  font-weight: 700;
+  font-size: 3rem; /* Slightly smaller to fit */
+  line-height: 1.3;
+  padding-bottom: 0.5rem;
+  margin-bottom: 0.5rem;
+  color: #e6c278; /* Metallic gold */
+  text-shadow: 
+    -1px -1px 0 rgba(0,0,0,0.6), /* Emboss shadow top/left */
+    1px 1px 0 rgba(255,255,255,0.2); /* Emboss highlight bottom/right */
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  background: none; /* Remove gradient for solid aged gold look */
+  -webkit-background-clip: border-box;
+}
+
+.cover-subtitle {
+  font-family: 'Patrick Hand', cursive;
+  font-size: 1.6rem;
+  color: #d7ccc8; /* Parchment white */
+  opacity: 0.8;
+  margin-bottom: auto; /* Push content down */
+  font-style: italic;
+}
+
+.cover-penguin-wrapper {
+  width: 200px;
+  height: 200px;
+  margin-top: 1rem;
+  border: 6px solid #5d4037; /* Leather-like frame */
+  border-radius: 50%; /* Circle frame */
+  box-shadow: 
+    0 4px 8px rgba(0,0,0,0.6),
+    inset 0 0 10px rgba(0,0,0,0.8);
+  overflow: hidden; /* Crop the penguin into a circle */
+  background: radial-gradient(circle at center, #2c0e37 0%, #1a0520 100%); /* Deep purple backing */
+}
+
+/* Override Penguin3D internal styles via className if needed, but wrapper controls size mostly */
+.cover-penguin-wrapper > div {
+  width: 100% !important;
+  height: 100% !important;
+  border-radius: 0 !important; /* Let parent control radius */
+  background: transparent !important; /* Let parent background show */
+  box-shadow: none !important;
 }
