@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { signOut } from 'firebase/auth';
 import { auth, db } from '../firebaseConfig';
 import { useNavigate, Link } from 'react-router-dom';
-import { collection, query, where, orderBy, getDocs, limit, Timestamp } from 'firebase/firestore';
+import { collection, query, where, getDocs, Timestamp } from 'firebase/firestore';
 import {
   LineChart,
   Line,

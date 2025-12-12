@@ -6,7 +6,6 @@ import { useAuth } from '../context/AuthContext';
 import { FirebaseError } from 'firebase/app';
 import { Link } from 'react-router-dom';
 import HTMLFlipBook from 'react-pageflip';
-import Penguin3D from '../components/Penguin3D';
 import '../styles/Journal.css';
 import '../styles/Cobwebs.css';
 
