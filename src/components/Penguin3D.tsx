@@ -227,7 +227,7 @@ const Penguin3D: React.FC<PenguinProps> = ({ mood, energy, sleep, className, sty
           intensity={1.2} 
           castShadow 
         />
-        <PenguinModel {...props} />
+        <PenguinModel mood={mood} energy={energy} sleep={sleep} />
         <ContactShadows position={[0, -1.2, 0]} opacity={0.4} scale={10} blur={2} far={1} />
         <Environment preset="city" />
       </Canvas>

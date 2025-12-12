@@ -145,13 +145,13 @@
     inset 0 0 10px rgba(0,0,0,0.8);
   overflow: hidden; /* Crop the penguin into a circle */
   background: radial-gradient(circle at center, #2c0e37 0%, #1a0520 100%); /* Deep purple backing */
+  position: relative; /* Contain children */
 }
 
-/* Override Penguin3D internal styles via className if needed, but wrapper controls size mostly */
-.cover-penguin-wrapper > div {
+/* Override Penguin3D internal styles via direct descendant selector */
+/* Since I passed className/style logic to Penguin3D, I can also force it with !important if needed,
+   but cleaner is to rely on the wrapper's size constraints */
+.cover-penguin-wrapper canvas {
   width: 100% !important;
   height: 100% !important;
-  border-radius: 0 !important; /* Let parent control radius */
-  background: transparent !important; /* Let parent background show */
-  box-shadow: none !important;
 }

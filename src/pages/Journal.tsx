@@ -32,8 +32,6 @@ const Page = forwardRef<HTMLDivElement, any>((props, ref) => {
 
 // Cover Page Component
 const Cover = forwardRef<HTMLDivElement, any>((props, ref) => {
-  const { mood = 5, energy = 5, sleep = 7 } = props.latestStats || {};
-
   return (
     <div className="page cover-page" ref={ref}>
       {props.showCobwebs && (
@@ -51,9 +49,7 @@ const Cover = forwardRef<HTMLDivElement, any>((props, ref) => {
         <p style={{ marginTop: '2rem', fontSize: '0.9rem', opacity: 0.8, marginBottom: '2rem' }}>
           {props.owner}
         </p>
-        <div className="cover-penguin-wrapper">
-          <Penguin3D mood={mood} energy={energy} sleep={sleep} />
-        </div>
+        <img src="/avatar.jpg" alt="Avatar" className="cover-avatar" />
       </div>
     </div>
   );
