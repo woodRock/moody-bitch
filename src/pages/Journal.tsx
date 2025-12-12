@@ -72,7 +72,7 @@ const Journal: React.FC = () => {
         const q = query(
           collection(db, 'moodEntries'),
           where('userId', '==', currentUser.uid),
-          orderBy('timestamp', 'desc')
+          orderBy('timestamp', 'asc')
         );
         const querySnapshot = await getDocs(q);
         const fetchedEntries: MoodEntry[] = querySnapshot.docs.map(doc => ({
