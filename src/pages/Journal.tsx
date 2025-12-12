@@ -1,5 +1,5 @@
 // src/pages/Journal.tsx
-import React, { useEffect, useState, forwardRef } from 'react';
+import React, { useEffect, useState, forwardRef, useRef } from 'react';
 import { db } from '../firebaseConfig';
 import { collection, query, where, orderBy, getDocs, Timestamp } from 'firebase/firestore';
 import { useAuth } from '../context/AuthContext';
@@ -59,6 +59,7 @@ const Journal: React.FC = () => {
   const [entries, setEntries] = useState<MoodEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const bookRef = useRef<any>(null); // Ref for HTMLFlipBook
 
   useEffect(() => {
     const fetchEntries = async () => {
@@ -72,7 +73,7 @@ const Journal: React.FC = () => {
         const q = query(
           collection(db, 'moodEntries'),
           where('userId', '==', currentUser.uid),
-          orderBy('timestamp', 'asc')
+          orderBy('timestamp', 'asc') // Changed to ascending
         );
         const querySnapshot = await getDocs(q);
         const fetchedEntries: MoodEntry[] = querySnapshot.docs.map(doc => ({
@@ -95,9 +96,11 @@ const Journal: React.FC = () => {
     fetchEntries();
   }, [currentUser]);
 
-  // Check if there is an entry for today
+  // Check if there is an entry for today (now using the last entry after asc sort)
   const hasEntryToday = entries.length > 0 && (() => {
-    const lastEntryDate = entries[0].timestamp.toDate();
+    const lastEntry = entries[entries.length - 1]; // Get the last entry
+    if (!lastEntry) return false;
+    const lastEntryDate = lastEntry.timestamp.toDate();
     const today = new Date();
     return (
       lastEntryDate.getDate() === today.getDate() &&
@@ -107,6 +110,17 @@ const Journal: React.FC = () => {
   })();
 
   const showCobwebs = !hasEntryToday;
+
+  const goToLatestEntry = () => {
+    if (bookRef.current) {
+      // +1 for the cover page, entries.length for the number of entries
+      // If there are no entries, we go to the placeholder page (page 1)
+      // Otherwise, the last entry is at index `entries.length - 1`, which corresponds to page `entries.length` (after cover page)
+      // The "The End" page is `entries.length + 1`
+      const lastEntryPageIndex = entries.length > 0 ? entries.length : 1; 
+      bookRef.current.pageFlip().turnToPage(lastEntryPageIndex);
+    }
+  };
 
   if (loading) {
     return (
@@ -130,6 +144,11 @@ const Journal: React.FC = () => {
         <Link to="/dashboard" className="btn btn-secondary">
           &larr; Back to Dashboard
         </Link>
+        {entries.length > 0 && (
+          <button onClick={goToLatestEntry} className="btn btn-primary">
+            Go to Latest Entry &rarr;
+          </button>
+        )}
         <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
           Click or drag page corners to turn
         </span>
@@ -149,11 +168,12 @@ const Journal: React.FC = () => {
           showCover={true}
           mobileScrollSupport={true}
           className="flip-book"
+          ref={bookRef}
         >
           <Cover 
             owner={currentUser?.email} 
             showCobwebs={showCobwebs} 
-            latestStats={entries.length > 0 ? entries[0] : undefined}
+            latestStats={entries.length > 0 ? entries[entries.length - 1] : undefined}
           />
           
           {entries.length === 0 ? (
@@ -194,3 +214,4 @@ const Journal: React.FC = () => {
 };
 
 export default Journal;
+
