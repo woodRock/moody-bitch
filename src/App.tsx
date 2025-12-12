@@ -1,0 +1,68 @@
+import { Routes, Route, Navigate } from 'react-router-dom';
+import { useAuth } from './context/AuthContext';
+import SignUp from './components/Auth/SignUp';
+import SignIn from './components/Auth/SignIn';
+import Dashboard from './pages/Dashboard';
+import DailyCheckin from './pages/DailyCheckin';
+import Journal from './pages/Journal';
+import NotFound from './pages/NotFound'; // Placeholder for 404
+
+interface ProtectedRouteProps {
+  children: React.ReactNode;
+}
+
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
+  const { currentUser, loading } = useAuth();
+
+  if (loading) {
+    return <div>Loading...</div>; // Or a spinner component
+  }
+
+  if (!currentUser) {
+    return <Navigate to="/signin" replace />;
+  }
+
+  return <>{children}</>;
+};
+
+function App() {
+  return (
+    <div className="app-root">
+      <Routes>
+        <Route path="/signup" element={<SignUp />} />
+        <Route path="/signin" element={<SignIn />} />
+        
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/checkin"
+          element={
+            <ProtectedRoute>
+              <DailyCheckin />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/journal"
+          element={
+            <ProtectedRoute>
+              <Journal />
+            </ProtectedRoute>
+          }
+        />
+        
+        {/* Redirect from root to dashboard if logged in, otherwise to signin */}
+        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </div>
+  );
+}
+
+export default App;
