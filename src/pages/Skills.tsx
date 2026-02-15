@@ -31,7 +31,6 @@ const Skills: React.FC = () => {
   useEffect(() => {
     if (!selectedSkill && scrollRef.current) {
       const container = scrollRef.current;
-      const vw = window.innerWidth / 100;
       container.scrollTo({ left: lastSelectedIndex * window.innerWidth, behavior: 'instant' });
     }
   }, [selectedSkill, lastSelectedIndex]);
