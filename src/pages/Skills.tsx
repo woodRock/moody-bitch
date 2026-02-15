@@ -25,15 +25,36 @@ const Skills: React.FC = () => {
   const [selectedSkill, setSelectedSkill] = useState<Constellation | null>(null);
   const [focusedPerk, setFocusedPerk] = useState<Perk | null>(null);
   
-  const [lastSelectedIndex, setLastSelectedIndex] = useState(0);
+  const [currentIndex, setCurrentIndex] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!selectedSkill && scrollRef.current) {
       const container = scrollRef.current;
-      container.scrollTo({ left: lastSelectedIndex * window.innerWidth, behavior: 'instant' });
+      container.scrollTo({ left: currentIndex * window.innerWidth, behavior: 'instant' });
     }
-  }, [selectedSkill, lastSelectedIndex]);
+  }, [selectedSkill]);
+
+  const handleScroll = () => {
+    if (scrollRef.current && !selectedSkill) {
+      const index = Math.round(scrollRef.current.scrollLeft / window.innerWidth);
+      if (index !== currentIndex && index >= 0 && index < CONSTELLATIONS.length) {
+        setCurrentIndex(index);
+      }
+    }
+  };
+
+  const scrollPrev = () => {
+    const newIndex = (currentIndex - 1 + CONSTELLATIONS.length) % CONSTELLATIONS.length;
+    setCurrentIndex(newIndex);
+    scrollRef.current?.scrollTo({ left: newIndex * window.innerWidth, behavior: 'smooth' });
+  };
+
+  const scrollNext = () => {
+    const newIndex = (currentIndex + 1) % CONSTELLATIONS.length;
+    setCurrentIndex(newIndex);
+    scrollRef.current?.scrollTo({ left: newIndex * window.innerWidth, behavior: 'smooth' });
+  };
 
   const handleStarClick = (perk: Perk) => {
     if (focusedPerk?.id === perk.id) {
@@ -52,53 +73,101 @@ const Skills: React.FC = () => {
   };
 
   return (
-    <div className="skills-container" style={{ background: 'radial-gradient(circle at center, #0a0e14 0%, #000 100%)', width: '100vw', height: '100vh', overflow: 'hidden' }}>
+    <div className="skills-container" style={{ background: 'radial-gradient(circle at center, #0a0e14 0%, #000 100%)', width: '100vw', height: '100vh', overflow: 'hidden', position: 'relative' }}>
       <NebulaFilters />
       <div className="star-field"></div>
       
       {!selectedSkill && (
-        <div 
-          className="horizontal-skills-wrapper" 
-          ref={scrollRef}
-          style={{ 
-            display: 'flex', 
-            overflowX: 'auto', 
-            width: '100vw', 
-            height: '100vh',
-            scrollSnapType: 'x mandatory',
-            padding: 0
-          }}
-        >
-          {CONSTELLATIONS.map((con, idx) => {
-            const skill = stats.skills[con.skillKey] || { level: 0, xp: 0, xpToNextLevel: 100 };
-            return (
-              <div 
-                key={idx} 
-                className="skill-constellation-view" 
-                onClick={() => { setLastSelectedIndex(idx); setSelectedSkill(con); }} 
-                style={{ 
-                  cursor: 'pointer',
-                  minWidth: '100vw',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  scrollSnapAlign: 'center'
-                }}
-              >
-                <svg width="500" height="500" viewBox="0 0 500 500" className="constellation-svg">
-                  {con.spectralPaths.map((path, i) => <path key={i} d={path} className="constellation-art" />)}
-                  {con.lines.map(([s, e], i) => <line key={i} x1={con.perks[s].x} y1={con.perks[s].y} x2={con.perks[e].x} y2={con.perks[e].y} className="constellation-line" />)}
-                  {con.perks.map(p => <circle key={p.id} cx={p.x} cy={p.y} r={stats.perks.includes(p.id) ? 8 : 4} fill={stats.perks.includes(p.id) ? '#e6c278' : '#444'} />)}
-                </svg>
-                <div style={{ textAlign: 'center', marginTop: '1rem' }}>
-                  <div className="skyrim-font" style={{ fontSize: '2.5rem', color: '#fff' }}>{con.name} <span style={{ color: 'var(--skyrim-gold-dim)', marginLeft: '10px' }}>{skill.level}</span></div>
-                  <div className="skill-progress-bar-container" style={{ margin: '15px auto', width: '300px' }}><div className="skill-progress-bar-fill" style={{ width: `${(skill.xp / skill.xpToNextLevel) * 100}%` }}></div></div>
+        <>
+          <div 
+            className="horizontal-skills-wrapper" 
+            ref={scrollRef}
+            onScroll={handleScroll}
+            style={{ 
+              display: 'flex', 
+              overflowX: 'auto', 
+              width: '100vw', 
+              height: '100vh',
+              scrollSnapType: 'x mandatory',
+              padding: 0,
+              scrollbarWidth: 'none',
+              msOverflowStyle: 'none'
+            }}
+          >
+            {CONSTELLATIONS.map((con, idx) => {
+              const skill = stats.skills[con.skillKey] || { level: 0, xp: 0, xpToNextLevel: 100 };
+              return (
+                <div 
+                  key={idx} 
+                  className="skill-constellation-view" 
+                  onClick={() => { setCurrentIndex(idx); setSelectedSkill(con); }} 
+                  style={{ 
+                    cursor: 'pointer',
+                    minWidth: '100vw',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    scrollSnapAlign: 'center'
+                  }}
+                >
+                  <svg width="500" height="500" viewBox="0 0 500 500" className="constellation-svg">
+                    {con.spectralPaths.map((path, i) => <path key={i} d={path} className="constellation-art" />)}
+                    {con.lines.map(([s, e], i) => <line key={i} x1={con.perks[s].x} y1={con.perks[s].y} x2={con.perks[e].x} y2={con.perks[e].y} className="constellation-line" />)}
+                    {con.perks.map(p => <circle key={p.id} cx={p.x} cy={p.y} r={stats.perks.includes(p.id) ? 8 : 4} fill={stats.perks.includes(p.id) ? '#e6c278' : '#444'} />)}
+                  </svg>
+                  <div style={{ textAlign: 'center', marginTop: '1rem' }}>
+                    <div className="skyrim-font" style={{ fontSize: '2.5rem', color: '#fff' }}>{con.name} <span style={{ color: 'var(--skyrim-gold-dim)', marginLeft: '10px' }}>{skill.level}</span></div>
+                    <div className="skill-progress-bar-container" style={{ margin: '15px auto', width: '300px' }}><div className="skill-progress-bar-fill" style={{ width: `${(skill.xp / skill.xpToNextLevel) * 100}%` }}></div></div>
+                  </div>
                 </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+
+          {/* Endless Navigation Arrows */}
+          <button 
+            onClick={scrollPrev}
+            className="skyrim-font"
+            style={{
+              position: 'fixed',
+              left: '2rem',
+              top: '50%',
+              transform: 'translateY(-50%)',
+              background: 'rgba(0,0,0,0.3)',
+              border: '1px solid var(--skyrim-gold-dim)',
+              color: 'var(--skyrim-gold-bright)',
+              fontSize: '2rem',
+              padding: '1rem 0.5rem',
+              cursor: 'pointer',
+              zIndex: 100,
+              transition: 'all 0.2s'
+            }}
+          >
+            &larr;
+          </button>
+          
+          <button 
+            onClick={scrollNext}
+            className="skyrim-font"
+            style={{
+              position: 'fixed',
+              right: '2rem',
+              top: '50%',
+              transform: 'translateY(-50%)',
+              background: 'rgba(0,0,0,0.3)',
+              border: '1px solid var(--skyrim-gold-dim)',
+              color: 'var(--skyrim-gold-bright)',
+              fontSize: '2rem',
+              padding: '1rem 0.5rem',
+              cursor: 'pointer',
+              zIndex: 100,
+              transition: 'all 0.2s'
+            }}
+          >
+            &rarr;
+          </button>
+        </>
       )}
 
       {selectedSkill && (
