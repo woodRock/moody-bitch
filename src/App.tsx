@@ -7,6 +7,8 @@ import Dashboard from './pages/Dashboard';
 import DailyCheckin from './pages/DailyCheckin';
 import Journal from './pages/Journal';
 import Skills from './pages/Skills';
+import Magic from './pages/Magic';
+import Inventory from './pages/Inventory';
 import NotFound from './pages/NotFound';
 
 interface ProtectedRouteProps {
@@ -76,11 +78,18 @@ function App() {
           }
         />
         <Route
+          path="/magic"
+          element={
+            <ProtectedRoute>
+              <Magic />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/inventory"
           element={
             <ProtectedRoute>
-              {/* Placeholder for Inventory */}
-              <div style={{ color: 'white', textAlign: 'center', marginTop: '100px' }}>INVENTORY EMPTY</div>
+              <Inventory />
             </ProtectedRoute>
           }
         />

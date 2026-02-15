@@ -1,73 +1,59 @@
-// src/components/Auth/ForgotPassword.tsx
 import React, { useState } from 'react';
-import { sendPasswordResetEmail } from 'firebase/auth';
-import { auth } from '../../firebaseConfig';
+import { useAuth } from '../../context/AuthContext';
 import { Link } from 'react-router-dom';
-import { FirebaseError } from 'firebase/app';
 import '../../styles/Auth.css';
 
 const ForgotPassword: React.FC = () => {
   const [email, setEmail] = useState('');
-  const [error, setError] = useState<string | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
+  const [error, setError] = useState('');
+  const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
+  const { resetPassword } = useAuth();
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setError(null);
-    setMessage(null);
-    setLoading(true);
-
     try {
-      await sendPasswordResetEmail(auth, email);
+      setMessage('');
+      setError('');
+      setLoading(true);
+      await resetPassword(email);
       setMessage('Check your inbox for further instructions.');
     } catch (err) {
-      if (err instanceof FirebaseError) {
-        setError(err.message);
-      } else {
-        setError('Failed to reset password.');
-      }
-    } finally {
-      setLoading(false);
+      setError('Failed to reset password.');
     }
-  };
+    setLoading(false);
+  }
 
   return (
     <div className="auth-container">
       <div className="auth-box">
-        <h2 className="auth-title">Reset Password</h2>
-        {error && <p className="error-message">{error}</p>}
-        {message && <p className="success-message" style={{ color: 'green', backgroundColor: '#d1fae5', padding: '0.5rem', borderRadius: '0.5rem', marginBottom: '1rem', textAlign: 'center' }}>{message}</p>}
-        
-        <form onSubmit={handleSubmit}>
+        <h2 className="auth-title">RESTORE MEMORY</h2>
+        {error && <div className="error-message">{error}</div>}
+        {message && <div style={{ color: '#10b981', textAlign: 'center', marginBottom: '1rem', fontFamily: 'Crimson Text' }}>{message}</div>}
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
           <div className="input-group">
-            <label className="input-label" htmlFor="email">
-              Email
-            </label>
+            <label className="skyrim-font" style={{ fontSize: '0.8rem', color: '#888' }}>EMAIL</label>
             <input
               type="email"
-              id="email"
-              className="form-input"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              className="parchment-input"
               required
+              style={{ background: 'rgba(255,255,255,0.05)', color: '#fff', border: '1px solid #444' }}
             />
           </div>
-          <div className="input-group">
-            <button
-              type="submit"
-              className="btn btn-primary w-full"
-              disabled={loading}
-            >
-              {loading ? 'Sending...' : 'Reset Password'}
-            </button>
-          </div>
+          <button 
+            type="submit" 
+            className="btn" 
+            disabled={loading}
+            style={{ width: '100%', padding: '1rem', background: 'rgba(255,255,255,0.1)', color: '#fff', border: '1px solid var(--skyrim-gold-dim)' }}
+          >
+            {loading ? 'SENDING MESSENGER...' : 'RESET PASSWORD'}
+          </button>
         </form>
-        <p className="mt-4 text-center">
-          <Link to="/signin" style={{ color: 'var(--primary-color)' }}>
-            Back to Sign In
-          </Link>
-        </p>
+        <div className="auth-footer">
+          <Link to="/signin">Back to Login</Link>
+        </div>
       </div>
     </div>
   );

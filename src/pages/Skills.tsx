@@ -76,14 +76,13 @@ const Skills: React.FC = () => {
       <NebulaFilters />
       <div className="star-field"></div>
       
-      <div className="character-info-bar">
-        <div className="info-item">NAME <span className="info-value">{currentUser?.email?.split('@')[0].toUpperCase()}</span></div>
-        <div className="info-item">LEVEL <span className="info-value">{stats.level}</span></div>
-        <div className="info-item">RACE <span className="info-value">{stats.race}</span></div>
-      </div>
-
       <SkyrimMenu onOpenPause={() => setIsPauseMenuOpen(true)} />
       <PauseMenu isOpen={isPauseMenuOpen} onClose={() => setIsPauseMenuOpen(false)} />
+
+      {/* Repositioned Buttons (Now higher since bar is gone) */}
+      <style>{`
+        .skyrim-font[style*="top: 4.5rem"] { top: 1.5rem !important; }
+      `}</style>
 
       {!selectedSkill && (
         <div className="horizontal-skills-wrapper" ref={scrollRef} style={{ display: 'flex', alignItems: 'center' }}>

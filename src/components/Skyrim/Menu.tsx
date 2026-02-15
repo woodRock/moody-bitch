@@ -106,11 +106,11 @@ const SkyrimMenu: React.FC<SkyrimMenuProps> = ({ onOpenPause }) => {
           <div className="diamond-label skyrim-font">MAP</div>
         </Link>
 
-        {/* LEFT: MAGIC (Coming Soon) */}
-        <div className="diamond-item item-left" style={{ opacity: 0.5, cursor: 'not-allowed' }}>
+        {/* LEFT: MAGIC */}
+        <Link to="/magic" className="diamond-item item-left" onClick={() => setIsOpen(false)}>
           <div className="diamond-label skyrim-font">MAGIC</div>
           <div className="diamond-line-left"></div>
-        </div>
+        </Link>
 
         {/* RIGHT: ITEMS */}
         <Link to="/inventory" className="diamond-item item-right" onClick={() => setIsOpen(false)}>

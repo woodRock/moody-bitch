@@ -381,7 +381,7 @@ svg.nebula-defs {
   width: 90vw;
   max-width: 1200px;
   height: 80vh;
-  background: rgba(20, 20, 20, 0.9); /* Dark gray transparent */
+  background: rgba(20, 20, 20, 0.9);
   border: 1px solid var(--skyrim-gold-dim);
   box-shadow: 0 0 50px rgba(0,0,0,0.9);
   display: flex;
@@ -513,6 +513,130 @@ svg.nebula-defs {
   text-transform: uppercase;
 }
 
+/* --- ADD QUEST MODAL --- */
+.skyrim-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.85);
+  z-index: 3000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  backdrop-filter: blur(5px);
+}
+
+.skyrim-modal-content {
+  width: 500px;
+  background: rgba(20, 20, 20, 0.95); /* Dark gray transparent */
+  border: 1px solid var(--skyrim-gold-dim);
+  padding: 2.5rem;
+  color: #fff; /* White text */
+  box-shadow: 0 0 50px rgba(0,0,0,0.8);
+  position: relative;
+  backdrop-filter: blur(10px);
+}
+
+.skyrim-modal-content .skyrim-title {
+  color: #fff !important;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  margin-bottom: 2rem;
+}
+
+.add-quest-btn-plus {
+  background: none;
+  border: 1px solid rgba(255,255,255,0.2);
+  color: #888;
+  cursor: pointer;
+  font-size: 1rem;
+  padding: 0.2rem 0.6rem;
+  transition: all 0.2s;
+  font-family: 'Futura', sans-serif;
+}
+
+/* --- MAGIC MENU (Reversed Right-to-Left) --- */
+.magic-menu-layout {
+  display: flex;
+  height: 100%;
+  gap: 2rem;
+  color: #fff;
+  flex-direction: row-reverse; /* Magic is reversed */
+}
+
+.inventory-menu-layout {
+  display: flex;
+  height: 100%;
+  gap: 2rem;
+  color: #fff;
+  flex-direction: row; /* Inventory is standard left-to-right */
+}
+
+.magic-school-column {
+  flex: 1;
+  border-left: 1px solid rgba(255,255,255,0.1);
+  text-align: right;
+}
+
+.magic-spell-column {
+  flex: 1.5;
+  border-left: 1px solid rgba(255,255,255,0.1);
+  text-align: right;
+}
+
+.magic-details-column {
+  flex: 2;
+  padding-right: 1rem;
+  text-align: left;
+}
+
+.magic-list-item {
+  padding: 1rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: #888;
+  font-family: 'Futura', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+.magic-list-item:hover, .magic-list-item.active {
+  color: #fff;
+  background: rgba(255,255,255,0.05);
+  transform: translateX(-10px); /* Animate towards center (left) */
+}
+
+.shout-word {
+  font-family: 'Cinzel', serif;
+  font-size: 1.2rem;
+  color: var(--skyrim-gold-bright);
+  margin-right: 10px;
+  letter-spacing: 4px;
+}
+
+.spell-cost-indicator {
+  font-family: 'Futura', sans-serif;
+  font-size: 0.8rem;
+  color: var(--skyrim-blue);
+  margin-top: 5px;
+}
+
+.active-effect-card {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.active-effect-icon {
+  font-size: 2rem;
+  filter: drop-shadow(0 0 10px rgba(255,255,255,0.3));
+}
+
 /* --- DIAMOND CHARACTER MENU --- */
 .character-menu-diamond {
   position: relative;
@@ -564,80 +688,21 @@ svg.nebula-defs {
 
 /* --- MOBILE RESPONSIVENESS (SCALING) --- */
 @media (max-width: 768px) {
-  /* Scale down the top bar */
-  .character-info-bar {
-    padding: 0 0.5rem;
-    height: 50px;
-  }
-  .info-item {
-    font-size: 0.7rem;
-    margin: 0 0.5rem;
-    letter-spacing: 1px;
-  }
-
-  /* Scale down the Diamond Menu */
-  .character-menu-diamond {
-    transform: scale(0.6);
-  }
-  .diamond-label {
-    font-size: 1.8rem;
-  }
-
-  /* Scale down the Pause Menu */
-  .pause-menu-container {
-    width: 95vw;
-    height: 90vh;
-  }
-  .pause-menu-tabs {
-    gap: 1rem;
-  }
-  .pause-tab {
-    font-size: 0.8rem;
-    letter-spacing: 1px;
-  }
-  .pause-content {
-    padding: 1rem;
-  }
-  .quest-menu-layout {
-    flex-direction: column;
-    overflow-y: auto;
-  }
-  .quest-list-column {
-    border-right: none;
-    border-bottom: 1px solid rgba(255,255,255,0.1);
-    padding-bottom: 1rem;
-    flex: none;
-  }
-
-  /* HUD scaling */
-  .hud-container {
-    padding: 0 1rem;
-    bottom: 1rem;
-  }
-  .stat-bar-group {
-    width: 30%;
-  }
-
-  /* Skills overview scaling */
-  .skill-constellation-view svg {
-    width: 300px;
-    height: 300px;
-  }
-  .skill-constellation-view .skyrim-font {
-    font-size: 1.2rem !important;
-  }
-
-  /* Perk focus box */
-  .perk-focus-info, .perk-description-area {
-    width: 90% !important;
-    font-size: 0.9rem !important;
-  }
-  .skill-progress-bar-container {
-    width: 150px;
-  }
-  
-  .compass-container {
-    width: 90%;
-    transform: translateX(-50%) scale(0.7);
-  }
+  .character-info-bar { padding: 0 0.5rem; height: 50px; }
+  .info-item { font-size: 0.7rem; margin: 0 0.5rem; letter-spacing: 1px; }
+  .character-menu-diamond { transform: scale(0.6); }
+  .diamond-label { font-size: 1.8rem; }
+  .pause-menu-container { width: 95vw; height: 90vh; }
+  .pause-menu-tabs { gap: 1rem; }
+  .pause-tab { font-size: 0.8rem; letter-spacing: 1px; }
+  .pause-content { padding: 1rem; }
+  .quest-menu-layout { flex-direction: column; overflow-y: auto; }
+  .quest-list-column { border-right: none; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 1rem; flex: none; }
+  .hud-container { padding: 0 1rem; bottom: 1rem; }
+  .stat-bar-group { width: 30%; }
+  .skill-constellation-view svg { width: 300px; height: 300px; }
+  .skill-constellation-view .skyrim-font { font-size: 1.2rem !important; }
+  .perk-focus-info { width: 90% !important; font-size: 0.9rem !important; }
+  .skill-progress-bar-container { width: 150px; }
+  .compass-container { width: 90%; transform: translateX(-50%) scale(0.7); }
 }

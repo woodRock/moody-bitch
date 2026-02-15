@@ -3,31 +3,67 @@
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  background-color: var(--bg-color);
+  background: radial-gradient(circle at center, #1a0520 0%, #000 100%);
+  position: relative;
+}
+
+.auth-container::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-image: radial-gradient(white, rgba(255,255,255,0.2) 2px, transparent 40px);
+  background-size: 150px 150px;
+  opacity: 0.15;
+  pointer-events: none;
 }
 
 .auth-box {
-  background: white;
-  padding: 2rem;
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
+  background: rgba(20, 20, 20, 0.9) !important;
+  padding: 3rem;
+  border: 1px solid var(--skyrim-gold-dim);
+  box-shadow: 0 0 50px rgba(0,0,0,0.8);
   width: 100%;
-  max-width: 800px;
+  max-width: 500px;
+  backdrop-filter: blur(10px);
+  color: #fff;
 }
 
 .auth-title {
   text-align: center;
-  margin-bottom: 1.5rem;
-  font-size: 1.5rem;
-  color: var(--text-color);
+  margin-bottom: 2rem;
+  font-size: 2rem;
+  color: #fff;
+  letter-spacing: 4px;
+  font-family: 'Futura', sans-serif;
+  text-transform: uppercase;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  padding-bottom: 1rem;
 }
 
 .error-message {
-  color: var(--danger-color);
-  background-color: #fee2e2;
-  padding: 0.5rem;
-  border-radius: var(--radius);
-  margin-bottom: 1rem;
-  font-size: 0.875rem;
+  color: #a92929;
+  background-color: rgba(169, 41, 41, 0.1);
+  padding: 0.8rem;
+  border: 1px solid #a92929;
+  margin-bottom: 1.5rem;
+  font-size: 0.9rem;
   text-align: center;
+  font-family: 'Crimson Text', serif;
+}
+
+.auth-footer {
+  margin-top: 2rem;
+  text-align: center;
+  font-family: 'Crimson Text', serif;
+  font-size: 1.1rem;
+  color: #888;
+}
+
+.auth-footer a {
+  color: var(--skyrim-gold-bright);
+  text-decoration: none;
+  margin-left: 10px;
+  text-transform: uppercase;
+  font-family: 'Futura', sans-serif;
+  font-size: 0.8rem;
 }
