@@ -29,7 +29,7 @@ const SHOUTS: Spell[] = [
 const SCHOOLS = ['ALL', 'SHOUTS', 'ALTERATION', 'CONJURATION', 'ILLUSION', 'RESTORATION', 'ACTIVE EFFECTS'];
 
 const Magic: React.FC = () => {
-  const { stats, activeEffects, castSpell, notify } = useGame();
+  const { stats, activeEffects, castSpell, notify, setUI } = useGame();
   const [selectedSchool, setSelectedSchool] = useState('ALL');
   const [selectedSpell, setSelectedSpell] = useState<Spell | null>(null);
 
@@ -66,6 +66,26 @@ const Magic: React.FC = () => {
   return (
     <div className="skills-container" style={{ background: 'radial-gradient(circle at center, #050a14 0%, #000 100%)' }}>
       <div className="star-field"></div>
+
+      {/* BACK TO MENU ARROW (RIGHT) */}
+      <button 
+        onClick={() => setUI({ isMenuOpen: true })}
+        className="skyrim-font"
+        style={{
+          position: 'fixed',
+          top: '2rem',
+          right: '4rem',
+          background: 'none',
+          border: 'none',
+          color: 'var(--skyrim-gold-bright)',
+          fontSize: '3rem',
+          cursor: 'pointer',
+          zIndex: 100,
+          opacity: 0.6
+        }}
+      >
+        &rarr;
+      </button>
       
       <div style={{ marginTop: '100px', height: 'calc(100vh - 250px)', width: '90vw', margin: '100px auto' }}>
         <div className="magic-menu-layout">

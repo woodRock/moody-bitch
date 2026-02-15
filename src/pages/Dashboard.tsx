@@ -80,6 +80,27 @@ const Dashboard: React.FC = () => {
         .skyrim-font[style*="top: 1.5rem"], .skyrim-font[style*="top: 2rem"] { top: 1.5rem !important; }
       `}</style>
 
+      {/* BACK TO MENU ARROW (UP) */}
+      <button 
+        onClick={() => setUI({ isMenuOpen: true })}
+        className="skyrim-font"
+        style={{
+          position: 'fixed',
+          top: '4rem', // Below compass
+          left: '50%',
+          transform: 'translateX(-50%)',
+          background: 'none',
+          border: 'none',
+          color: 'var(--skyrim-gold-bright)',
+          fontSize: '3rem',
+          cursor: 'pointer',
+          zIndex: 100,
+          opacity: 0.6
+        }}
+      >
+        &uarr;
+      </button>
+
       <div className="map-wrapper" style={{ width: '100vw', height: '100vh', zIndex: 1 }}>
         {hasLocation ? (
           <MapContainer 

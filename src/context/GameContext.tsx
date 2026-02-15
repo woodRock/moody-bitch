@@ -53,6 +53,7 @@ interface GameContextType {
     heading: number;
     compassMarkers: { id: string, offset: number, icon: string }[];
     isPauseMenuOpen: boolean;
+    isMenuOpen: boolean;
     disabledGestures: boolean;
   };
   setUI: (updates: Partial<GameContextType['ui']>) => void;
@@ -101,6 +102,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     heading: 0,
     compassMarkers: [],
     isPauseMenuOpen: false,
+    isMenuOpen: false,
     disabledGestures: false
   });
 

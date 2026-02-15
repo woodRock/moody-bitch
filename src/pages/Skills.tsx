@@ -21,7 +21,7 @@ const NebulaFilters = () => (
 );
 
 const Skills: React.FC = () => {
-  const { stats, spendSkillPoint, notify } = useGame();
+  const { stats, spendSkillPoint, notify, setUI } = useGame();
   const [selectedSkill, setSelectedSkill] = useState<Constellation | null>(null);
   const [focusedPerk, setFocusedPerk] = useState<Perk | null>(null);
   
@@ -125,47 +125,28 @@ const Skills: React.FC = () => {
             })}
           </div>
 
-          {/* Endless Navigation Arrows */}
+          <button onClick={scrollPrev} className="skyrim-font" style={{ position: 'fixed', left: '2rem', top: '50%', transform: 'translateY(-50%)', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--skyrim-gold-dim)', color: 'var(--skyrim-gold-bright)', fontSize: '2rem', padding: '1rem 0.5rem', cursor: 'pointer', zIndex: 100 }}>&larr;</button>
+          <button onClick={scrollNext} className="skyrim-font" style={{ position: 'fixed', right: '2rem', top: '50%', transform: 'translateY(-50%)', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--skyrim-gold-dim)', color: 'var(--skyrim-gold-bright)', fontSize: '2rem', padding: '1rem 0.5rem', cursor: 'pointer', zIndex: 100 }}>&rarr;</button>
+
+          {/* BACK TO MENU ARROW (DOWN) */}
           <button 
-            onClick={scrollPrev}
+            onClick={() => setUI({ isMenuOpen: true })}
             className="skyrim-font"
             style={{
               position: 'fixed',
-              left: '2rem',
-              top: '50%',
-              transform: 'translateY(-50%)',
-              background: 'rgba(0,0,0,0.3)',
-              border: '1px solid var(--skyrim-gold-dim)',
+              bottom: '6rem', // Above HUD bars
+              left: '50%',
+              transform: 'translateX(-50%)',
+              background: 'none',
+              border: 'none',
               color: 'var(--skyrim-gold-bright)',
-              fontSize: '2rem',
-              padding: '1rem 0.5rem',
+              fontSize: '3rem',
               cursor: 'pointer',
               zIndex: 100,
-              transition: 'all 0.2s'
+              opacity: 0.6
             }}
           >
-            &larr;
-          </button>
-          
-          <button 
-            onClick={scrollNext}
-            className="skyrim-font"
-            style={{
-              position: 'fixed',
-              right: '2rem',
-              top: '50%',
-              transform: 'translateY(-50%)',
-              background: 'rgba(0,0,0,0.3)',
-              border: '1px solid var(--skyrim-gold-dim)',
-              color: 'var(--skyrim-gold-bright)',
-              fontSize: '2rem',
-              padding: '1rem 0.5rem',
-              cursor: 'pointer',
-              zIndex: 100,
-              transition: 'all 0.2s'
-            }}
-          >
-            &rarr;
+            &darr;
           </button>
         </>
       )}

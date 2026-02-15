@@ -7,7 +7,7 @@ import '../styles/Skyrim.css';
 const CATEGORIES = ['ALL', 'APPAREL', 'POTIONS', 'BOOKS', 'MISC'];
 
 const Inventory: React.FC = () => {
-  const { stats, useItem } = useGame();
+  const { stats, useItem, setUI } = useGame();
   const [selectedCategory, setSelectedCategory] = useState('ALL');
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
 
@@ -40,6 +40,26 @@ const Inventory: React.FC = () => {
   return (
     <div className="skills-container" style={{ background: 'radial-gradient(circle at center, #140a05 0%, #000 100%)' }}>
       <div className="star-field"></div>
+
+      {/* BACK TO MENU ARROW (LEFT) */}
+      <button 
+        onClick={() => setUI({ isMenuOpen: true })}
+        className="skyrim-font"
+        style={{
+          position: 'fixed',
+          top: '2rem',
+          left: '4rem',
+          background: 'none',
+          border: 'none',
+          color: 'var(--skyrim-gold-bright)',
+          fontSize: '3rem',
+          cursor: 'pointer',
+          zIndex: 100,
+          opacity: 0.6
+        }}
+      >
+        &larr;
+      </button>
       
       <div style={{ marginTop: '100px', height: 'calc(100vh - 250px)', width: '90vw', margin: '100px auto' }}>
         <div className="inventory-menu-layout">

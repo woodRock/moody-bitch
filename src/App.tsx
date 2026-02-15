@@ -33,6 +33,9 @@ function App() {
 
   const isAuthPage = ['/signin', '/signup', '/forgot-password'].includes(location.pathname);
   const showHUD = !!currentUser && !isAuthPage;
+  
+  // Hide the floating MENU [TAB] button on specific pages
+  const showMenuButton = !['/magic', '/inventory'].includes(location.pathname);
 
   return (
     <div className="app-root">
@@ -42,9 +45,11 @@ function App() {
             showCompass={location.pathname === '/dashboard'} 
             showLevel={location.pathname !== '/skills'} 
           />
+          {/* Always render SkyrimMenu so it can handle the overlay, but tell it to hide its button */}
           <SkyrimMenu 
             onOpenPause={() => setUI({ isPauseMenuOpen: true })} 
             disabledGestures={ui.disabledGestures}
+            hideButton={!showMenuButton}
           />
           <PauseMenu 
             isOpen={ui.isPauseMenuOpen} 

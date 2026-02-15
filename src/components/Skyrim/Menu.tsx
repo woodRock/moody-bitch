@@ -1,18 +1,20 @@
-import React, { useState, useCallback } from 'react';
+import React, { useCallback } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { signOut } from 'firebase/auth';
 import { auth } from '../../firebaseConfig';
 import { useTrackpadSwipe } from '../../hooks/useTrackpadSwipe';
+import { useGame } from '../../context/GameContext';
 import { motion, useMotionValue, useSpring } from 'framer-motion';
 import '../../styles/Skyrim.css';
 
 interface SkyrimMenuProps {
   onOpenPause?: () => void;
   disabledGestures?: boolean;
+  hideButton?: boolean;
 }
 
-const SkyrimMenu: React.FC<SkyrimMenuProps> = ({ onOpenPause, disabledGestures = false }) => {
-  const [isOpen, setIsOpen] = useState(false);
+const SkyrimMenu: React.FC<SkyrimMenuProps> = ({ onOpenPause, disabledGestures = false, hideButton = false }) => {
+  const { ui, setUI } = useGame();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -31,26 +33,23 @@ const SkyrimMenu: React.FC<SkyrimMenuProps> = ({ onOpenPause, disabledGestures =
   };
 
   const handleGesture = useCallback((direction: 'UP' | 'DOWN' | 'LEFT' | 'RIGHT') => {
-    if (isOpen) {
-      // In DIAMOND MENU
-      if (direction === 'UP') { navigate('/skills'); setIsOpen(false); }
-      else if (direction === 'DOWN') { navigate('/dashboard'); setIsOpen(false); }
-      else if (direction === 'LEFT') { navigate('/magic'); setIsOpen(false); }
-      else if (direction === 'RIGHT') { navigate('/inventory'); setIsOpen(false); }
+    if (ui.isMenuOpen) {
+      if (direction === 'UP') { navigate('/skills'); setUI({ isMenuOpen: false }); }
+      else if (direction === 'DOWN') { navigate('/dashboard'); setUI({ isMenuOpen: false }); }
+      else if (direction === 'LEFT') { navigate('/magic'); setUI({ isMenuOpen: false }); }
+      else if (direction === 'RIGHT') { navigate('/inventory'); setUI({ isMenuOpen: false }); }
     } else {
-      // Returning FROM PAGE
       const path = location.pathname;
-      if (path === '/skills' && direction === 'DOWN') setIsOpen(true);
-      else if (path === '/dashboard' && direction === 'UP') setIsOpen(true);
-      else if (path === '/magic' && direction === 'RIGHT') setIsOpen(true);
-      else if (path === '/inventory' && direction === 'LEFT') setIsOpen(true);
+      if (path === '/skills' && direction === 'DOWN') setUI({ isMenuOpen: true });
+      else if (path === '/dashboard' && direction === 'UP') setUI({ isMenuOpen: true });
+      else if (path === '/magic' && direction === 'RIGHT') setUI({ isMenuOpen: true });
+      else if (path === '/inventory' && direction === 'LEFT') setUI({ isMenuOpen: true });
     }
     dragX.set(0);
     dragY.set(0);
-  }, [isOpen, navigate, location.pathname, dragX, dragY]);
+  }, [ui.isMenuOpen, navigate, location.pathname, dragX, dragY, setUI]);
 
   const handleProgress = useCallback((offset: { x: number, y: number }) => {
-    // Visual feedback
     dragX.set(-offset.x * 0.5);
     dragY.set(-offset.y * 0.5);
   }, [dragX, dragY]);
@@ -59,16 +58,16 @@ const SkyrimMenu: React.FC<SkyrimMenuProps> = ({ onOpenPause, disabledGestures =
     onSwipe: handleGesture,
     onProgress: handleProgress,
     threshold: 120,
-    disabled: disabledGestures && !isOpen,
-    // We keep preventX true by default to stop browser back/forward, 
-    // unless you are specifically on a page that needs horizontal scroll.
+    disabled: disabledGestures && !ui.isMenuOpen,
     preventX: true 
   });
 
-  if (!isOpen) {
+  if (!ui.isMenuOpen) {
+    if (hideButton) return null; // Logic moved here!
+    
     return (
       <button 
-        onClick={() => setIsOpen(true)}
+        onClick={() => setUI({ isMenuOpen: true })}
         className="skyrim-font"
         style={{
           position: 'fixed',
@@ -90,12 +89,11 @@ const SkyrimMenu: React.FC<SkyrimMenuProps> = ({ onOpenPause, disabledGestures =
   }
 
   return (
-    <div className="skyrim-menu-overlay" onClick={() => setIsOpen(false)} style={{ background: 'rgba(0,0,0,0.9)' }}>
+    <div className="skyrim-menu-overlay" onClick={() => setUI({ isMenuOpen: false })} style={{ background: 'rgba(0,0,0,0.9)' }}>
       <button 
         onClick={(e) => { 
           e.stopPropagation(); 
-          setIsOpen(false);
-          if (onOpenPause) onOpenPause(); 
+          setUI({ isMenuOpen: false, isPauseMenuOpen: true });
         }}
         className="skyrim-font"
         style={{
@@ -125,22 +123,22 @@ const SkyrimMenu: React.FC<SkyrimMenuProps> = ({ onOpenPause, disabledGestures =
         onClick={e => e.stopPropagation()}
         style={{ x: springX, y: springY }}
       >
-        <Link to="/skills" className="diamond-item item-up" onClick={() => setIsOpen(false)}>
+        <Link to="/skills" className="diamond-item item-up" onClick={() => setUI({ isMenuOpen: false })}>
           <div className="diamond-label skyrim-font">SKILLS</div>
           <div className="diamond-line-up"></div>
         </Link>
 
-        <Link to="/dashboard" className="diamond-item item-down" onClick={() => setIsOpen(false)}>
+        <Link to="/dashboard" className="diamond-item item-down" onClick={() => setUI({ isMenuOpen: false })}>
           <div className="diamond-line-down"></div>
           <div className="diamond-label skyrim-font">MAP</div>
         </Link>
 
-        <Link to="/magic" className="diamond-item item-left" onClick={() => setIsOpen(false)}>
+        <Link to="/magic" className="diamond-item item-left" onClick={() => setUI({ isMenuOpen: false })}>
           <div className="diamond-label skyrim-font">MAGIC</div>
           <div className="diamond-line-left"></div>
         </Link>
 
-        <Link to="/inventory" className="diamond-item item-right" onClick={() => setIsOpen(false)}>
+        <Link to="/inventory" className="diamond-item item-right" onClick={() => setUI({ isMenuOpen: false })}>
           <div className="diamond-line-right"></div>
           <div className="diamond-label skyrim-font">ITEMS</div>
         </Link>
