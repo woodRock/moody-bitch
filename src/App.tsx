@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
 import { useGame } from './context/GameContext';
@@ -34,8 +35,24 @@ function App() {
   const isAuthPage = ['/signin', '/signup', '/forgot-password'].includes(location.pathname);
   const showHUD = !!currentUser && !isAuthPage;
   
-  // Hide the floating MENU [TAB] button on specific pages
   const showMenuButton = !['/magic', '/inventory'].includes(location.pathname);
+
+  // Keyboard Shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (isAuthPage) return;
+      
+      if (e.key === 'Escape') {
+        setUI({ isPauseMenuOpen: !ui.isPauseMenuOpen, isMenuOpen: false });
+      }
+      if (e.key === 'Tab') {
+        e.preventDefault(); // Stop focus switching
+        setUI({ isMenuOpen: !ui.isMenuOpen, isPauseMenuOpen: false });
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [ui.isPauseMenuOpen, ui.isMenuOpen, setUI, isAuthPage]);
 
   return (
     <div className="app-root">
@@ -45,12 +62,33 @@ function App() {
             showCompass={location.pathname === '/dashboard'} 
             showLevel={location.pathname !== '/skills'} 
           />
-          {/* Always render SkyrimMenu so it can handle the overlay, but tell it to hide its button */}
+
+          {/* Persistent SYSTEM Button */}
+          <button 
+            onClick={() => setUI({ isPauseMenuOpen: !ui.isPauseMenuOpen, isMenuOpen: false })}
+            className="skyrim-font"
+            style={{
+              position: 'fixed',
+              top: '1.5rem',
+              left: '2rem',
+              background: 'rgba(0,0,0,0.5)',
+              border: '1px solid var(--skyrim-gold-dim)',
+              color: '#aaa',
+              fontSize: '0.8rem',
+              padding: '0.4rem 0.8rem',
+              cursor: 'pointer',
+              zIndex: 200,
+              textShadow: '1px 1px 0 #000'
+            }}
+          >
+            SYSTEM [ESC]
+          </button>
+
           <SkyrimMenu 
-            onOpenPause={() => setUI({ isPauseMenuOpen: true })} 
             disabledGestures={ui.disabledGestures}
             hideButton={!showMenuButton}
           />
+          
           <PauseMenu 
             isOpen={ui.isPauseMenuOpen} 
             onClose={() => setUI({ isPauseMenuOpen: false })} 

@@ -8,7 +8,6 @@ import { motion, useMotionValue, useSpring } from 'framer-motion';
 import '../../styles/Skyrim.css';
 
 interface SkyrimMenuProps {
-  onOpenPause?: () => void;
   disabledGestures?: boolean;
   hideButton?: boolean;
 }
@@ -63,16 +62,16 @@ const SkyrimMenu: React.FC<SkyrimMenuProps> = ({ disabledGestures = false, hideB
   });
 
   if (!ui.isMenuOpen) {
-    if (hideButton) return null; // Logic moved here!
+    if (hideButton) return null;
     
     return (
       <button 
-        onClick={() => setUI({ isMenuOpen: true })}
+        onClick={() => setUI({ isMenuOpen: true, isPauseMenuOpen: false })}
         className="skyrim-font"
         style={{
           position: 'fixed',
           top: '1.5rem',
-          left: '2rem',
+          right: '2rem', // Symmetrical with SYSTEM button on the left
           background: 'rgba(0,0,0,0.5)',
           border: '1px solid var(--skyrim-gold-dim)',
           color: '#aaa',
@@ -83,13 +82,14 @@ const SkyrimMenu: React.FC<SkyrimMenuProps> = ({ disabledGestures = false, hideB
           textShadow: '1px 1px 0 #000'
         }}
       >
-        MENU [TAB]
+        CHARACTER [TAB]
       </button>
     );
   }
 
   return (
     <div className="skyrim-menu-overlay" onClick={() => setUI({ isMenuOpen: false })} style={{ background: 'rgba(0,0,0,0.9)' }}>
+      {/* Top Left Pause Toggle */}
       <button 
         onClick={(e) => { 
           e.stopPropagation(); 
