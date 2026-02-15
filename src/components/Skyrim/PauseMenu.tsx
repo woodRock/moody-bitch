@@ -33,7 +33,7 @@ interface Quest {
   title: string;
   description: string;
   type: 'daily' | 'one-off';
-  skill: string; // The skill this quest improves
+  skill: string; 
   completed: boolean;
   lastCompleted?: Timestamp;
 }
@@ -60,14 +60,12 @@ const PauseMenu: React.FC<PauseMenuProps> = ({ isOpen, onClose }) => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<Tab>('QUESTS');
   
-  // Quest State
   const [quests, setQuests] = useState<Quest[]>([]);
   const [selectedQuest, setSelectedQuest] = useState<Quest | null>(null);
   const [newQuestTitle, setNewQuestTitle] = useState('');
   const [newQuestType, setNewQuestType] = useState<'daily' | 'one-off'>('one-off');
   const [newQuestSkill, setNewQuestSkill] = useState('RESTORATION');
   
-  // Journal State
   const [entries, setEntries] = useState<MoodEntry[]>([]);
   const [selectedEntry, setSelectedEntry] = useState<MoodEntry | null>(null);
   
@@ -152,7 +150,6 @@ const PauseMenu: React.FC<PauseMenuProps> = ({ isOpen, onClose }) => {
       });
       if (newStatus) {
         notify("QUEST COMPLETED", quest.title.toUpperCase());
-        // Reward specific skill
         addXP(40, quest.skill); 
       }
       const updated = sortQuests(quests.map(q => q.id === quest.id ? { ...q, completed: newStatus } : q));
@@ -194,8 +191,8 @@ const PauseMenu: React.FC<PauseMenuProps> = ({ isOpen, onClose }) => {
 
         <div className="pause-content">
           {activeTab === 'QUESTS' && (
-            <div className="quest-menu-layout">
-              <div className="quest-list-column">
+            <div className="quest-menu-layout" style={{ flexWrap: 'wrap' }}>
+              <div className="quest-list-column" style={{ minWidth: '250px' }}>
                 <div className="quest-category-title">Active Quests</div>
                 <div style={{ overflowY: 'auto', maxHeight: '40vh', paddingRight: '1rem' }}>
                   {quests.map(q => (
@@ -282,8 +279,8 @@ const PauseMenu: React.FC<PauseMenuProps> = ({ isOpen, onClose }) => {
           )}
 
           {activeTab === 'JOURNAL' && (
-            <div className="quest-menu-layout">
-              <div className="quest-list-column">
+            <div className="quest-menu-layout" style={{ flexWrap: 'wrap' }}>
+              <div className="quest-list-column" style={{ minWidth: '250px' }}>
                 <div className="quest-category-title">Past Chronicles</div>
                 <div style={{ overflowY: 'auto', maxHeight: '50vh', paddingRight: '1rem' }}>
                   {entries.map(e => (

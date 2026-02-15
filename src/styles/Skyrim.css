@@ -562,9 +562,82 @@ svg.nebula-defs {
 .item-right { right: 0; }
 .diamond-line-right { height: 2px; width: 100px; background: linear-gradient(to left, #aaa, transparent); }
 
-.diamond-center {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  z-index: 10;
+/* --- MOBILE RESPONSIVENESS (SCALING) --- */
+@media (max-width: 768px) {
+  /* Scale down the top bar */
+  .character-info-bar {
+    padding: 0 0.5rem;
+    height: 50px;
+  }
+  .info-item {
+    font-size: 0.7rem;
+    margin: 0 0.5rem;
+    letter-spacing: 1px;
+  }
+
+  /* Scale down the Diamond Menu */
+  .character-menu-diamond {
+    transform: scale(0.6);
+  }
+  .diamond-label {
+    font-size: 1.8rem;
+  }
+
+  /* Scale down the Pause Menu */
+  .pause-menu-container {
+    width: 95vw;
+    height: 90vh;
+  }
+  .pause-menu-tabs {
+    gap: 1rem;
+  }
+  .pause-tab {
+    font-size: 0.8rem;
+    letter-spacing: 1px;
+  }
+  .pause-content {
+    padding: 1rem;
+  }
+  .quest-menu-layout {
+    flex-direction: column;
+    overflow-y: auto;
+  }
+  .quest-list-column {
+    border-right: none;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    padding-bottom: 1rem;
+    flex: none;
+  }
+
+  /* HUD scaling */
+  .hud-container {
+    padding: 0 1rem;
+    bottom: 1rem;
+  }
+  .stat-bar-group {
+    width: 30%;
+  }
+
+  /* Skills overview scaling */
+  .skill-constellation-view svg {
+    width: 300px;
+    height: 300px;
+  }
+  .skill-constellation-view .skyrim-font {
+    font-size: 1.2rem !important;
+  }
+
+  /* Perk focus box */
+  .perk-focus-info, .perk-description-area {
+    width: 90% !important;
+    font-size: 0.9rem !important;
+  }
+  .skill-progress-bar-container {
+    width: 150px;
+  }
+  
+  .compass-container {
+    width: 90%;
+    transform: translateX(-50%) scale(0.7);
+  }
 }

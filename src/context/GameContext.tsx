@@ -43,9 +43,12 @@ export const useGame = () => {
 
 const DEFAULT_SKILLS = {
   RESTORATION: { level: 15, xp: 0, xpToNextLevel: 100 },
+  ENCHANTING: { level: 15, xp: 0, xpToNextLevel: 100 },
+  SMITHING: { level: 15, xp: 0, xpToNextLevel: 100 },
   SPEECH: { level: 15, xp: 0, xpToNextLevel: 100 },
   ALCHEMY: { level: 15, xp: 0, xpToNextLevel: 100 },
   'ONE-HANDED': { level: 15, xp: 0, xpToNextLevel: 100 },
+  'TWO-HANDED': { level: 15, xp: 0, xpToNextLevel: 100 },
   ALTERATION: { level: 15, xp: 0, xpToNextLevel: 100 },
 };
 
@@ -67,13 +70,29 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     if (!currentUser) return;
     const docRef = doc(db, 'userStats', currentUser.uid);
-    return onSnapshot(docRef, (docSnap) => {
+    return onSnapshot(docRef, async (docSnap) => {
       if (docSnap.exists()) {
         const data = docSnap.data();
+        const currentSkills = data.skills || {};
+        
+        // Check if any default skills are missing (Migration)
+        let needsUpdate = false;
+        const updatedSkills = { ...DEFAULT_SKILLS, ...currentSkills };
+        
+        Object.keys(DEFAULT_SKILLS).forEach(skill => {
+          if (!currentSkills[skill]) {
+            needsUpdate = true;
+          }
+        });
+
+        if (needsUpdate) {
+          await updateDoc(docRef, { skills: updatedSkills });
+        }
+
         setStats({
           ...stats,
           ...data,
-          skills: data.skills || DEFAULT_SKILLS
+          skills: updatedSkills
         } as UserStats);
       } else {
         const initialStats = {
@@ -101,7 +120,6 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
         s.xpToNextLevel = Math.floor(s.xpToNextLevel * 1.2);
         notify("SKILL INCREASED", `${skillName} TO ${s.level}`);
         
-        // Character level up logic (Skyrim style: skill increases contribute to level)
         let charXP = stats.xp + (s.level * 10);
         let charLevel = stats.level;
         let charXPNext = stats.xpToNextLevel;
@@ -121,9 +139,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       updates[`skills.${skillName}`] = s;
     } else {
-      // Global XP
       let newXP = stats.xp + amount;
-      if (newXP >= stats.xpToNextLevel) { /* ... same character level up logic ... */ }
       updates.xp = newXP;
     }
 
@@ -149,10 +165,16 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
       magicka: Math.min(sleep * 10, 100),
       stamina: energy * 10
     });
-    // Also give XP to relevant skills
-    addXP(20, 'RESTORATION'); // Sleep
-    addXP(20, 'SPEECH'); // Journaling
-    addXP(20, 'ALTERATION'); // Mindset
+    
+    // Reward XP
+    addXP(20, 'RESTORATION');
+    addXP(20, 'SPEECH');
+    addXP(20, 'ALTERATION');
+    if (energy >= 8) {
+      addXP(30, 'TWO-HANDED'); // High intensity bonus
+    } else if (energy >= 5) {
+      addXP(20, 'ONE-HANDED'); // Regular movement bonus
+    }
   };
 
   return (

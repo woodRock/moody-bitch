@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useGame } from '../context/GameContext';
 import { useAuth } from '../context/AuthContext';
 import HUD from '../components/Skyrim/HUD';
@@ -30,15 +30,32 @@ const Skills: React.FC = () => {
   const [selectedSkill, setSelectedSkill] = useState<Constellation | null>(null);
   const [focusedPerk, setFocusedPerk] = useState<Perk | null>(null);
   const [isPauseMenuOpen, setIsPauseMenuOpen] = useState(false);
+  
+  // Track the last index to restore scroll
+  const [lastSelectedIndex, setLastSelectedIndex] = useState(0);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Restore scroll position when returning to overview
+  useEffect(() => {
+    if (!selectedSkill && scrollRef.current) {
+      const container = scrollRef.current;
+      // We calculate approximate scroll based on index
+      // itemWidth is 60vw (min-width) + 100px (gap)
+      const vw = window.innerWidth / 100;
+      const itemWidth = (60 * vw) + 100;
+      
+      container.scrollTo({
+        left: lastSelectedIndex * itemWidth,
+        behavior: 'instant'
+      });
+    }
+  }, [selectedSkill, lastSelectedIndex]);
 
   const handleStarClick = (perk: Perk) => {
     if (focusedPerk?.id === perk.id) {
       if (!stats.perks.includes(perk.id) && stats.skillPoints > 0) {
-        // Check prerequisites (is there a line where this is the 'end' point?)
         const constellation = selectedSkill!;
         const perkIndex = constellation.perks.findIndex(p => p.id === perk.id);
-        
-        // The first perk in the list (index 0) is the root and always unlockable
         const hasPrereq = perkIndex === 0 || constellation.lines.some(([start, end]) => {
           return end === perkIndex && stats.perks.includes(constellation.perks[start].id);
         });
@@ -69,11 +86,19 @@ const Skills: React.FC = () => {
       <PauseMenu isOpen={isPauseMenuOpen} onClose={() => setIsPauseMenuOpen(false)} />
 
       {!selectedSkill && (
-        <div className="horizontal-skills-wrapper" style={{ display: 'flex', alignItems: 'center' }}>
+        <div className="horizontal-skills-wrapper" ref={scrollRef} style={{ display: 'flex', alignItems: 'center' }}>
           {CONSTELLATIONS.map((con, idx) => {
             const skill = stats.skills[con.skillKey] || { level: 0, xp: 0, xpToNextLevel: 100 };
             return (
-              <div key={idx} className="skill-constellation-view" onClick={() => setSelectedSkill(con)} style={{ cursor: 'pointer' }}>
+              <div 
+                key={idx} 
+                className="skill-constellation-view" 
+                onClick={() => {
+                  setLastSelectedIndex(idx);
+                  setSelectedSkill(con);
+                }} 
+                style={{ cursor: 'pointer' }}
+              >
                 <svg width="500" height="500" viewBox="0 0 500 500" className="constellation-svg">
                   {con.spectralPaths.map((path, i) => (
                     <path key={i} d={path} className="constellation-art" />
@@ -155,10 +180,8 @@ const Skills: React.FC = () => {
             </svg>
           </div>
 
-          {/* Perk Info (Positioned above and below the centered star) */}
           {focusedPerk && (
             <>
-              {/* Name Above */}
               <div style={{ 
                 position: 'fixed', 
                 top: '38vh', 
@@ -167,7 +190,7 @@ const Skills: React.FC = () => {
                 textAlign: 'center', 
                 zIndex: 700,
                 width: '100%',
-                pointerEvents: 'none' /* Allow clicking through to stars */
+                pointerEvents: 'none'
               }}>
                 <h2 className="skyrim-font" style={{ 
                   color: '#e6c278', 
@@ -181,16 +204,15 @@ const Skills: React.FC = () => {
                 <div className="menu-separator" style={{ margin: '0.5rem auto', width: '150px' }}></div>
               </div>
 
-              {/* Description & Unlock Button Below */}
               <div style={{ 
                 position: 'fixed', 
-                top: '65vh', /* Adjusted position slightly */
+                top: '65vh', 
                 left: '50%', 
                 transform: 'translateX(-50%)', 
                 textAlign: 'center', 
                 zIndex: 700, 
                 width: '600px',
-                pointerEvents: 'none' /* Allow clicking through to stars */
+                pointerEvents: 'none'
               }}>
                 <p className="skyrim-serif" style={{ 
                   color: '#fff', 
@@ -202,7 +224,7 @@ const Skills: React.FC = () => {
                   {focusedPerk.description}
                 </p>
                 
-                <div style={{ pointerEvents: 'auto' }}> {/* Only button is clickable */}
+                <div style={{ pointerEvents: 'auto' }}>
                   {!stats.perks.includes(focusedPerk.id) ? (
                     <button 
                       className="btn-unlock" 
