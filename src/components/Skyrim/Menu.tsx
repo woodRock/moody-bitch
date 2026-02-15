@@ -3,16 +3,23 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { signOut } from 'firebase/auth';
 import { auth } from '../../firebaseConfig';
 import { useTrackpadSwipe } from '../../hooks/useTrackpadSwipe';
+import { motion, useMotionValue, useSpring } from 'framer-motion';
 import '../../styles/Skyrim.css';
 
 interface SkyrimMenuProps {
   onOpenPause?: () => void;
+  disabledGestures?: boolean;
 }
 
-const SkyrimMenu: React.FC<SkyrimMenuProps> = ({ onOpenPause }) => {
+const SkyrimMenu: React.FC<SkyrimMenuProps> = ({ onOpenPause, disabledGestures = false }) => {
   const [isOpen, setIsOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+
+  const dragX = useMotionValue(0);
+  const dragY = useMotionValue(0);
+  const springX = useSpring(dragX, { stiffness: 300, damping: 30 });
+  const springY = useSpring(dragY, { stiffness: 300, damping: 30 });
 
   const handleLogout = async () => {
     try {
@@ -25,22 +32,38 @@ const SkyrimMenu: React.FC<SkyrimMenuProps> = ({ onOpenPause }) => {
 
   const handleGesture = useCallback((direction: 'UP' | 'DOWN' | 'LEFT' | 'RIGHT') => {
     if (isOpen) {
-      // Corrected Mapping
+      // In DIAMOND MENU
       if (direction === 'UP') { navigate('/skills'); setIsOpen(false); }
-      if (direction === 'DOWN') { navigate('/dashboard'); setIsOpen(false); }
-      if (direction === 'LEFT') { navigate('/magic'); setIsOpen(false); }
-      if (direction === 'RIGHT') { navigate('/inventory'); setIsOpen(false); }
+      else if (direction === 'DOWN') { navigate('/dashboard'); setIsOpen(false); }
+      else if (direction === 'LEFT') { navigate('/magic'); setIsOpen(false); }
+      else if (direction === 'RIGHT') { navigate('/inventory'); setIsOpen(false); }
     } else {
-      // Returning
+      // Returning FROM PAGE
       const path = location.pathname;
       if (path === '/skills' && direction === 'DOWN') setIsOpen(true);
-      if (path === '/dashboard' && direction === 'UP') setIsOpen(true);
-      if (path === '/magic' && direction === 'RIGHT') setIsOpen(true);
-      if (path === '/inventory' && direction === 'LEFT') setIsOpen(true);
+      else if (path === '/dashboard' && direction === 'UP') setIsOpen(true);
+      else if (path === '/magic' && direction === 'RIGHT') setIsOpen(true);
+      else if (path === '/inventory' && direction === 'LEFT') setIsOpen(true);
     }
-  }, [isOpen, navigate, location.pathname]);
+    dragX.set(0);
+    dragY.set(0);
+  }, [isOpen, navigate, location.pathname, dragX, dragY]);
 
-  useTrackpadSwipe({ onSwipe: handleGesture });
+  const handleProgress = useCallback((offset: { x: number, y: number }) => {
+    // Visual feedback
+    dragX.set(-offset.x * 0.5);
+    dragY.set(-offset.y * 0.5);
+  }, [dragX, dragY]);
+
+  useTrackpadSwipe({ 
+    onSwipe: handleGesture,
+    onProgress: handleProgress,
+    threshold: 120,
+    disabled: disabledGestures && !isOpen,
+    // We keep preventX true by default to stop browser back/forward, 
+    // unless you are specifically on a page that needs horizontal scroll.
+    preventX: true 
+  });
 
   if (!isOpen) {
     return (
@@ -49,7 +72,7 @@ const SkyrimMenu: React.FC<SkyrimMenuProps> = ({ onOpenPause }) => {
         className="skyrim-font"
         style={{
           position: 'fixed',
-          top: '4.5rem',
+          top: '1.5rem',
           left: '2rem',
           background: 'rgba(0,0,0,0.5)',
           border: '1px solid var(--skyrim-gold-dim)',
@@ -68,7 +91,6 @@ const SkyrimMenu: React.FC<SkyrimMenuProps> = ({ onOpenPause }) => {
 
   return (
     <div className="skyrim-menu-overlay" onClick={() => setIsOpen(false)} style={{ background: 'rgba(0,0,0,0.9)' }}>
-      {/* Top Left Pause Button */}
       <button 
         onClick={(e) => { 
           e.stopPropagation(); 
@@ -77,77 +99,59 @@ const SkyrimMenu: React.FC<SkyrimMenuProps> = ({ onOpenPause }) => {
         }}
         className="skyrim-font"
         style={{
-          position: 'fixed',
-          top: '2rem',
-          left: '2rem',
-          background: 'rgba(255, 255, 255, 0.05)',
-          border: '1px solid var(--skyrim-gold-dim)',
-          color: '#fff',
-          padding: '0.5rem 1.5rem',
-          cursor: 'pointer',
-          zIndex: 1100,
-          fontSize: '0.9rem',
-          letterSpacing: '2px'
+          position: 'fixed', top: '2rem', left: '2rem',
+          background: 'rgba(255, 255, 255, 0.05)', border: '1px solid var(--skyrim-gold-dim)',
+          color: '#fff', padding: '0.5rem 1.5rem', cursor: 'pointer', zIndex: 1100,
+          fontSize: '0.9rem', letterSpacing: '2px'
         }}
       >
         PAUSE
       </button>
 
-      {/* Top Right Quit Icon */}
       <button 
         onClick={(e) => { e.stopPropagation(); handleLogout(); }}
         className="skyrim-font"
         style={{
-          position: 'fixed',
-          top: '2rem',
-          right: '2rem',
-          background: 'rgba(169, 41, 41, 0.2)',
-          border: '1px solid #a92929',
-          color: '#a92929',
-          padding: '0.5rem 1rem',
-          cursor: 'pointer',
-          zIndex: 1100,
-          fontSize: '0.8rem'
+          position: 'fixed', top: '2rem', right: '2rem',
+          background: 'rgba(169, 41, 41, 0.2)', border: '1px solid #a92929',
+          color: '#a92929', padding: '0.5rem 1rem', cursor: 'pointer', zIndex: 1100, fontSize: '0.8rem'
         }}
       >
         QUIT REALM [ESC]
       </button>
 
-      <div className="character-menu-diamond" onClick={e => e.stopPropagation()}>
-        
-        {/* TOP: SKILLS */}
+      <motion.div 
+        className="character-menu-diamond" 
+        onClick={e => e.stopPropagation()}
+        style={{ x: springX, y: springY }}
+      >
         <Link to="/skills" className="diamond-item item-up" onClick={() => setIsOpen(false)}>
           <div className="diamond-label skyrim-font">SKILLS</div>
           <div className="diamond-line-up"></div>
         </Link>
 
-        {/* BOTTOM: MAP */}
         <Link to="/dashboard" className="diamond-item item-down" onClick={() => setIsOpen(false)}>
           <div className="diamond-line-down"></div>
           <div className="diamond-label skyrim-font">MAP</div>
         </Link>
 
-        {/* LEFT: MAGIC */}
         <Link to="/magic" className="diamond-item item-left" onClick={() => setIsOpen(false)}>
           <div className="diamond-label skyrim-font">MAGIC</div>
           <div className="diamond-line-left"></div>
         </Link>
 
-        {/* RIGHT: ITEMS */}
         <Link to="/inventory" className="diamond-item item-right" onClick={() => setIsOpen(false)}>
           <div className="diamond-line-right"></div>
           <div className="diamond-label skyrim-font">ITEMS</div>
         </Link>
 
-        {/* CENTER: Now empty for a cleaner look */}
         <div className="diamond-center">
            <div style={{ width: '4px', height: '4px', background: '#fff', borderRadius: '50%', boxShadow: '0 0 10px #fff' }}></div>
         </div>
-
-      </div>
+      </motion.div>
       
       <div style={{ position: 'fixed', bottom: '2rem', left: '50%', transform: 'translateX(-50%)', color: '#777' }} className="skyrim-font">
-        [ TWO-FINGER SCROLL TO NAVIGATE ]
+        [ SCROLL TO NAVIGATE ]
       </div>
     </div>
   );

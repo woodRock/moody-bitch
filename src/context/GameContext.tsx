@@ -17,8 +17,8 @@ export interface ActiveEffect {
 }
 
 export interface InventoryItem {
-  uid: string; // Unique instance ID
-  id: string; // Template ID
+  uid: string;
+  id: string;
   name: string;
   category: 'APPAREL' | 'POTIONS' | 'BOOKS' | 'MISC';
   description: string;
@@ -49,6 +49,13 @@ interface GameContextType {
   stats: UserStats;
   notification: { title: string; subtitle: string } | null;
   activeEffects: ActiveEffect[];
+  ui: {
+    heading: number;
+    compassMarkers: { id: string, offset: number, icon: string }[];
+    isPauseMenuOpen: boolean;
+    disabledGestures: boolean;
+  };
+  setUI: (updates: Partial<GameContextType['ui']>) => void;
   addXP: (amount: number, skillName?: string) => void;
   updateAttributes: (mood: number, energy: number, sleep: number) => void;
   notify: (title: string, subtitle: string) => void;
@@ -90,6 +97,13 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const { currentUser } = useAuth();
   const [notification, setNotification] = useState<{ title: string; subtitle: string } | null>(null);
   const [activeEffects, setActiveEffects] = useState<ActiveEffect[]>([]);
+  const [ui, setUIState] = useState<GameContextType['ui']>({
+    heading: 0,
+    compassMarkers: [],
+    isPauseMenuOpen: false,
+    disabledGestures: false
+  });
+
   const [stats, setStats] = useState<UserStats>({
     level: 1, xp: 0, xpToNextLevel: 100,
     health: 50, magicka: 50, stamina: 50,
@@ -98,6 +112,10 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     inventory: [],
     completedQuestCount: 0
   });
+
+  const setUI = (updates: Partial<GameContextType['ui']>) => {
+    setUIState(prev => ({ ...prev, ...updates }));
+  };
 
   const notify = (title: string, subtitle: string) => {
     setNotification({ title, subtitle });
@@ -208,22 +226,15 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const useItem = async (item: InventoryItem) => {
     if (!currentUser) return;
     const uid = currentUser.uid;
-    
     const docRef = doc(db, 'userStats', uid);
-    let updates: any = {
-      inventory: stats.inventory.filter(i => i.uid !== item.uid)
-    };
+    let updates: any = { inventory: stats.inventory.filter(i => i.uid !== item.uid) };
 
     if (item.effectType === 'RESTORE_HEALTH') updates.health = Math.min(stats.health + (item.effectValue || 0), 100);
     if (item.effectType === 'RESTORE_MAGICKA') updates.magicka = Math.min(stats.magicka + (item.effectValue || 0), 100);
     if (item.effectType === 'RESTORE_STAMINA') updates.stamina = Math.min(stats.stamina + (item.effectValue || 0), 100);
     
     await updateDoc(docRef, updates);
-    
-    if (item.effectType === 'GRANT_XP') {
-      addXP(item.effectValue || 0, item.effectTarget);
-    }
-
+    if (item.effectType === 'GRANT_XP') addXP(item.effectValue || 0, item.effectTarget);
     notify("ITEM USED", item.name.toUpperCase());
   };
 
@@ -268,7 +279,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <GameContext.Provider value={{ stats, notification, activeEffects, addXP, updateAttributes, notify, spendSkillPoint, castSpell, completeQuest, useItem }}>
+    <GameContext.Provider value={{ stats, notification, activeEffects, ui, setUI, addXP, updateAttributes, notify, spendSkillPoint, castSpell, completeQuest, useItem }}>
       {children}
     </GameContext.Provider>
   );

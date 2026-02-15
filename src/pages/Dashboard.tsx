@@ -1,21 +1,17 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useGame } from '../context/GameContext';
 import '../styles/Dashboard.css';
-import HUD from '../components/Skyrim/HUD';
-import SkyrimMenu from '../components/Skyrim/Menu';
-import PauseMenu from '../components/Skyrim/PauseMenu';
 import { MapContainer, TileLayer, Marker, Popup, Polyline, useMapEvents } from 'react-leaflet';
 import { fetchLocationHistory } from '../services/locationService';
 import type { UserLocation } from '../services/locationService';
 import L from 'leaflet';
 
-// Fix for markers
 import icon from 'leaflet/dist/images/marker-icon.png';
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
 let DefaultIcon = L.icon({ iconUrl: icon, shadowUrl: iconShadow, iconSize: [25, 41], iconAnchor: [12, 41] });
 L.Marker.prototype.options.icon = DefaultIcon;
 
-// Internal component to catch map movement
 const MapController = ({ onMove }: { onMove: (center: L.LatLng) => void }) => {
   useMapEvents({
     move: (e) => onMove(e.target.getCenter()),
@@ -25,20 +21,17 @@ const MapController = ({ onMove }: { onMove: (center: L.LatLng) => void }) => {
 
 const Dashboard: React.FC = () => {
   const { currentUser } = useAuth();
-  const [isPauseMenuOpen, setIsPauseMenuOpen] = useState(false);
+  const { setUI, ui } = useGame();
   const [locations, setLocations] = useState<UserLocation[]>([]);
   const [mapCenter, setMapCenter] = useState<[number, number]>([0, 0]);
   const [hasLocation, setHasLocation] = useState(false);
-  const [heading, setHeading] = useState(0); 
-  const [markersOnCompass, setMarkersOnCompass] = useState<{id: string, offset: number, icon: string}[]>([]);
 
   useEffect(() => {
     if (currentUser) {
       loadHistory();
       const handleOrientation = (e: any) => {
-        // use any to bypass webkitCompassHeading missing on standard DeviceOrientationEvent type
-        if (e.webkitCompassHeading) setHeading(e.webkitCompassHeading);
-        else if (e.alpha) setHeading(360 - e.alpha);
+        const heading = e.webkitCompassHeading || (360 - (e.alpha || 0));
+        setUI({ heading });
       };
       window.addEventListener('deviceorientation', handleOrientation, true);
       return () => window.removeEventListener('deviceorientation', handleOrientation);
@@ -49,7 +42,6 @@ const Dashboard: React.FC = () => {
     if (!currentUser) return;
     const history = await fetchLocationHistory(currentUser.uid);
     setLocations(history);
-    
     if (history.length > 0) {
       const last = history[history.length - 1];
       setMapCenter([last.lat, last.lng]);
@@ -68,7 +60,7 @@ const Dashboard: React.FC = () => {
       const x = Math.cos(center.lat) * Math.sin(loc.lat) -
                 Math.sin(center.lat) * Math.cos(loc.lat) * Math.cos(loc.lng - center.lng);
       let bearing = (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
-      let relativeBearing = (bearing - heading + 540) % 360 - 180;
+      let relativeBearing = (bearing - ui.heading + 540) % 360 - 180;
       
       return {
         id: loc.id || Math.random().toString(),
@@ -77,19 +69,15 @@ const Dashboard: React.FC = () => {
       };
     }).filter(m => Math.abs(m.offset) < 200);
 
-    setMarkersOnCompass(newMarkers);
-  }, [locations, heading]);
+    setUI({ compassMarkers: newMarkers });
+  }, [locations, ui.heading, setUI]);
 
   const pathPositions = locations.map(loc => [loc.lat, loc.lng] as [number, number]);
 
   return (
     <div className="dashboard-container" style={{ padding: 0, overflow: 'hidden' }}>
-      <HUD heading={heading} compassMarkers={markersOnCompass} />
-      <SkyrimMenu onOpenPause={() => setIsPauseMenuOpen(true)} />
-      <PauseMenu isOpen={isPauseMenuOpen} onClose={() => { setIsPauseMenuOpen(false); loadHistory(); }} />
-
       <style>{`
-        .skyrim-font[style*="top: 4.5rem"] { top: 1.5rem !important; }
+        .skyrim-font[style*="top: 1.5rem"], .skyrim-font[style*="top: 2rem"] { top: 1.5rem !important; }
       `}</style>
 
       <div className="map-wrapper" style={{ width: '100vw', height: '100vh', zIndex: 1 }}>
