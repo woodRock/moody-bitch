@@ -2,7 +2,7 @@ import React, { useState, useCallback } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { signOut } from 'firebase/auth';
 import { auth } from '../../firebaseConfig';
-import { useTwoFingerSwipe } from '../../hooks/useTwoFingerSwipe';
+import { useTrackpadSwipe } from '../../hooks/useTrackpadSwipe';
 import '../../styles/Skyrim.css';
 
 interface SkyrimMenuProps {
@@ -25,13 +25,13 @@ const SkyrimMenu: React.FC<SkyrimMenuProps> = ({ onOpenPause }) => {
 
   const handleGesture = useCallback((direction: 'UP' | 'DOWN' | 'LEFT' | 'RIGHT') => {
     if (isOpen) {
-      // NAVIGATING FROM MENU
+      // Corrected Mapping
       if (direction === 'UP') { navigate('/skills'); setIsOpen(false); }
       if (direction === 'DOWN') { navigate('/dashboard'); setIsOpen(false); }
       if (direction === 'LEFT') { navigate('/magic'); setIsOpen(false); }
       if (direction === 'RIGHT') { navigate('/inventory'); setIsOpen(false); }
     } else {
-      // RETURNING TO MENU
+      // Returning
       const path = location.pathname;
       if (path === '/skills' && direction === 'DOWN') setIsOpen(true);
       if (path === '/dashboard' && direction === 'UP') setIsOpen(true);
@@ -40,7 +40,7 @@ const SkyrimMenu: React.FC<SkyrimMenuProps> = ({ onOpenPause }) => {
     }
   }, [isOpen, navigate, location.pathname]);
 
-  useTwoFingerSwipe({ onSwipe: handleGesture });
+  useTrackpadSwipe({ onSwipe: handleGesture });
 
   if (!isOpen) {
     return (
@@ -147,7 +147,7 @@ const SkyrimMenu: React.FC<SkyrimMenuProps> = ({ onOpenPause }) => {
       </div>
       
       <div style={{ position: 'fixed', bottom: '2rem', left: '50%', transform: 'translateX(-50%)', color: '#777' }} className="skyrim-font">
-        [ TWO-FINGER SLIDE TO NAVIGATE ]
+        [ TWO-FINGER SCROLL TO NAVIGATE ]
       </div>
     </div>
   );

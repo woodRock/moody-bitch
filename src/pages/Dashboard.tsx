@@ -1,14 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { useGame } from '../context/GameContext';
 import '../styles/Dashboard.css';
 import HUD from '../components/Skyrim/HUD';
 import SkyrimMenu from '../components/Skyrim/Menu';
 import PauseMenu from '../components/Skyrim/PauseMenu';
 import { MapContainer, TileLayer, Marker, Popup, Polyline, useMapEvents } from 'react-leaflet';
 import { fetchLocationHistory } from '../services/locationService';
-import { db } from '../firebaseConfig';
-import { collection, query, where, getDocs } from 'firebase/firestore';
 import type { UserLocation } from '../services/locationService';
 import L from 'leaflet';
 
@@ -17,13 +14,6 @@ import icon from 'leaflet/dist/images/marker-icon.png';
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
 let DefaultIcon = L.icon({ iconUrl: icon, shadowUrl: iconShadow, iconSize: [25, 41], iconAnchor: [12, 41] });
 L.Marker.prototype.options.icon = DefaultIcon;
-
-interface MapMarker {
-  lat: number;
-  lng: number;
-  label: string;
-  type: 'quest' | 'log';
-}
 
 // Internal component to catch map movement
 const MapController = ({ onMove }: { onMove: (center: L.LatLng) => void }) => {
@@ -35,20 +25,18 @@ const MapController = ({ onMove }: { onMove: (center: L.LatLng) => void }) => {
 
 const Dashboard: React.FC = () => {
   const { currentUser } = useAuth();
-  const { stats } = useGame();
   const [isPauseMenuOpen, setIsPauseMenuOpen] = useState(false);
   const [locations, setLocations] = useState<UserLocation[]>([]);
-  const [activeQuests, setActiveQuests] = useState<{lat: number, lng: number, title: string}[]>([]);
   const [mapCenter, setMapCenter] = useState<[number, number]>([0, 0]);
   const [hasLocation, setHasLocation] = useState(false);
-  const [heading, setHeading] = useState(0); // For Device Orientation
+  const [heading, setHeading] = useState(0); 
   const [markersOnCompass, setMarkersOnCompass] = useState<{id: string, offset: number, icon: string}[]>([]);
 
   useEffect(() => {
     if (currentUser) {
       loadHistory();
-      // Listen for device orientation (mobile compass)
-      const handleOrientation = (e: DeviceOrientationEvent) => {
+      const handleOrientation = (e: any) => {
+        // use any to bypass webkitCompassHeading missing on standard DeviceOrientationEvent type
         if (e.webkitCompassHeading) setHeading(e.webkitCompassHeading);
         else if (e.alpha) setHeading(360 - e.alpha);
       };
@@ -62,9 +50,6 @@ const Dashboard: React.FC = () => {
     const history = await fetchLocationHistory(currentUser.uid);
     setLocations(history);
     
-    // Also fetch locations for active quests if they have them (optional enhancement)
-    // For now, let's just use the history points as compass markers
-    
     if (history.length > 0) {
       const last = history[history.length - 1];
       setMapCenter([last.lat, last.lng]);
@@ -77,24 +62,20 @@ const Dashboard: React.FC = () => {
     }
   };
 
-  // Calculate marker positions on the compass bar based on current map center
   const updateCompassMarkers = useCallback((center: L.LatLng) => {
     const newMarkers = locations.map(loc => {
-      // Calculate bearing from center to marker
       const y = Math.sin(loc.lng - center.lng) * Math.cos(loc.lat);
       const x = Math.cos(center.lat) * Math.sin(loc.lat) -
                 Math.sin(center.lat) * Math.cos(loc.lat) * Math.cos(loc.lng - center.lng);
       let bearing = (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
-      
-      // Relative to current heading
       let relativeBearing = (bearing - heading + 540) % 360 - 180;
       
       return {
         id: loc.id || Math.random().toString(),
-        offset: relativeBearing * (400 / 180), // Map -180/180 to -400/400px
+        offset: relativeBearing * (400 / 180),
         icon: loc.label?.includes('Quest') ? '📍' : '📜'
       };
-    }).filter(m => Math.abs(m.offset) < 200); // Only show if within compass view range
+    }).filter(m => Math.abs(m.offset) < 200);
 
     setMarkersOnCompass(newMarkers);
   }, [locations, heading]);

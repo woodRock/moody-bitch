@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useGame } from '../context/GameContext';
-import { useAuth } from '../context/AuthContext';
 import HUD from '../components/Skyrim/HUD';
 import SkyrimMenu from '../components/Skyrim/Menu';
 import PauseMenu from '../components/Skyrim/PauseMenu';
@@ -26,7 +25,6 @@ const NebulaFilters = () => (
 
 const Skills: React.FC = () => {
   const { stats, spendSkillPoint, notify } = useGame();
-  const { currentUser } = useAuth();
   const [selectedSkill, setSelectedSkill] = useState<Constellation | null>(null);
   const [focusedPerk, setFocusedPerk] = useState<Perk | null>(null);
   const [isPauseMenuOpen, setIsPauseMenuOpen] = useState(false);
