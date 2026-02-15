@@ -25,7 +25,7 @@ const NebulaFilters = () => (
 );
 
 const Skills: React.FC = () => {
-  const { stats, spendSkillPoint } = useGame();
+  const { stats, spendSkillPoint, notify } = useGame();
   const { currentUser } = useAuth();
   const [selectedSkill, setSelectedSkill] = useState<Constellation | null>(null);
   const [focusedPerk, setFocusedPerk] = useState<Perk | null>(null);
@@ -155,25 +155,76 @@ const Skills: React.FC = () => {
             </svg>
           </div>
 
+          {/* Perk Info (Positioned above and below the centered star) */}
           {focusedPerk && (
-            <div className="perk-focus-info">
-              <h2 className="skyrim-font" style={{ color: '#e6c278', margin: 0 }}>{focusedPerk.name}</h2>
-              <p className="skyrim-serif" style={{ color: '#fff', fontSize: '1.1rem', margin: '10px 0' }}>{focusedPerk.description}</p>
-              {!stats.perks.includes(focusedPerk.id) ? (
-                <button 
-                  className="btn-unlock" 
-                  disabled={stats.skillPoints <= 0}
-                  onClick={() => spendSkillPoint(focusedPerk.id)}
-                >
-                  {stats.skillPoints > 0 ? `UNLOCK PERK (1 POINT)` : 'NEED SKILL POINTS'}
-                </button>
-              ) : (
-                <div className="skyrim-font" style={{ color: 'var(--skyrim-gold-bright)' }}>PERK UNLOCKED</div>
-              )}
-            </div>
+            <>
+              {/* Name Above */}
+              <div style={{ 
+                position: 'fixed', 
+                top: '38vh', 
+                left: '50%', 
+                transform: 'translateX(-50%)', 
+                textAlign: 'center', 
+                zIndex: 700,
+                width: '100%',
+                pointerEvents: 'none' /* Allow clicking through to stars */
+              }}>
+                <h2 className="skyrim-font" style={{ 
+                  color: '#e6c278', 
+                  fontSize: '1.5rem', 
+                  margin: 0, 
+                  textShadow: '0 0 10px rgba(230, 194, 120, 0.6), 2px 2px 4px #000',
+                  letterSpacing: '2px'
+                }}>
+                  {focusedPerk.name.toUpperCase()}
+                </h2>
+                <div className="menu-separator" style={{ margin: '0.5rem auto', width: '150px' }}></div>
+              </div>
+
+              {/* Description & Unlock Button Below */}
+              <div style={{ 
+                position: 'fixed', 
+                top: '65vh', /* Adjusted position slightly */
+                left: '50%', 
+                transform: 'translateX(-50%)', 
+                textAlign: 'center', 
+                zIndex: 700, 
+                width: '600px',
+                pointerEvents: 'none' /* Allow clicking through to stars */
+              }}>
+                <p className="skyrim-serif" style={{ 
+                  color: '#fff', 
+                  fontSize: '1.4rem', 
+                  margin: '0 0 1.5rem 0', 
+                  lineHeight: '1.5',
+                  textShadow: '1px 1px 2px #000'
+                }}>
+                  {focusedPerk.description}
+                </p>
+                
+                <div style={{ pointerEvents: 'auto' }}> {/* Only button is clickable */}
+                  {!stats.perks.includes(focusedPerk.id) ? (
+                    <button 
+                      className="btn-unlock" 
+                      disabled={stats.skillPoints <= 0}
+                      onClick={() => spendSkillPoint(focusedPerk.id)}
+                      style={{ 
+                        boxShadow: stats.skillPoints > 0 ? '0 0 20px rgba(230, 194, 120, 0.4)' : 'none'
+                      }}
+                    >
+                      {stats.skillPoints > 0 ? `UNLOCK PERK (1 POINT)` : 'NEED SKILL POINTS'}
+                    </button>
+                  ) : (
+                    <div className="skyrim-font" style={{ color: 'var(--skyrim-gold-bright)', fontSize: '1.2rem', letterSpacing: '2px' }}>
+                      [ PERK UNLOCKED ]
+                    </div>
+                  )}
+                </div>
+              </div>
+            </>
           )}
 
-          <div style={{ position: 'fixed', bottom: '2rem', right: '4rem' }} className="skyrim-font">
+          <div style={{ position: 'fixed', bottom: '2rem', right: '4rem', zIndex: 1000 }} className="skyrim-font">
              AVAILABLE POINTS: <span style={{ color: '#fff' }}>{stats.skillPoints}</span>
           </div>
         </div>

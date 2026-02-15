@@ -71,7 +71,6 @@ const PauseMenu: React.FC<PauseMenuProps> = ({ isOpen, onClose }) => {
   const [entries, setEntries] = useState<MoodEntry[]>([]);
   const [selectedEntry, setSelectedEntry] = useState<MoodEntry | null>(null);
   
-  const [loading, setLoading] = useState(false);
   const [isAddingQuest, setIsAddingQuest] = useState(false);
 
   useEffect(() => {
@@ -86,7 +85,6 @@ const PauseMenu: React.FC<PauseMenuProps> = ({ isOpen, onClose }) => {
 
   const fetchData = async () => {
     if (!currentUser) return;
-    setLoading(true);
     try {
       const qQuests = query(collection(db, 'quests'), where('userId', '==', currentUser.uid));
       const questSnap = await getDocs(qQuests);
@@ -116,8 +114,6 @@ const PauseMenu: React.FC<PauseMenuProps> = ({ isOpen, onClose }) => {
       if (fetchedEntries.length > 0 && !selectedEntry) setSelectedEntry(fetchedEntries[0]);
     } catch (error) {
       console.error("Error fetching data:", error);
-    } finally {
-      setLoading(false);
     }
   };
 
