@@ -1,69 +1,111 @@
+/* src/styles/Auth.css */
 .auth-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
   min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   background: radial-gradient(circle at center, #1a0520 0%, #000 100%);
-  position: relative;
+  padding: 2rem;
 }
 
-.auth-container::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background-image: radial-gradient(white, rgba(255,255,255,0.2) 2px, transparent 40px);
-  background-size: 150px 150px;
-  opacity: 0.15;
-  pointer-events: none;
-}
-
-.auth-box {
-  background: rgba(20, 20, 20, 0.9) !important;
-  padding: 3rem;
-  border: 1px solid var(--skyrim-gold-dim);
-  box-shadow: 0 0 50px rgba(0,0,0,0.8);
+.auth-card {
   width: 100%;
-  max-width: 500px;
+  max-width: 450px;
+  background: rgba(20, 20, 20, 0.9);
+  border: 1px solid var(--skyrim-gold-dim);
+  padding: 3rem;
+  box-shadow: 0 0 50px rgba(0,0,0,0.8);
+  position: relative;
   backdrop-filter: blur(10px);
-  color: #fff;
 }
 
 .auth-title {
-  text-align: center;
-  margin-bottom: 2rem;
-  font-size: 2rem;
   color: #fff;
+  text-align: center;
+  font-size: 2rem;
+  margin-bottom: 2rem;
   letter-spacing: 4px;
-  font-family: 'Futura', sans-serif;
-  text-transform: uppercase;
-  border-bottom: 1px solid rgba(255,255,255,0.1);
-  padding-bottom: 1rem;
 }
 
-.error-message {
-  color: #a92929;
-  background-color: rgba(169, 41, 41, 0.1);
-  padding: 0.8rem;
-  border: 1px solid #a92929;
-  margin-bottom: 1.5rem;
-  font-size: 0.9rem;
-  text-align: center;
-  font-family: 'Crimson Text', serif;
+.label-text {
+  display: block;
+  color: #888;
+  font-size: 0.8rem;
+  margin-bottom: 0.5rem;
+}
+
+.btn-auth {
+  width: 100%;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--skyrim-gold-dim);
+  color: #fff;
+  cursor: pointer;
+  font-size: 1rem;
+  margin-top: 1rem;
+  transition: all 0.3s;
+}
+
+.btn-auth:hover {
+  background: rgba(230, 194, 120, 0.1);
+  border-color: var(--skyrim-gold-bright);
 }
 
 .auth-footer {
   margin-top: 2rem;
   text-align: center;
-  font-family: 'Crimson Text', serif;
-  font-size: 1.1rem;
-  color: #888;
+  color: #666;
 }
 
 .auth-footer a {
-  color: var(--skyrim-gold-bright);
+  color: var(--skyrim-gold-dim);
   text-decoration: none;
-  margin-left: 10px;
-  text-transform: uppercase;
-  font-family: 'Futura', sans-serif;
-  font-size: 0.8rem;
+}
+
+.error-banner {
+  background: rgba(169, 41, 41, 0.2);
+  border: 1px solid #a92929;
+  color: #ff6b6b;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+/* Google Sign In Styles */
+.divider-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin: 2rem 0;
+}
+
+.divider-text {
+  color: #444;
+  font-size: 0.9rem;
+}
+
+.btn-google {
+  width: 100%;
+  padding: 0.8rem;
+  background: #fff;
+  border: 1px solid #ddd;
+  color: #757575;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  font-weight: bold;
+  border-radius: 2px;
+  transition: background 0.2s;
+}
+
+.btn-google:hover {
+  background: #f1f1f1;
+}
+
+.google-icon {
+  width: 18px;
+  height: 18px;
 }
