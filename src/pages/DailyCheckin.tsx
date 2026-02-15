@@ -5,36 +5,43 @@ import { collection, addDoc, Timestamp } from 'firebase/firestore';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
 import { FirebaseError } from 'firebase/app';
-import Penguin3D from '../components/Penguin3D';
+import { useGame } from '../context/GameContext';
 import '../styles/Forms.css';
 
 const DailyCheckin: React.FC = () => {
   const { currentUser } = useAuth();
+  const { addXP, updateAttributes } = useGame();
   const navigate = useNavigate();
   const [mood, setMood] = useState(5); // 1-10 scale
   const [energy, setEnergy] = useState(5); // 1-10 scale
   const [sleep, setSleep] = useState(7); // Hours
-  const [notes, setNotes] = useState('');
+  const [highlights, setHighlights] = useState(['', '', '']);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
   const getMoodEmoji = (value: number) => {
-    if (value <= 2) return '😭'; // Sobbing
-    if (value <= 4) return '😞'; // Sad
-    if (value === 5) return '😐'; // Neutral
-    if (value <= 7) return '🙂'; // Slight smile
-    if (value <= 9) return '😄'; // Happy
-    return '🤩'; // Star-struck
+    if (value <= 2) return '😭';
+    if (value <= 4) return '😞';
+    if (value === 5) return '😐';
+    if (value <= 7) return '🙂';
+    if (value <= 9) return '😄';
+    return '🤩';
   };
 
   const getEnergyEmoji = (value: number) => {
-    if (value <= 2) return '😴'; // Sleeping
-    if (value <= 4) return '🥱'; // Tired
-    if (value === 5) return '😐'; // Neutral
-    if (value <= 7) return '🔋'; // Battery
-    if (value <= 9) return '⚡'; // Zap
-    return '🚀'; // Rocket
+    if (value <= 2) return '😴';
+    if (value <= 4) return '🥱';
+    if (value === 5) return '😐';
+    if (value <= 7) return '🔋';
+    if (value <= 9) return '⚡';
+    return '🚀';
+  };
+
+  const handleHighlightChange = (index: number, value: string) => {
+    const newHighlights = [...highlights];
+    newHighlights[index] = value;
+    setHighlights(newHighlights);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -54,20 +61,21 @@ const DailyCheckin: React.FC = () => {
         mood,
         energy,
         sleep,
-        notes,
+        highlights,
         timestamp: Timestamp.now(),
       });
-      setSuccess('Check-in submitted successfully!');
-      setMood(5);
-      setEnergy(5);
-      setSleep(7);
-      setNotes('');
-      navigate('/dashboard'); // Redirect to dashboard after successful submission
+
+      // Update RPG Stats
+      await updateAttributes(mood, energy, sleep);
+      await addXP(50); // 50 XP for daily checkin
+
+      setSuccess('Log updated. Your saga continues. (50 XP Gained)');
+      setTimeout(() => navigate('/dashboard'), 1500);
     } catch (err) {
       if (err instanceof FirebaseError) {
-        setError('Error submitting check-in: ' + err.message);
+        setError('The gods frown upon this entry: ' + err.message);
       } else {
-        setError('An unexpected error occurred while submitting check-in.');
+        setError('An unexpected error occurred in the realm.');
       }
       console.error('Error adding document: ', err);
     } finally {
@@ -77,28 +85,19 @@ const DailyCheckin: React.FC = () => {
 
   return (
     <div className="checkin-container">
-      <div className="checkin-box">
-        <Link to="/dashboard" className="btn btn-secondary" style={{ marginBottom: '1rem', display: 'inline-block' }}>
-          &larr; Back to Dashboard
+      <div className="checkin-box card">
+        <Link to="/dashboard" className="btn" style={{ marginBottom: '2rem', display: 'inline-block' }}>
+          &larr; Return to Map
         </Link>
-        <h2 className="text-center" style={{ marginBottom: '1.5rem', fontSize: '1.5rem' }}>Daily Check-in</h2>
+        <h2 className="text-center skyrim-title" style={{ marginBottom: '2rem', fontSize: '2rem', letterSpacing: '4px' }}>DAILY LOG</h2>
         
-        {/* Animated 3D Penguin */}
-        <div style={{ marginBottom: '2rem' }}>
-          <Penguin3D mood={mood} energy={energy} sleep={sleep} />
-          <p className="text-center text-muted" style={{ fontSize: '0.8rem', marginTop: '0.5rem' }}>
-            Watch the penguin react to your inputs!
-          </p>
-        </div>
-
-        {error && <p className="error-message">{error}</p>}
         {error && <p className="error-message">{error}</p>}
         {success && <p className="success-message">{success}</p>}
         
         <form onSubmit={handleSubmit}>
           <div className="input-group">
             <label className="input-label" htmlFor="mood">
-              Mood <span className="emoji-display">{getMoodEmoji(mood)}</span>
+              MOOD <span className="emoji-display">{getMoodEmoji(mood)}</span>
             </label>
             <div className="range-wrapper">
               <input
@@ -112,15 +111,11 @@ const DailyCheckin: React.FC = () => {
               />
               <span className="range-value">{mood}</span>
             </div>
-            <div className="range-labels">
-              <span>Bad</span>
-              <span>Great</span>
-            </div>
           </div>
 
           <div className="input-group">
             <label className="input-label" htmlFor="energy">
-              Energy <span className="emoji-display">{getEnergyEmoji(energy)}</span>
+              ENERGY <span className="emoji-display">{getEnergyEmoji(energy)}</span>
             </label>
             <div className="range-wrapper">
               <input
@@ -134,15 +129,11 @@ const DailyCheckin: React.FC = () => {
               />
               <span className="range-value">{energy}</span>
             </div>
-            <div className="range-labels">
-              <span>Low</span>
-              <span>High</span>
-            </div>
           </div>
 
           <div className="input-group">
             <label className="input-label" htmlFor="sleep">
-              Sleep (Hours)
+              REST (HOURS)
             </label>
             <input
               type="number"
@@ -157,27 +148,30 @@ const DailyCheckin: React.FC = () => {
             />
           </div>
 
-          <div className="input-group">
-            <label className="input-label" htmlFor="notes">
-              Journal Entry (Thoughts and Feelings)
-            </label>
-            <textarea
-              id="notes"
-              rows={4}
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              className="form-textarea"
-              placeholder="What's on your mind today?"
-            ></textarea>
+          <div className="highlights-section" style={{ marginTop: '2rem' }}>
+            <h3 className="skyrim-title" style={{ fontSize: '1.2rem', marginBottom: '1rem', textAlign: 'center' }}>TODAY'S HIGHLIGHTS</h3>
+            {highlights.map((h, i) => (
+              <div key={i} className="input-group">
+                <input
+                  type="text"
+                  value={h}
+                  onChange={(e) => handleHighlightChange(i, e.target.value)}
+                  className="form-input parchment-input"
+                  placeholder={`Highlight ${i + 1}...`}
+                  required={i === 0}
+                />
+              </div>
+            ))}
           </div>
 
-          <div className="input-group">
+          <div className="input-group" style={{ marginTop: '3rem', textAlign: 'center' }}>
             <button
               type="submit"
               className="btn btn-primary w-full"
               disabled={loading}
+              style={{ padding: '1rem', background: 'var(--skyrim-stone)', color: 'var(--skyrim-gold)', border: '1px solid var(--skyrim-gold)' }}
             >
-              {loading ? 'Submitting...' : 'Submit Check-in'}
+              {loading ? 'SCRIBING...' : 'COMMIT TO MEMORY'}
             </button>
           </div>
         </form>

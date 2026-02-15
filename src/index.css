@@ -1,36 +1,70 @@
 :root {
-  /* Modern Palette */
-  --primary-color: #8b5cf6; /* Soft Violet */
-  --primary-hover: #7c3aed;
-  --secondary-color: #ec4899; /* Pink */
-  --secondary-hover: #db2777;
-  --accent-color: #10b981; /* Emerald */
-  --bg-color: #f3f4f6;
-  --text-color: #1f2937;
-  --text-muted: #6b7280;
-  --border-color: #e5e7eb;
+  /* Skyrim-Inspired Palette */
+  --skyrim-gold: #c5a059;
+  --skyrim-gold-bright: #e6c278;
+  --skyrim-parchment: #fdfbf7;
+  --skyrim-stone: #2a2a2a;
+  --skyrim-dark-stone: #1a1a1a;
+  --skyrim-border: #4a4a4a;
+  --skyrim-iron: #5d5d5d;
+  --danger-color: #991b1b;
   
-  /* Gradients */
-  --bg-gradient: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-  --primary-gradient: linear-gradient(135deg, #8b5cf6 0%, #c4b5fd 100%);
-  --secondary-gradient: linear-gradient(135deg, #ec4899 0%, #f472b6 100%);
-
   /* UI Elements */
-  --card-bg: rgba(255, 255, 255, 0.95);
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-  --radius: 1rem; /* More rounded */
+  --card-bg: var(--skyrim-parchment);
+  --shadow-md: 0 4px 10px rgba(0,0,0,0.5);
+  --radius: 0px; /* Skyrim UI is very sharp/rectangular */
 }
 
 body {
   margin: 0;
-  font-family: 'Calibri', 'Inter', sans-serif; /* Friendly font */
+  font-family: 'Crimson Text', 'Georgia', serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background: var(--bg-gradient);
-  color: var(--text-color);
+  background: #121212 url('https://www.transparenttextures.com/patterns/dark-matter.png');
+  color: var(--skyrim-stone);
   min-height: 100vh;
+}
+
+.card {
+  background-color: var(--card-bg);
+  background-image: url('https://www.transparenttextures.com/patterns/parchment.png');
+  border: 2px solid var(--skyrim-border);
+  box-shadow: var(--shadow-md);
+  padding: 2rem;
+  margin-bottom: 1.5rem;
+  position: relative;
+}
+
+.card::before {
+  content: '';
+  position: absolute;
+  top: 5px;
+  left: 5px;
+  right: 5px;
+  bottom: 5px;
+  border: 1px solid rgba(0,0,0,0.1);
+  pointer-events: none;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.6rem 2rem;
+  border: 1px solid var(--skyrim-gold);
+  background: var(--skyrim-stone);
+  color: var(--skyrim-gold);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  font-family: 'Futura', 'Trebuchet MS', sans-serif;
+}
+
+.btn:hover {
+  background: var(--skyrim-gold);
+  color: var(--skyrim-stone);
 }
 
 * {

@@ -14,7 +14,7 @@ interface MoodEntry {
   mood: number;
   energy: number;
   sleep: number;
-  notes: string;
+  highlights: string[];
   timestamp: Timestamp;
 }
 
@@ -43,12 +43,12 @@ const Cover = forwardRef<HTMLDivElement, any>((props, ref) => {
         </div>
       )}
       <div className="cover-content">
-        <h1 className="cover-title">My Journal</h1>
-        <p className="cover-subtitle">Private & Personal</p>
-        <p style={{ marginTop: '2rem', fontSize: '0.9rem', opacity: 0.8, marginBottom: '2rem' }}>
+        <h1 className="cover-title skyrim-title" style={{ color: '#e6c278', border: 'none' }}>SCROLLS OF TIME</h1>
+        <p className="cover-subtitle">Chronicles of the Dragonborn</p>
+        <p style={{ marginTop: '2rem', fontSize: '0.9rem', opacity: 0.8, marginBottom: '2rem', color: '#e6c278' }}>
           {props.owner}
         </p>
-        <img src="/avatar.jpg" alt="Avatar" className="cover-avatar" />
+        <img src="/avatar.jpg" alt="Avatar" className="cover-avatar" style={{ border: '2px solid #c5a059' }} />
       </div>
     </div>
   );
@@ -113,10 +113,6 @@ const Journal: React.FC = () => {
 
   const goToLatestEntry = () => {
     if (bookRef.current) {
-      // +1 for the cover page, entries.length for the number of entries
-      // If there are no entries, we go to the placeholder page (page 1)
-      // Otherwise, the last entry is at index `entries.length - 1`, which corresponds to page `entries.length` (after cover page)
-      // The "The End" page is `entries.length + 1`
       const lastEntryPageIndex = entries.length > 0 ? entries.length : 1; 
       bookRef.current.pageFlip().turnToPage(lastEntryPageIndex);
     }
@@ -125,7 +121,7 @@ const Journal: React.FC = () => {
   if (loading) {
     return (
       <div className="journal-container">
-        <p className="text-muted">Loading your diary...</p>
+        <p className="text-muted">Consulting the Elder Scrolls...</p>
       </div>
     );
   }
@@ -141,16 +137,19 @@ const Journal: React.FC = () => {
   return (
     <div className="journal-container">
       <div style={{ width: '100%', maxWidth: '800px', marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Link to="/dashboard" className="btn btn-secondary">
-          &larr; Back to Dashboard
+        <Link to="/dashboard" className="btn">
+          &larr; Return to Map
+        </Link>
+        <Link to="/checkin" className="btn" style={{ color: '#e6c278' }}>
+          Scribe New Log
         </Link>
         {entries.length > 0 && (
-          <button onClick={goToLatestEntry} className="btn btn-primary">
-            Go to Latest Entry &rarr;
+          <button onClick={goToLatestEntry} className="btn">
+            Latest Chronicle &rarr;
           </button>
         )}
-        <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-          Click or drag page corners to turn
+        <span style={{ color: '#c5a059', fontSize: '0.9rem', fontFamily: 'Crimson Text, serif' }}>
+          Unroll the scroll to read
         </span>
       </div>
 
@@ -173,18 +172,17 @@ const Journal: React.FC = () => {
           <Cover 
             owner={currentUser?.email} 
             showCobwebs={showCobwebs} 
-            latestStats={entries.length > 0 ? entries[entries.length - 1] : undefined}
           />
           
           {entries.length === 0 ? (
             <Page number={1}>
               <div className="page-header">
-                <span className="page-date">Today</span>
+                <span className="page-date">TODAY</span>
               </div>
-              <p className="page-text">
-                Dear Diary,<br/><br/>
-                I haven't written anything yet. I should go to the dashboard and make a check-in!
-              </p>
+              <div className="page-text">
+                The scroll is blank.<br/><br/>
+                No triumphs have been recorded in this age. Visit the map to scribe your first entry.
+              </div>
             </Page>
           ) : (
             entries.map((entry, index) => (
@@ -195,16 +193,22 @@ const Journal: React.FC = () => {
                      M:{entry.mood} E:{entry.energy} S:{entry.sleep}h
                   </div>
                 </div>
-                <p className="page-text">
-                  {entry.notes || "(No notes written for this entry)"}
-                </p>
+                <div className="page-text">
+                  <h4 style={{ margin: '0 0 1rem 0', color: '#c5a059', borderBottom: '1px solid #e0e0e0', fontFamily: 'Futura, sans-serif' }}>TODAY'S TRIUMPHS</h4>
+                  <ul style={{ listStyleType: 'square', paddingLeft: '1.5rem' }}>
+                    {entry.highlights && entry.highlights.filter(h => h).map((h, i) => (
+                      <li key={i} style={{ marginBottom: '0.5rem' }}>{h}</li>
+                    ))}
+                    {(!entry.highlights || entry.highlights.every(h => !h)) && <li>(The scribe left no notes)</li>}
+                  </ul>
+                </div>
               </Page>
             ))
           )}
           
           <Page number={entries.length + 1}>
              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
-               <p style={{ color: '#aaa', fontStyle: 'italic' }}>The End</p>
+               <p style={{ color: '#aaa', fontStyle: 'italic' }}>The End of the Current Age</p>
              </div>
           </Page>
         </HTMLFlipBook>

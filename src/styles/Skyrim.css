@@ -1,0 +1,570 @@
+/* src/styles/Skyrim.css */
+@import url('https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,700;1,400&family=Cinzel:wght@400;700&display=swap');
+
+:root {
+  --skyrim-red: #a92929;
+  --skyrim-blue: #2b4e8f;
+  --skyrim-green: #3b7c2a;
+  --skyrim-gold-dim: #998762;
+  --skyrim-gold-bright: #e6c278;
+  --skyrim-stone: #2a2a2a;
+  --skyrim-border-light: rgba(200, 200, 200, 0.5);
+}
+
+.skyrim-font {
+  font-family: 'Futura', 'Trebuchet MS', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+.skyrim-serif {
+  font-family: 'Crimson Text', serif;
+}
+
+/* --- HUD BARS --- */
+.hud-container {
+  position: fixed;
+  bottom: 2rem;
+  left: 0;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  padding: 0 4rem;
+  pointer-events: none;
+  z-index: 1000;
+}
+
+.stat-bar-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 300px;
+}
+
+.stat-bar-bg {
+  width: 100%;
+  height: 12px;
+  background: rgba(0, 0, 0, 0.6);
+  border: 1px solid #555;
+  position: relative;
+  overflow: hidden;
+  clip-path: polygon(2% 0, 98% 0, 100% 50%, 98% 100%, 2% 100%, 0% 50%);
+}
+
+.stat-bar-fill {
+  height: 100%;
+  width: 50%;
+  transition: width 1s ease-out;
+  box-shadow: inset 0 2px 5px rgba(255,255,255,0.3), inset 0 -2px 5px rgba(0,0,0,0.3);
+}
+
+.bar-health { background: linear-gradient(to right, #600, #c00, #600); }
+.bar-magicka { background: linear-gradient(to right, #004, #008, #004); }
+.bar-stamina { background: linear-gradient(to right, #040, #080, #040); }
+
+/* --- COMPASS --- */
+.compass-container {
+  position: fixed;
+  top: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 600px;
+  height: 40px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 100;
+  border-bottom: 2px solid var(--skyrim-gold-dim);
+  border-top: 2px solid var(--skyrim-gold-dim);
+  background: linear-gradient(90deg, transparent, rgba(0,0,0,0.8) 20%, rgba(0,0,0,0.8) 80%, transparent);
+  mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+}
+
+.compass-tick {
+  height: 10px;
+  width: 2px;
+  background: var(--skyrim-gold-dim);
+  margin: 0 20px;
+}
+
+.compass-direction {
+  color: var(--skyrim-gold-dim);
+  font-weight: bold;
+  font-size: 1.2rem;
+  margin: 0 40px;
+}
+
+/* --- MENU --- */
+.skyrim-menu-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  backdrop-filter: blur(5px);
+}
+
+.skyrim-menu-cross {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2rem;
+}
+
+.menu-item {
+  font-family: 'Futura', sans-serif;
+  font-size: 2rem;
+  color: #aaa;
+  text-transform: uppercase;
+  letter-spacing: 0.2rem;
+  cursor: pointer;
+  transition: all 0.3s;
+  text-decoration: none;
+  text-shadow: 2px 2px 0px rgba(0,0,0,0.8);
+}
+
+.menu-item:hover, .menu-item.active {
+  color: #fff;
+  transform: scale(1.1);
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+}
+
+.menu-separator {
+  width: 400px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #aaa, transparent);
+  margin: 1rem 0;
+}
+
+/* --- BANNERS --- */
+.skyrim-banner {
+  position: fixed;
+  top: 25%;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+  z-index: 2000;
+  pointer-events: none;
+  animation: banner-in-out 4s forwards;
+}
+
+.banner-text {
+  font-family: 'Cinzel', serif;
+  font-size: 3.5rem;
+  color: #fff;
+  text-shadow: 0 0 20px rgba(255, 255, 255, 0.5), 2px 2px 5px #000;
+  letter-spacing: 0.5rem;
+  margin: 0;
+}
+
+.banner-subtext {
+  font-family: 'Futura', sans-serif;
+  font-size: 1.2rem;
+  color: var(--skyrim-gold-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.3rem;
+  margin-top: -10px;
+}
+
+@keyframes banner-in-out {
+  0% { opacity: 0; transform: translate(-50%, -20px) scale(0.9); }
+  10% { opacity: 1; transform: translate(-50%, 0) scale(1); }
+  80% { opacity: 1; transform: translate(-50%, 0) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, 20px) scale(1.1); }
+}
+
+/* --- CHARACTER INFO BAR (TOP) --- */
+.character-info-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 60px;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.9), transparent);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  border-bottom: 1px solid var(--skyrim-gold-dim);
+  padding: 0 2rem;
+}
+
+.info-item {
+  color: #fff;
+  font-family: 'Futura', sans-serif;
+  font-size: 1.1rem;
+  margin: 0 2rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.info-value {
+  color: var(--skyrim-gold-bright);
+  margin-left: 10px;
+}
+
+/* --- HORIZONTAL SKILLS SCROLL --- */
+.horizontal-skills-wrapper {
+  display: flex;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  width: 100vw;
+  height: 100vh;
+  padding-top: 100px;
+  gap: 100px;
+  padding-left: 20vw;
+  padding-right: 20vw;
+  scrollbar-width: none;
+}
+
+.horizontal-skills-wrapper::-webkit-scrollbar {
+  display: none;
+}
+
+.skill-constellation-view {
+  min-width: 60vw;
+  flex-shrink: 0;
+  scroll-snap-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.constellation-svg {
+  filter: drop-shadow(0 0 10px rgba(255,255,255,0.3));
+}
+
+.constellation-star {
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.constellation-star circle {
+  fill: #888;
+  stroke: #555;
+  stroke-width: 2;
+}
+
+.constellation-star.unlocked circle {
+  fill: var(--skyrim-gold-bright);
+  stroke: #fff;
+  filter: drop-shadow(0 0 8px var(--skyrim-gold-bright));
+}
+
+.constellation-line {
+  stroke: rgba(255,255,255,0.1);
+  stroke-width: 1;
+  pointer-events: none;
+}
+
+.constellation-art {
+  fill: none;
+  stroke: rgba(100, 150, 255, 0.1);
+  stroke-width: 4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  filter: url(#nebula-glow);
+  transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.skill-constellation-view:hover .constellation-art {
+  stroke: rgba(230, 194, 120, 0.2);
+  stroke-width: 6;
+}
+
+.skill-detail-overlay .constellation-art {
+  stroke: rgba(255, 255, 255, 0.15);
+  stroke-width: 5;
+}
+
+/* Nebula Filter Definition */
+svg.nebula-defs {
+  position: absolute;
+  width: 0;
+  height: 0;
+}
+
+/* --- SKILL DETAIL VIEW --- */
+.skill-detail-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 600;
+  background: radial-gradient(circle at center, rgba(26, 5, 32, 0.9) 0%, rgba(0,0,0,1) 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  animation: zoom-in 0.5s ease-out;
+}
+
+@keyframes zoom-in {
+  from { opacity: 0; transform: scale(0.5); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.skill-progress-bar-container {
+  width: 250px;
+  height: 4px;
+  background: rgba(0,0,0,0.5);
+  border: 1px solid #444;
+  margin-top: 5px;
+  position: relative;
+}
+
+.skill-progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--skyrim-gold-dim), var(--skyrim-gold-bright));
+  box-shadow: 0 0 10px var(--skyrim-gold-bright);
+}
+
+.constellation-container {
+  transition: transform 0.6s cubic-bezier(0.2, 0, 0.2, 1);
+  cursor: grab;
+}
+
+.constellation-container:active {
+  cursor: grabbing;
+}
+
+.perk-focus-info {
+  position: fixed;
+  bottom: 12rem;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+  z-index: 700;
+  background: rgba(0,0,0,0.7);
+  padding: 1.5rem 3rem;
+  border-top: 1px solid var(--skyrim-gold-dim);
+  border-bottom: 1px solid var(--skyrim-gold-dim);
+  width: 600px;
+}
+
+.btn-unlock {
+  margin-top: 1rem;
+  padding: 0.5rem 2rem;
+  font-size: 1rem;
+  background: var(--skyrim-gold-bright);
+  color: #000;
+  border: none;
+  cursor: pointer;
+  font-family: 'Futura', sans-serif;
+  text-transform: uppercase;
+}
+
+/* --- PAUSE MENU --- */
+.pause-menu-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.85);
+  z-index: 2000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  backdrop-filter: blur(10px);
+}
+
+.pause-menu-container {
+  width: 90vw;
+  max-width: 1200px;
+  height: 80vh;
+  background: rgba(20, 20, 20, 0.9); /* Dark gray transparent */
+  border: 1px solid var(--skyrim-gold-dim);
+  box-shadow: 0 0 50px rgba(0,0,0,0.9);
+  display: flex;
+  flex-direction: column;
+  color: #fff;
+  position: relative;
+}
+
+.pause-menu-tabs {
+  height: 60px;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 4rem;
+  border-bottom: 1px solid var(--skyrim-gold-dim);
+}
+
+.pause-tab {
+  color: #888;
+  font-family: 'Futura', sans-serif;
+  font-size: 1.2rem;
+  letter-spacing: 3px;
+  cursor: pointer;
+  transition: all 0.3s;
+  text-transform: uppercase;
+}
+
+.pause-tab.active {
+  color: #fff;
+  text-shadow: 0 0 10px rgba(255,255,255,0.5);
+}
+
+.pause-content {
+  flex: 1;
+  padding: 3rem;
+  overflow-y: auto;
+  position: relative;
+}
+
+/* --- QUEST MENU SPECIFICS --- */
+.quest-menu-layout {
+  display: flex;
+  height: 100%;
+  gap: 2rem;
+}
+
+.quest-list-column {
+  flex: 1;
+  border-right: 1px solid rgba(255,255,255,0.1);
+  padding-right: 1rem;
+}
+
+.quest-details-column {
+  flex: 2;
+  padding-left: 1rem;
+}
+
+.quest-list-item {
+  padding: 0.8rem 1rem;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  color: #888;
+  transform: scale(0.9);
+  transform-origin: left;
+}
+
+.quest-list-item:hover, .quest-list-item.active {
+  color: #fff;
+  transform: scale(1.1);
+}
+
+.quest-diamond {
+  width: 10px;
+  height: 10px;
+  background: transparent;
+  border: 1px solid #888;
+  transform: rotate(45deg);
+  transition: all 0.2s;
+}
+
+.quest-list-item:hover .quest-diamond, .quest-list-item.active .quest-diamond {
+  border-color: #fff;
+}
+
+.quest-diamond.filled {
+  background: #fff;
+  border-color: #fff;
+}
+
+.quest-description {
+  font-family: 'Crimson Text', serif;
+  font-size: 1.4rem;
+  color: #bbb;
+  line-height: 1.6;
+  margin-bottom: 2rem;
+  font-style: italic;
+}
+
+.objective-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  font-family: 'Crimson Text', serif;
+  font-size: 1.3rem;
+}
+
+.objective-marker {
+  width: 10px;
+  height: 10px;
+  border: 1px solid #fff;
+  border-radius: 50%;
+}
+
+.objective-marker.completed {
+  background: #fff;
+}
+
+.quest-category-title {
+  font-family: 'Futura', sans-serif;
+  font-size: 0.9rem;
+  color: #888;
+  letter-spacing: 2px;
+  margin-bottom: 1rem;
+  text-transform: uppercase;
+}
+
+/* --- DIAMOND CHARACTER MENU --- */
+.character-menu-diamond {
+  position: relative;
+  width: 600px;
+  height: 600px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.diamond-item {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  color: #888;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.diamond-item:hover {
+  color: #fff;
+  transform: scale(1.1);
+  text-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
+}
+
+.diamond-label {
+  font-size: 2.5rem;
+  letter-spacing: 0.5rem;
+}
+
+[class^="diamond-line-"] {
+  background: linear-gradient(90deg, transparent, #aaa, transparent);
+  opacity: 0.5;
+}
+
+.item-up { top: 0; }
+.diamond-line-up { width: 2px; height: 100px; background: linear-gradient(to bottom, #aaa, transparent); }
+
+.item-down { bottom: 0; }
+.diamond-line-down { width: 2px; height: 100px; background: linear-gradient(to top, #aaa, transparent); }
+
+.item-left { left: 0; }
+.diamond-line-left { height: 2px; width: 100px; background: linear-gradient(to right, #aaa, transparent); }
+
+.item-right { right: 0; }
+.diamond-line-right { height: 2px; width: 100px; background: linear-gradient(to left, #aaa, transparent); }
+
+.diamond-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  z-index: 10;
+}
