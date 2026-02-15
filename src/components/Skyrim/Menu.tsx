@@ -13,7 +13,7 @@ interface SkyrimMenuProps {
   hideButton?: boolean;
 }
 
-const SkyrimMenu: React.FC<SkyrimMenuProps> = ({ onOpenPause, disabledGestures = false, hideButton = false }) => {
+const SkyrimMenu: React.FC<SkyrimMenuProps> = ({ disabledGestures = false, hideButton = false }) => {
   const { ui, setUI } = useGame();
   const navigate = useNavigate();
   const location = useLocation();
