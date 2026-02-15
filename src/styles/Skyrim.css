@@ -68,7 +68,7 @@
   top: 1rem;
   left: 50%;
   transform: translateX(-50%);
-  width: 600px;
+  width: 400px;
   height: 40px;
   display: flex;
   justify-content: center;
@@ -77,21 +77,40 @@
   border-bottom: 2px solid var(--skyrim-gold-dim);
   border-top: 2px solid var(--skyrim-gold-dim);
   background: linear-gradient(90deg, transparent, rgba(0,0,0,0.8) 20%, rgba(0,0,0,0.8) 80%, transparent);
-  mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+  overflow: hidden;
+  mask-image: linear-gradient(to right, transparent, black 30%, black 70%, transparent);
 }
 
-.compass-tick {
-  height: 10px;
-  width: 2px;
-  background: var(--skyrim-gold-dim);
-  margin: 0 20px;
+.compass-strip {
+  display: flex;
+  align-items: center;
+  position: absolute;
+  white-space: nowrap;
+  transition: transform 0.1s linear;
+  will-change: transform;
+}
+
+.compass-mark {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100px; /* Each major direction is 100px apart */
+  flex-shrink: 0;
 }
 
 .compass-direction {
   color: var(--skyrim-gold-dim);
   font-weight: bold;
   font-size: 1.2rem;
-  margin: 0 40px;
+  font-family: 'Futura', sans-serif;
+}
+
+.compass-tick-small {
+  height: 5px;
+  width: 1px;
+  background: var(--skyrim-gold-dim);
+  opacity: 0.5;
 }
 
 /* --- MENU --- */
