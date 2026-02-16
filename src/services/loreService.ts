@@ -1,7 +1,7 @@
 // src/services/loreService.ts
 
 const API_KEY = import.meta.env.VITE_GOOGLE_API_KEY;
-const MODEL = "gemini-1.5-flash"; 
+const MODEL = "gemini-3-flash-preview"; 
 
 export const generateQuestLore = async (title: string, type: 'daily' | 'one-off'): Promise<string> => {
   const prompt = `You are an ancient scribe documenting the deeds of the Dragonborn. 

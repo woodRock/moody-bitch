@@ -104,13 +104,20 @@ const Skills: React.FC = () => {
     setIsEditingRace(false);
   };
 
+  // Play level up sound when modal appears
+  useEffect(() => {
+    if (stats.pendingLevelUps > 0 && !selectedSkill && !ui.isPauseMenuOpen && !ui.isMenuOpen) {
+      playSound('LEVEL_UP');
+    }
+  }, [stats.pendingLevelUps, !!selectedSkill, ui.isPauseMenuOpen, ui.isMenuOpen]);
+
   return (
     <div className="skills-container" style={{ background: 'radial-gradient(circle at center, #0a0e14 0%, #000 100%)', width: '100vw', height: '100vh', overflow: 'hidden', position: 'relative' }}>
       <NebulaFilters />
       <div className="star-field"></div>
 
       {/* --- Persistent Top Bar --- */}
-      {!ui.isMenuOpen && (
+      {!ui.isMenuOpen && !ui.isPauseMenuOpen && (
         <div className="character-info-bar" style={{ zIndex: 1000, gap: '4rem' }}>
           <div className="info-item" onDoubleClick={() => { setIsEditingName(true); setTempName(stats.name); }}>
             NAME 
@@ -146,7 +153,7 @@ const Skills: React.FC = () => {
       )}
 
       {/* --- Perks Remaining Bar --- */}
-      {!selectedSkill && (
+      {!selectedSkill && !ui.isPauseMenuOpen && (
         <div style={{ position: 'fixed', top: '5rem', left: '50%', transform: 'translateX(-50%)', textAlign: 'center', zIndex: 100, width: '100%', pointerEvents: 'none' }}>
           <div className="skyrim-font" style={{ color: 'var(--skyrim-gold-bright)', fontSize: '1.2rem', letterSpacing: '4px' }}>PERKS TO SPEND: <span style={{ color: '#fff' }}>{stats.skillPoints}</span></div>
           <div className="menu-separator" style={{ margin: '0.5rem auto', width: '200px', opacity: 0.5 }}></div>
@@ -159,7 +166,7 @@ const Skills: React.FC = () => {
             {CONSTELLATIONS.map((con, idx) => {
               const skill = stats.skills[con.skillKey] || { level: 0, xp: 0, xpToNextLevel: 100 };
               return (
-                <div key={idx} className="skill-constellation-view" onClick={() => { setCurrentIndex(idx); setSelectedSkill(con); playSound('UI_CLICK'); }} style={{ cursor: 'pointer', minWidth: '100vw', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', scrollSnapAlign: 'center' }}>
+                <div key={idx} className="skill-constellation-view" onClick={() => { if(!ui.isPauseMenuOpen) { setCurrentIndex(idx); setSelectedSkill(con); playSound('UI_CLICK'); } }} style={{ cursor: 'pointer', minWidth: '100vw', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', scrollSnapAlign: 'center' }}>
                   <svg width="500" height="500" viewBox="0 0 500 500" className="constellation-svg">
                     {con.spectralPaths.map((path, i) => <path key={i} d={path} className="constellation-art" />)}
                     {con.lines.map(([s, e], i) => <line key={i} x1={con.perks[s].x} y1={con.perks[s].y} x2={con.perks[e].x} y2={con.perks[e].y} className="constellation-line" />)}
@@ -173,15 +180,15 @@ const Skills: React.FC = () => {
               );
             })}
           </div>
-          <button onClick={scrollPrev} className="skyrim-font" style={{ position: 'fixed', left: '2rem', top: '50%', transform: 'translateY(-50%)', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--skyrim-gold-dim)', color: 'var(--skyrim-gold-bright)', fontSize: '2rem', padding: '1rem 0.5rem', cursor: 'pointer', zIndex: 100 }}>&larr;</button>
-          <button onClick={scrollNext} className="skyrim-font" style={{ position: 'fixed', right: '2rem', top: '50%', transform: 'translateY(-50%)', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--skyrim-gold-dim)', color: 'var(--skyrim-gold-bright)', fontSize: '2rem', padding: '1rem 0.5rem', cursor: 'pointer', zIndex: 100 }}>&rarr;</button>
-          <button onClick={() => { setUI({ isMenuOpen: true }); playSound('UI_CLICK'); }} className="skyrim-font" style={{ position: 'fixed', bottom: '6rem', left: '50%', transform: 'translateX(-50%)', background: 'none', border: 'none', color: 'var(--skyrim-gold-bright)', fontSize: '3rem', cursor: 'pointer', zIndex: 100, opacity: 0.6 }}>&darr;</button>
+          <button onClick={scrollPrev} className="skyrim-font" style={{ position: 'fixed', left: '2rem', top: '50%', transform: 'translateY(-50%)', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--skyrim-gold-dim)', color: 'var(--skyrim-gold-bright)', fontSize: '2rem', padding: '1rem 0.5rem', cursor: 'pointer', zIndex: 100, display: ui.isPauseMenuOpen ? 'none' : 'block' }}>&larr;</button>
+          <button onClick={scrollNext} className="skyrim-font" style={{ position: 'fixed', right: '2rem', top: '50%', transform: 'translateY(-50%)', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--skyrim-gold-dim)', color: 'var(--skyrim-gold-bright)', fontSize: '2rem', padding: '1rem 0.5rem', cursor: 'pointer', zIndex: 100, display: ui.isPauseMenuOpen ? 'none' : 'block' }}>&rarr;</button>
+          <button onClick={() => { setUI({ isMenuOpen: true }); playSound('UI_CLICK'); }} className="skyrim-font" style={{ position: 'fixed', bottom: '6rem', left: '50%', transform: 'translateX(-50%)', background: 'none', border: 'none', color: 'var(--skyrim-gold-bright)', fontSize: '3rem', cursor: 'pointer', zIndex: 100, opacity: 0.6, display: ui.isPauseMenuOpen ? 'none' : 'block' }}>&darr;</button>
         </>
       )}
 
       {/* --- LEVEL UP MODAL --- */}
       <AnimatePresence>
-        {stats.pendingLevelUps > 0 && !selectedSkill && (
+        {stats.pendingLevelUps > 0 && !selectedSkill && !ui.isPauseMenuOpen && !ui.isMenuOpen && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="skyrim-modal-overlay" style={{ background: 'rgba(0,0,0,0.9)', zIndex: 2000 }}>
             <div style={{ textAlign: 'center', maxWidth: '800px' }}>
               <h1 className="skyrim-font" style={{ fontSize: '3rem', color: '#fff', marginBottom: '1rem', letterSpacing: '8px' }}>LEVEL UP!</h1>

@@ -41,6 +41,7 @@ function App() {
 
   const isAuthPage = ['/signin', '/signup', '/forgot-password'].includes(location.pathname);
   const showHUD = !!currentUser && !isAuthPage && !isFirstLoad;
+  const hideHUDForMenus = ui.isPauseMenuOpen || ui.isMenuOpen;
   const showMenuButton = !['/magic', '/inventory'].includes(location.pathname);
   const isSkillsPage = location.pathname === '/skills';
 
@@ -66,27 +67,31 @@ function App() {
 
       {showHUD && (
         <>
-          <HUD 
-            showCompass={location.pathname === '/dashboard' || location.pathname === '/quests'} 
-            showLevel={location.pathname !== '/skills'} 
-          />
-          <button 
-            onClick={() => setUI({ isPauseMenuOpen: !ui.isPauseMenuOpen, isMenuOpen: false })}
-            className="skyrim-font"
-            style={{
-              position: 'fixed', 
-              top: isSkillsPage ? '5rem' : '1.5rem', 
-              left: '2rem',
-              background: 'rgba(0,0,0,0.5)', border: '1px solid var(--skyrim-gold-dim)',
-              color: '#aaa', fontSize: '0.8rem', padding: '0.4rem 0.8rem',
-              cursor: 'pointer', zIndex: 200, textShadow: '1px 1px 0 #000'
-            }}
-          >
-            SYSTEM [ESC]
-          </button>
+          {!hideHUDForMenus && (
+            <>
+              <HUD 
+                showCompass={location.pathname === '/dashboard' || location.pathname === '/quests'} 
+                showLevel={location.pathname !== '/skills'} 
+              />
+              <button 
+                onClick={() => setUI({ isPauseMenuOpen: !ui.isPauseMenuOpen, isMenuOpen: false })}
+                className="skyrim-font"
+                style={{
+                  position: 'fixed', 
+                  top: isSkillsPage ? '5rem' : '1.5rem', 
+                  left: '2rem',
+                  background: 'rgba(0,0,0,0.5)', border: '1px solid var(--skyrim-gold-dim)',
+                  color: '#aaa', fontSize: '0.8rem', padding: '0.4rem 0.8rem',
+                  cursor: 'pointer', zIndex: 200, textShadow: '1px 1px 0 #000'
+                }}
+              >
+                SYSTEM [ESC]
+              </button>
+            </>
+          )}
           <SkyrimMenu 
             disabledGestures={ui.disabledGestures}
-            hideButton={!showMenuButton}
+            hideButton={!showMenuButton || hideHUDForMenus}
           />
           <PauseMenu 
             isOpen={ui.isPauseMenuOpen} 
