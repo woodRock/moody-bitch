@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { useGame } from '../context/GameContext';
+import { useSound } from '../context/SoundContext';
 import { useTrackpadSwipe } from '../hooks/useTrackpadSwipe';
 import type { InventoryItem } from '../context/GameContext';
 import '../styles/Skyrim.css';
@@ -7,7 +8,8 @@ import '../styles/Skyrim.css';
 const CATEGORIES = ['ALL', 'APPAREL', 'POTIONS', 'BOOKS', 'MISC'];
 
 const Inventory: React.FC = () => {
-  const { stats, useItem, setUI } = useGame();
+  const { stats, useItem, setUI, toggleEquip } = useGame();
+  const { playSound } = useSound();
   const [selectedCategory, setSelectedCategory] = useState('ALL');
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
 
@@ -19,44 +21,44 @@ const Inventory: React.FC = () => {
     const currentIndex = CATEGORIES.indexOf(selectedCategory);
     if (direction === 'DOWN') {
       const nextIndex = Math.min(currentIndex + 1, CATEGORIES.length - 1);
-      setSelectedCategory(CATEGORIES[nextIndex]);
-      setSelectedItem(null);
+      if (nextIndex !== currentIndex) {
+        setSelectedCategory(CATEGORIES[nextIndex]);
+        setSelectedItem(null);
+        playSound('UI_CLICK');
+      }
     } else if (direction === 'UP') {
       const prevIndex = Math.max(currentIndex - 1, 0);
-      setSelectedCategory(CATEGORIES[prevIndex]);
-      setSelectedItem(null);
+      if (prevIndex !== currentIndex) {
+        setSelectedCategory(CATEGORIES[prevIndex]);
+        setSelectedItem(null);
+        playSound('UI_CLICK');
+      }
     }
-  }, [selectedCategory]);
+  }, [selectedCategory, playSound]);
 
   useTrackpadSwipe({ onSwipe: handleSwipe, threshold: 80 });
 
   const handleUseItem = () => {
     if (selectedItem) {
-      useItem(selectedItem);
-      setSelectedItem(null);
+      if (selectedItem.category === 'APPAREL') {
+        toggleEquip(selectedItem.uid);
+      } else {
+        useItem(selectedItem);
+        setSelectedItem(null);
+      }
     }
   };
+
+  const isEquipped = selectedItem && stats.equippedItemId === selectedItem.uid;
 
   return (
     <div className="skills-container" style={{ background: 'radial-gradient(circle at center, #140a05 0%, #000 100%)' }}>
       <div className="star-field"></div>
 
-      {/* BACK TO MENU ARROW (LEFT) */}
       <button 
-        onClick={() => setUI({ isMenuOpen: true })}
+        onClick={() => { setUI({ isMenuOpen: true }); playSound('UI_CLICK'); }}
         className="skyrim-font"
-        style={{
-          position: 'fixed',
-          top: '2rem',
-          left: '4rem',
-          background: 'none',
-          border: 'none',
-          color: 'var(--skyrim-gold-bright)',
-          fontSize: '3rem',
-          cursor: 'pointer',
-          zIndex: 100,
-          opacity: 0.6
-        }}
+        style={{ position: 'fixed', top: '2rem', left: '4rem', background: 'none', border: 'none', color: 'var(--skyrim-gold-bright)', fontSize: '3rem', cursor: 'pointer', zIndex: 100, opacity: 0.6 }}
       >
         &larr;
       </button>
@@ -65,7 +67,15 @@ const Inventory: React.FC = () => {
         <div className="inventory-menu-layout">
           <div className="magic-school-column" style={{ borderLeft: 'none', borderRight: '1px solid rgba(255,255,255,0.1)', textAlign: 'left' }}>
             {CATEGORIES.map(cat => (
-              <div key={cat} className={`magic-list-item ${selectedCategory === cat ? 'active' : ''}`} onClick={() => { setSelectedCategory(cat); setSelectedItem(null); }}>
+              <div 
+                key={cat} 
+                className={`magic-list-item ${selectedCategory === cat ? 'active' : ''}`} 
+                onClick={() => { 
+                  setSelectedCategory(cat); 
+                  setSelectedItem(null); 
+                  playSound('UI_CLICK'); 
+                }}
+              >
                 {cat}
               </div>
             ))}
@@ -75,12 +85,25 @@ const Inventory: React.FC = () => {
             <div>
               <div className="quest-category-title" style={{ padding: '1rem', textAlign: 'left' }}>Inventory</div>
               <div style={{ overflowY: 'auto', maxHeight: '60vh' }}>
-                {filteredItems.map((item, idx) => (
-                  <div key={item.uid || idx} className={`magic-list-item ${selectedItem?.uid === item.uid ? 'active' : ''}`} onClick={() => setSelectedItem(item)} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span>{item.icon} {item.name}</span>
-                    <span style={{ fontSize: '0.7rem', color: '#555' }}>{item.weight}</span>
-                  </div>
-                ))}
+                {filteredItems.map((item, idx) => {
+                  const equipped = stats.equippedItemId === item.uid;
+                  return (
+                    <div 
+                      key={item.uid || idx} 
+                      className={`magic-list-item ${selectedItem?.uid === item.uid ? 'active' : ''}`} 
+                      onClick={() => { 
+                        setSelectedItem(item); 
+                        playSound('UI_CLICK'); 
+                      }} 
+                      style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                    >
+                      <span style={{ color: equipped ? 'var(--skyrim-gold-bright)' : 'inherit' }}>
+                        {item.icon} {item.name} {equipped && '(EQUIPPED)'}
+                      </span>
+                      <span style={{ fontSize: '0.7rem', color: '#555' }}>{item.weight}</span>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -98,8 +121,17 @@ const Inventory: React.FC = () => {
                   <div>WEIGHT <span style={{ color: '#fff' }}>{selectedItem.weight}</span></div>
                 </div>
                 <div style={{ marginTop: '4rem' }}>
-                  <button className="btn" onClick={handleUseItem} disabled={selectedItem.category === 'APPAREL'} style={{ background: selectedItem.category === 'APPAREL' ? 'rgba(255,255,255,0.1)' : 'var(--skyrim-blue)', border: '1px solid #4a90e2', color: '#fff', padding: '0.8rem 2rem' }}>
-                    {selectedItem.category === 'POTIONS' || selectedItem.category === 'MISC' ? 'USE ITEM' : 'EQUIP ITEM'}
+                  <button 
+                    className="btn" 
+                    onClick={handleUseItem} 
+                    style={{ 
+                      background: isEquipped ? 'rgba(169, 41, 41, 0.3)' : 'var(--skyrim-blue)', 
+                      border: '1px solid #4a90e2', 
+                      color: '#fff', 
+                      padding: '0.8rem 2rem' 
+                    }}
+                  >
+                    {selectedItem.category === 'APPAREL' ? (isEquipped ? 'UNEQUIP' : 'EQUIP ITEM') : 'USE ITEM'}
                   </button>
                 </div>
               </div>

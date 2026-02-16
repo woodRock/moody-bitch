@@ -1,6 +1,9 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useGame } from '../context/GameContext';
+import { useSound } from '../context/SoundContext';
 import { useTrackpadSwipe } from '../hooks/useTrackpadSwipe';
+import { motion, AnimatePresence } from 'framer-motion';
+import { generateQuestLore } from '../services/loreService'; 
 import '../styles/Skyrim.css';
 
 interface Spell {
@@ -29,16 +32,20 @@ const SHOUTS: Spell[] = [
 const SCHOOLS = ['ALL', 'SHOUTS', 'ALTERATION', 'CONJURATION', 'ILLUSION', 'RESTORATION', 'ACTIVE EFFECTS'];
 
 const Magic: React.FC = () => {
-  const { stats, activeEffects, castSpell, notify, setUI } = useGame();
+  const { stats, activeEffects, castSpell, notify, setUI, addXP } = useGame();
+  const { playSound } = useSound();
   const [selectedSchool, setSelectedSchool] = useState('ALL');
   const [selectedSpell, setSelectedSpell] = useState<Spell | null>(null);
 
-  const allItems = [...SPELLS, ...SHOUTS];
-  const filteredItems = selectedSchool === 'ALL' 
-    ? allItems 
-    : allItems.filter(s => s.school === selectedSchool);
+  const [isCasting, setIsCasting] = useState<string | null>(null);
+  const [gratitudes, setGratitudes] = useState(['', '', '']);
+  const [breathingStep, setBreathingStep] = useState<'In' | 'Hold' | 'Out'>('In');
+  const [negativeThought, setNegativeThought] = useState('');
+  const [transmutedThought, setTransmutedThought] = useState('');
+  const [isTransmuting, setIsTransmuting] = useState(false);
 
   const handleSwipe = useCallback((direction: 'UP' | 'DOWN' | 'LEFT' | 'RIGHT') => {
+    if (isCasting) return;
     const currentIndex = SCHOOLS.indexOf(selectedSchool);
     if (direction === 'DOWN') {
       const nextIndex = Math.min(currentIndex + 1, SCHOOLS.length - 1);
@@ -49,17 +56,62 @@ const Magic: React.FC = () => {
       setSelectedSchool(SCHOOLS[prevIndex]);
       setSelectedSpell(null);
     }
-  }, [selectedSchool]);
+  }, [selectedSchool, isCasting]);
 
   useTrackpadSwipe({ onSwipe: handleSwipe, threshold: 80 });
 
   const handleCast = (spell: Spell) => {
     if (spell.school === 'SHOUTS') {
       notify("SHOUT UNLEASHED", spell.words?.join(' ') || '');
+      playSound('SPELL_CAST');
       return;
     }
     if (castSpell(spell.cost, spell.name)) {
-      console.log(`Casting ${spell.name}...`);
+      setIsCasting(spell.id);
+    }
+  };
+
+  useEffect(() => {
+    if (isCasting !== 'calm') return;
+    let timer: any;
+    const runBreath = () => {
+      setBreathingStep('In');
+      timer = setTimeout(() => {
+        setBreathingStep('Hold');
+        timer = setTimeout(() => {
+          setBreathingStep('Out');
+          timer = setTimeout(() => {
+            setIsCasting(null);
+            notify("SOOTHED", "Your mind is clear.");
+            addXP(50, 'ALTERATION');
+          }, 8000);
+        }, 7000);
+      }, 4000);
+    };
+    runBreath();
+    return () => clearTimeout(timer);
+  }, [isCasting, notify, addXP]);
+
+  const finalizeHeal = () => {
+    if (gratitudes.every(g => g.trim().length > 2)) {
+      setIsCasting(null);
+      notify("SPIRIT MENDED", "Health restored.");
+      addXP(50, 'RESTORATION');
+      setGratitudes(['', '', '']);
+    }
+  };
+
+  const handleTransmute = async () => {
+    if (!negativeThought.trim()) return;
+    setIsTransmuting(true);
+    try {
+      const prompt = `Reframe this negative thought into a constructive, positive lesson in the style of a wise Skyrim mage: "${negativeThought}"`;
+      const result = await generateQuestLore(prompt, 'one-off'); 
+      setTransmutedThought(result);
+    } catch (e) {
+      setTransmutedThought("The stars are cloudy. Try again later.");
+    } finally {
+      setIsTransmuting(false);
     }
   };
 
@@ -67,22 +119,10 @@ const Magic: React.FC = () => {
     <div className="skills-container" style={{ background: 'radial-gradient(circle at center, #050a14 0%, #000 100%)' }}>
       <div className="star-field"></div>
 
-      {/* BACK TO MENU ARROW (RIGHT) */}
       <button 
-        onClick={() => setUI({ isMenuOpen: true })}
+        onClick={() => { setUI({ isMenuOpen: true }); playSound('UI_CLICK'); }}
         className="skyrim-font"
-        style={{
-          position: 'fixed',
-          top: '2rem',
-          right: '4rem',
-          background: 'none',
-          border: 'none',
-          color: 'var(--skyrim-gold-bright)',
-          fontSize: '3rem',
-          cursor: 'pointer',
-          zIndex: 100,
-          opacity: 0.6
-        }}
+        style={{ position: 'fixed', top: '2rem', right: '4rem', background: 'none', border: 'none', color: 'var(--skyrim-gold-bright)', fontSize: '3rem', cursor: 'pointer', zIndex: 100, opacity: 0.6 }}
       >
         &rarr;
       </button>
@@ -91,7 +131,7 @@ const Magic: React.FC = () => {
         <div className="magic-menu-layout">
           <div className="magic-school-column">
             {SCHOOLS.map(school => (
-              <div key={school} className={`magic-list-item ${selectedSchool === school ? 'active' : ''}`} onClick={() => { setSelectedSchool(school); setSelectedSpell(null); }}>
+              <div key={school} className={`magic-list-item ${selectedSchool === school ? 'active' : ''}`} onClick={() => { setSelectedSchool(school); setSelectedSpell(null); playSound('UI_CLICK'); }}>
                 {school}
               </div>
             ))}
@@ -115,8 +155,8 @@ const Magic: React.FC = () => {
               ) : (
                 <div>
                   <div className="quest-category-title" style={{ padding: '1rem', textAlign: 'right' }}>{selectedSchool === 'SHOUTS' ? 'Dragon Shouts' : 'Available Spells'}</div>
-                  {filteredItems.map(spell => (
-                    <div key={spell.id} className={`magic-list-item ${selectedSpell?.id === spell.id ? 'active' : ''}`} onClick={() => setSelectedSpell(spell)}>
+                  {([...SPELLS, ...SHOUTS]).filter(s => selectedSchool === 'ALL' || s.school === selectedSchool).map(spell => (
+                    <div key={spell.id} className={`magic-list-item ${selectedSpell?.id === spell.id ? 'active' : ''}`} onClick={() => { setSelectedSpell(spell); playSound('UI_CLICK'); }}>
                       <div>{spell.name}</div>
                       {spell.school !== 'SHOUTS' && <div className="spell-cost-indicator">COST {spell.cost}</div>}
                     </div>
@@ -147,6 +187,69 @@ const Magic: React.FC = () => {
           </div>
         </div>
       </div>
+
+      <AnimatePresence>
+        {isCasting === 'heal' && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="skyrim-modal-overlay">
+            <div className="skyrim-modal-content" style={{ width: '600px', textAlign: 'center' }}>
+              <h2 className="skyrim-title">MEND SPIRIT</h2>
+              <p className="skyrim-serif" style={{ fontSize: '1.2rem', marginBottom: '2rem' }}>List three things you value about your journey today.</p>
+              {gratitudes.map((g, i) => (
+                <input key={i} className="parchment-input" style={{ marginBottom: '1rem', width: '100%' }} placeholder={`Blessing ${i+1}...`} value={g} onChange={e => {
+                  const n = [...gratitudes]; n[i] = e.target.value; setGratitudes(n);
+                }} />
+              ))}
+              <button className="btn" style={{ marginTop: '1rem', width: '100%' }} onClick={finalizeHeal}>RESTORE HEALTH</button>
+            </div>
+          </motion.div>
+        )}
+
+        {isCasting === 'calm' && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="skyrim-modal-overlay" style={{ background: 'rgba(0,0,0,0.95)' }}>
+            <div style={{ textAlign: 'center' }}>
+              <motion.div 
+                animate={{ scale: breathingStep === 'In' ? 1.5 : (breathingStep === 'Hold' ? 1.5 : 1) }}
+                transition={{ duration: breathingStep === 'In' ? 4 : (breathingStep === 'Out' ? 8 : 0) }}
+                style={{ width: '200px', height: '200px', borderRadius: '50%', background: 'radial-gradient(circle, var(--skyrim-blue), transparent)', border: '2px solid #fff', margin: '0 auto 2rem' }}
+              />
+              <h1 className="skyrim-font" style={{ fontSize: '4rem', color: '#fff' }}>{breathingStep.toUpperCase()}</h1>
+              <p className="skyrim-serif" style={{ fontSize: '1.5rem', color: 'var(--skyrim-blue)' }}>Release the weight of the realm...</p>
+            </div>
+          </motion.div>
+        )}
+
+        {isCasting === 'transmute' && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="skyrim-modal-overlay">
+            <div className="skyrim-modal-content" style={{ width: '700px' }}>
+              <h2 className="skyrim-title">THOUGHT FORGE</h2>
+              {!transmutedThought ? (
+                <>
+                  <p className="skyrim-serif" style={{ fontSize: '1.2rem', marginBottom: '1.5rem' }}>Place your leaden worry into the fire...</p>
+                  <textarea className="parchment-input" style={{ width: '100%', height: '100px', marginBottom: '1rem' }} placeholder="What weighs on your soul?" value={negativeThought} onChange={e => setNegativeThought(e.target.value)} />
+                  <button className="btn" style={{ width: '100%' }} onClick={handleTransmute} disabled={isTransmuting}>{isTransmuting ? 'TRANSMUTING...' : 'FORGE GOLDEN LESSON'}</button>
+                </>
+              ) : (
+                <div style={{ animation: 'zoom-in 0.5s' }}>
+                  <p className="skyrim-serif" style={{ fontSize: '1.5rem', fontStyle: 'italic', color: 'var(--skyrim-gold-bright)', marginBottom: '2rem' }}>"{transmutedThought}"</p>
+                  <button className="btn" style={{ width: '100%' }} onClick={() => { setIsCasting(null); setTransmutedThought(''); setNegativeThought(''); addXP(100, 'ALTERATION'); }}>COLLECT WISDOM</button>
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )}
+
+        {isCasting === 'familiar' && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="skyrim-modal-overlay">
+            <div className="skyrim-modal-content" style={{ textAlign: 'center' }}>
+              <h2 className="skyrim-title">SUMMON ALLY</h2>
+              <div style={{ fontSize: '5rem', marginBottom: '1rem' }}>🦅</div>
+              <p className="skyrim-serif" style={{ fontSize: '1.4rem' }}>A true Dragonborn never walks alone.</p>
+              <p className="skyrim-serif" style={{ color: '#888', marginBottom: '2rem' }}>Send a message to a trusted friend or ally in the physical realm.</p>
+              <button className="btn" style={{ width: '100%' }} onClick={() => { setIsCasting(null); addXP(30, 'CONJURATION'); }}>I SHALL REACH OUT</button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

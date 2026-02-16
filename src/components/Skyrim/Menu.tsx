@@ -4,6 +4,7 @@ import { signOut } from 'firebase/auth';
 import { auth } from '../../firebaseConfig';
 import { useTrackpadSwipe } from '../../hooks/useTrackpadSwipe';
 import { useGame } from '../../context/GameContext';
+import { useSound } from '../../context/SoundContext';
 import { motion, useMotionValue, useSpring } from 'framer-motion';
 import '../../styles/Skyrim.css';
 
@@ -13,7 +14,8 @@ interface SkyrimMenuProps {
 }
 
 const SkyrimMenu: React.FC<SkyrimMenuProps> = ({ disabledGestures = false, hideButton = false }) => {
-  const { ui, setUI } = useGame();
+  const { ui, setUI, stats } = useGame();
+  const { playSound } = useSound();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -69,27 +71,21 @@ const SkyrimMenu: React.FC<SkyrimMenuProps> = ({ disabledGestures = false, hideB
         onClick={() => setUI({ isMenuOpen: true, isPauseMenuOpen: false })}
         className="skyrim-font"
         style={{
-          position: 'fixed',
-          top: '1.5rem',
-          right: '2rem', // Symmetrical with SYSTEM button on the left
-          background: 'rgba(0,0,0,0.5)',
-          border: '1px solid var(--skyrim-gold-dim)',
-          color: '#aaa',
-          fontSize: '0.8rem',
-          padding: '0.4rem 0.8rem',
-          cursor: 'pointer',
-          zIndex: 200,
-          textShadow: '1px 1px 0 #000'
+          position: 'fixed', top: '1.5rem', right: '2rem',
+          background: 'rgba(0,0,0,0.5)', border: '1px solid var(--skyrim-gold-dim)',
+          color: stats.pendingLevelUps > 0 ? 'var(--skyrim-gold-bright)' : '#aaa', 
+          fontSize: '0.8rem', padding: '0.4rem 0.8rem',
+          cursor: 'pointer', zIndex: 200, textShadow: '1px 1px 0 #000',
+          boxShadow: stats.pendingLevelUps > 0 ? '0 0 15px rgba(230, 194, 120, 0.3)' : 'none'
         }}
       >
-        CHARACTER [TAB]
+        {stats.pendingLevelUps > 0 ? 'LEVEL UP!' : 'CHARACTER [TAB]'}
       </button>
     );
   }
 
   return (
     <div className="skyrim-menu-overlay" onClick={() => setUI({ isMenuOpen: false })} style={{ background: 'rgba(0,0,0,0.9)' }}>
-      {/* Top Left Pause Toggle */}
       <button 
         onClick={(e) => { 
           e.stopPropagation(); 
@@ -123,22 +119,24 @@ const SkyrimMenu: React.FC<SkyrimMenuProps> = ({ disabledGestures = false, hideB
         onClick={e => e.stopPropagation()}
         style={{ x: springX, y: springY }}
       >
-        <Link to="/skills" className="diamond-item item-up" onClick={() => setUI({ isMenuOpen: false })}>
-          <div className="diamond-label skyrim-font">SKILLS</div>
-          <div className="diamond-line-up"></div>
+        <Link to="/skills" className="diamond-item item-up" onClick={() => { setUI({ isMenuOpen: false }); playSound('UI_CLICK'); }}>
+          <div className="diamond-label skyrim-font" style={{ color: stats.pendingLevelUps > 0 ? 'var(--skyrim-gold-bright)' : 'inherit' }}>
+            {stats.pendingLevelUps > 0 ? 'LEVEL UP' : 'SKILLS'}
+          </div>
+          <div className="diamond-line-up" style={{ background: stats.pendingLevelUps > 0 ? 'var(--skyrim-gold-bright)' : 'inherit' }}></div>
         </Link>
 
-        <Link to="/dashboard" className="diamond-item item-down" onClick={() => setUI({ isMenuOpen: false })}>
+        <Link to="/dashboard" className="diamond-item item-down" onClick={() => { setUI({ isMenuOpen: false }); playSound('UI_CLICK'); }}>
           <div className="diamond-line-down"></div>
           <div className="diamond-label skyrim-font">MAP</div>
         </Link>
 
-        <Link to="/magic" className="diamond-item item-left" onClick={() => setUI({ isMenuOpen: false })}>
+        <Link to="/magic" className="diamond-item item-left" onClick={() => { setUI({ isMenuOpen: false }); playSound('UI_CLICK'); }}>
           <div className="diamond-label skyrim-font">MAGIC</div>
           <div className="diamond-line-left"></div>
         </Link>
 
-        <Link to="/inventory" className="diamond-item item-right" onClick={() => setUI({ isMenuOpen: false })}>
+        <Link to="/inventory" className="diamond-item item-right" onClick={() => { setUI({ isMenuOpen: false }); playSound('UI_CLICK'); }}>
           <div className="diamond-line-right"></div>
           <div className="diamond-label skyrim-font">ITEMS</div>
         </Link>

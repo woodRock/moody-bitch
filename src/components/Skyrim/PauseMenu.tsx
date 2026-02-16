@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useGame } from '../../context/GameContext';
+import { useSound } from '../../context/SoundContext';
 import { db } from '../../firebaseConfig';
 import { 
   collection, 
@@ -58,6 +59,7 @@ type Tab = 'QUESTS' | 'STATS' | 'JOURNAL';
 
 const PauseMenu: React.FC<PauseMenuProps> = ({ isOpen, onClose }) => {
   const { stats, completeQuest } = useGame();
+  const { playSound } = useSound();
   const { currentUser } = useAuth();
   const [activeTab, setActiveTab] = useState<Tab>('QUESTS');
   const TABS: Tab[] = ['QUESTS', 'STATS', 'JOURNAL'];
@@ -90,12 +92,18 @@ const PauseMenu: React.FC<PauseMenuProps> = ({ isOpen, onClose }) => {
     const currentIndex = TABS.indexOf(activeTab);
     if (direction === 'RIGHT') {
       const nextIndex = Math.min(currentIndex + 1, TABS.length - 1);
-      setActiveTab(TABS[nextIndex]);
+      if (nextIndex !== currentIndex) {
+        setActiveTab(TABS[nextIndex]);
+        playSound('UI_CLICK');
+      }
     } else if (direction === 'LEFT') {
       const prevIndex = Math.max(currentIndex - 1, 0);
-      setActiveTab(TABS[prevIndex]);
+      if (prevIndex !== currentIndex) {
+        setActiveTab(TABS[prevIndex]);
+        playSound('UI_CLICK');
+      }
     }
-  }, [activeTab, isAddQuestModalOpen, isAddLogModalOpen]);
+  }, [activeTab, isAddQuestModalOpen, isAddLogModalOpen, playSound]);
 
   useTrackpadSwipe({ 
     onSwipe: handleSwipe,
@@ -157,6 +165,7 @@ const PauseMenu: React.FC<PauseMenuProps> = ({ isOpen, onClose }) => {
       setSelectedQuest(q);
       setNewQuestTitle('');
       setIsAddQuestModalOpen(false);
+      playSound('UI_CLICK');
     } catch (error) {
       console.error("Error adding quest:", error);
     } finally {
@@ -179,6 +188,7 @@ const PauseMenu: React.FC<PauseMenuProps> = ({ isOpen, onClose }) => {
       const updated = sortQuests(quests.map(q => q.id === quest.id ? { ...q, completed: newStatus } : q));
       setQuests(updated);
       if (selectedQuest?.id === quest.id) setSelectedQuest({ ...selectedQuest, completed: newStatus });
+      playSound('UI_CLICK');
     } catch (error) {
       console.error("Error updating quest:", error);
     }
@@ -190,6 +200,7 @@ const PauseMenu: React.FC<PauseMenuProps> = ({ isOpen, onClose }) => {
       const updated = sortQuests(quests.filter(q => q.id !== id));
       setQuests(updated);
       if (selectedQuest?.id === id) setSelectedQuest(updated.length > 0 ? updated[0] : null);
+      playSound('UI_CLICK');
     } catch (error) {
       console.error("Error deleting quest:", error);
     }
@@ -210,7 +221,13 @@ const PauseMenu: React.FC<PauseMenuProps> = ({ isOpen, onClose }) => {
         <div className="pause-menu-container" onClick={e => e.stopPropagation()}>
           <div className="pause-menu-tabs">
             {TABS.map(tab => (
-              <div key={tab} className={`pause-tab ${activeTab === tab ? 'active' : ''}`} onClick={() => setActiveTab(tab)}>{tab}</div>
+              <div 
+                key={tab} 
+                className={`pause-tab ${activeTab === tab ? 'active' : ''}`} 
+                onClick={() => { setActiveTab(tab); playSound('UI_CLICK'); }}
+              >
+                {tab}
+              </div>
             ))}
           </div>
 
@@ -221,11 +238,11 @@ const PauseMenu: React.FC<PauseMenuProps> = ({ isOpen, onClose }) => {
                   <div className="quest-list-column" style={{ minWidth: '250px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                       <div className="quest-category-title" style={{ margin: 0 }}>Active Quests</div>
-                      <button onClick={() => setIsAddQuestModalOpen(true)} className="add-quest-btn-plus">+</button>
+                      <button onClick={() => { setIsAddQuestModalOpen(true); playSound('UI_CLICK'); }} className="add-quest-btn-plus">+</button>
                     </div>
                     <div style={{ overflowY: 'auto', maxHeight: '45vh', paddingRight: '1rem' }}>
                       {quests.map(q => (
-                        <div key={q.id} className={`quest-list-item ${selectedQuest?.id === q.id ? 'active' : ''}`} onClick={() => setSelectedQuest(q)}>
+                        <div key={q.id} className={`quest-list-item ${selectedQuest?.id === q.id ? 'active' : ''}`} onClick={() => { setSelectedQuest(q); playSound('UI_CLICK'); }}>
                           <div className={`quest-diamond ${q.completed ? 'filled' : ''}`}></div>
                           <div style={{ display: 'flex', flexDirection: 'column' }}>
                             <span className="skyrim-font" style={{ fontSize: '0.9rem', opacity: q.completed ? 0.5 : 1 }}>{q.title}</span>
@@ -299,11 +316,11 @@ const PauseMenu: React.FC<PauseMenuProps> = ({ isOpen, onClose }) => {
                   <div className="quest-list-column" style={{ minWidth: '250px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                       <div className="quest-category-title" style={{ margin: 0 }}>Past Chronicles</div>
-                      <button onClick={() => setIsAddLogModalOpen(true)} className="add-quest-btn-plus">+</button>
+                      <button onClick={() => { setIsAddLogModalOpen(true); playSound('UI_CLICK'); }} className="add-quest-btn-plus">+</button>
                     </div>
                     <div style={{ overflowY: 'auto', maxHeight: '50vh', paddingRight: '1rem' }}>
                       {entries.map(e => (
-                        <div key={e.id} className={`quest-list-item ${selectedEntry?.id === e.id ? 'active' : ''}`} onClick={() => setSelectedEntry(e)}>
+                        <div key={e.id} className={`quest-list-item ${selectedEntry?.id === e.id ? 'active' : ''}`} onClick={() => { setSelectedEntry(e); playSound('UI_CLICK'); }}>
                           <div className="quest-diamond filled" style={{ width: '8px', height: '8px' }}></div>
                           <span className="skyrim-font" style={{ fontSize: '0.9rem' }}>{e.timestamp.toDate().toLocaleDateString()}</span>
                         </div>
@@ -363,7 +380,7 @@ const PauseMenu: React.FC<PauseMenuProps> = ({ isOpen, onClose }) => {
               </div>
               <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
                 <button type="submit" className="btn" disabled={isAddingQuest} style={{ flex: 1, background: 'rgba(255,255,255,0.1)', color: '#fff', border: '1px solid var(--skyrim-gold-dim)' }}>{isAddingQuest ? '...' : 'CONFIRM'}</button>
-                <button type="button" onClick={() => setIsAddQuestModalOpen(false)} className="btn" style={{ flex: 1, background: 'transparent', border: '1px solid rgba(255,255,255,0.2)', color: '#888' }}>CANCEL</button>
+                <button type="button" onClick={() => { setIsAddQuestModalOpen(false); playSound('UI_CLICK'); }} className="btn" style={{ flex: 1, background: 'transparent', border: '1px solid rgba(255,255,255,0.2)', color: '#888' }}>CANCEL</button>
               </div>
             </form>
           </div>

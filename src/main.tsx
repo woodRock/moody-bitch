@@ -1,19 +1,22 @@
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
-import { HashRouter as Router } from 'react-router-dom';
-import { AuthProvider } from './context/AuthContext';
-import { GameProvider } from './context/GameContext';
+import React from 'react'
+import ReactDOM from 'react-dom/client'
+import { BrowserRouter } from 'react-router-dom'
+import App from './App'
+import { AuthProvider } from './context/AuthContext'
+import { GameProvider } from './context/GameContext'
+import { SoundProvider } from './context/SoundContext'
 import './index.css'
-import App from './App.tsx'
 
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <Router>
+ReactDOM.createRoot(document.getElementById('root')!).render(
+  <React.StrictMode>
+    <BrowserRouter basename={import.meta.env.BASE_URL}>
       <AuthProvider>
-        <GameProvider>
-          <App />
-        </GameProvider>
+        <SoundProvider>
+          <GameProvider>
+            <App />
+          </GameProvider>
+        </SoundProvider>
       </AuthProvider>
-    </Router>
-  </StrictMode>,
+    </BrowserRouter>
+  </React.StrictMode>,
 )

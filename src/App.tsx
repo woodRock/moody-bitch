@@ -1,10 +1,11 @@
-import { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
 import { useGame } from './context/GameContext';
 import HUD from './components/Skyrim/HUD';
 import SkyrimMenu from './components/Skyrim/Menu';
 import PauseMenu from './components/Skyrim/PauseMenu';
+import LoadingScreen from './components/Skyrim/LoadingScreen';
 import SignUp from './components/Auth/SignUp';
 import SignIn from './components/Auth/SignIn';
 import ForgotPassword from './components/Auth/ForgotPassword';
@@ -31,64 +32,59 @@ function App() {
   const location = useLocation();
   const { currentUser } = useAuth();
   const { ui, setUI } = useGame();
+  const [isFirstLoad, setIsFirstLoad] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setIsFirstLoad(false), 3500);
+    return () => clearTimeout(timer);
+  }, []);
 
   const isAuthPage = ['/signin', '/signup', '/forgot-password'].includes(location.pathname);
-  const showHUD = !!currentUser && !isAuthPage;
-  
+  const showHUD = !!currentUser && !isAuthPage && !isFirstLoad;
   const showMenuButton = !['/magic', '/inventory'].includes(location.pathname);
 
   // Keyboard Shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (isAuthPage) return;
-      
+      if (isAuthPage || isFirstLoad) return;
       if (e.key === 'Escape') {
         setUI({ isPauseMenuOpen: !ui.isPauseMenuOpen, isMenuOpen: false });
       }
       if (e.key === 'Tab') {
-        e.preventDefault(); // Stop focus switching
+        e.preventDefault(); 
         setUI({ isMenuOpen: !ui.isMenuOpen, isPauseMenuOpen: false });
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [ui.isPauseMenuOpen, ui.isMenuOpen, setUI, isAuthPage]);
+  }, [ui.isPauseMenuOpen, ui.isMenuOpen, setUI, isAuthPage, isFirstLoad]);
 
   return (
     <div className="app-root">
+      <LoadingScreen isLoading={isFirstLoad} />
+
       {showHUD && (
         <>
           <HUD 
-            showCompass={location.pathname === '/dashboard'} 
+            showCompass={location.pathname === '/dashboard' || location.pathname === '/quests'} 
             showLevel={location.pathname !== '/skills'} 
           />
-
-          {/* Persistent SYSTEM Button */}
           <button 
             onClick={() => setUI({ isPauseMenuOpen: !ui.isPauseMenuOpen, isMenuOpen: false })}
             className="skyrim-font"
             style={{
-              position: 'fixed',
-              top: '1.5rem',
-              left: '2rem',
-              background: 'rgba(0,0,0,0.5)',
-              border: '1px solid var(--skyrim-gold-dim)',
-              color: '#aaa',
-              fontSize: '0.8rem',
-              padding: '0.4rem 0.8rem',
-              cursor: 'pointer',
-              zIndex: 200,
-              textShadow: '1px 1px 0 #000'
+              position: 'fixed', top: '1.5rem', left: '2rem',
+              background: 'rgba(0,0,0,0.5)', border: '1px solid var(--skyrim-gold-dim)',
+              color: '#aaa', fontSize: '0.8rem', padding: '0.4rem 0.8rem',
+              cursor: 'pointer', zIndex: 200, textShadow: '1px 1px 0 #000'
             }}
           >
             SYSTEM [ESC]
           </button>
-
           <SkyrimMenu 
             disabledGestures={ui.disabledGestures}
             hideButton={!showMenuButton}
           />
-          
           <PauseMenu 
             isOpen={ui.isPauseMenuOpen} 
             onClose={() => setUI({ isPauseMenuOpen: false })} 
@@ -102,9 +98,9 @@ function App() {
         <Route path="/forgot-password" element={<ForgotPassword />} />
         
         <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+        <Route path="/quests" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
         <Route path="/checkin" element={<ProtectedRoute><DailyCheckin /></ProtectedRoute>} />
         <Route path="/journal" element={<ProtectedRoute><Journal /></ProtectedRoute>} />
-        <Route path="/quests" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
         <Route path="/skills" element={<ProtectedRoute><Skills /></ProtectedRoute>} />
         <Route path="/magic" element={<ProtectedRoute><Magic /></ProtectedRoute>} />
         <Route path="/inventory" element={<ProtectedRoute><Inventory /></ProtectedRoute>} />

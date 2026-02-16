@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useGame } from '../context/GameContext';
+import { useSound } from '../context/SoundContext';
 import '../styles/Dashboard.css';
 import { MapContainer, TileLayer, Marker, Popup, Polyline, useMapEvents } from 'react-leaflet';
 import { fetchLocationHistory } from '../services/locationService';
@@ -22,6 +23,7 @@ const MapController = ({ onMove }: { onMove: (center: L.LatLng) => void }) => {
 const Dashboard: React.FC = () => {
   const { currentUser } = useAuth();
   const { setUI, ui } = useGame();
+  const { playSound } = useSound();
   const [locations, setLocations] = useState<UserLocation[]>([]);
   const [mapCenter, setMapCenter] = useState<[number, number]>([0, 0]);
   const [hasLocation, setHasLocation] = useState(false);
@@ -82,11 +84,11 @@ const Dashboard: React.FC = () => {
 
       {/* BACK TO MENU ARROW (UP) */}
       <button 
-        onClick={() => setUI({ isMenuOpen: true })}
+        onClick={() => { setUI({ isMenuOpen: true }); playSound('UI_CLICK'); }}
         className="skyrim-font"
         style={{
           position: 'fixed',
-          top: '4rem', // Below compass
+          top: '4rem',
           left: '50%',
           transform: 'translateX(-50%)',
           background: 'none',
@@ -113,7 +115,13 @@ const Dashboard: React.FC = () => {
             <MapController onMove={updateCompassMarkers} />
             <Polyline positions={pathPositions} color="#a92929" weight={3} opacity={0.6} dashArray="10, 10" />
             {locations.map((loc, i) => (
-              <Marker key={loc.id || i} position={[loc.lat, loc.lng]}>
+              <Marker 
+                key={loc.id || i} 
+                position={[loc.lat, loc.lng]}
+                eventHandlers={{
+                  click: () => playSound('UI_CLICK')
+                }}
+              >
                 <Popup><div className="skyrim-serif"><strong>{loc.label}</strong><br/>{loc.timestamp.toDate().toLocaleString()}</div></Popup>
               </Marker>
             ))}
