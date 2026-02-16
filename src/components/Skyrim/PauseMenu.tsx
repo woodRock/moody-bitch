@@ -234,7 +234,7 @@ const PauseMenu: React.FC<PauseMenuProps> = ({ isOpen, onClose }) => {
           <div className="pause-content" style={{ overflow: 'hidden' }}>
             <div>
               {activeTab === 'QUESTS' && (
-                <div className="quest-menu-layout" style={{ flexWrap: 'wrap' }}>
+                <div className="quest-menu-layout" style={{ flexWrap: 'wrap', paddingBottom: '4rem' }}>
                   <div className="quest-list-column" style={{ minWidth: '250px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                       <div className="quest-category-title" style={{ margin: 0 }}>Active Quests</div>
@@ -275,7 +275,7 @@ const PauseMenu: React.FC<PauseMenuProps> = ({ isOpen, onClose }) => {
               )}
 
               {activeTab === 'STATS' && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem', overflowY: 'auto', maxHeight: '65vh' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem', overflowY: 'auto', maxHeight: '65vh', paddingBottom: '4rem' }}>
                   <div style={{ background: 'rgba(0,0,0,0.3)', padding: '2rem', border: '1px solid rgba(255,255,255,0.1)' }}>
                     <h2 className="skyrim-title" style={{ border: 'none', textAlign: 'center', marginBottom: '2rem' }}>LINEAGE OF SPIRIT</h2>
                     <div style={{ width: '100%', height: 350 }}>
@@ -297,10 +297,23 @@ const PauseMenu: React.FC<PauseMenuProps> = ({ isOpen, onClose }) => {
                     <div className="skyrim-card" style={{ padding: '1.5rem' }}>
                       <h3 className="skyrim-font" style={{ color: '#e6c278', marginBottom: '1rem' }}>CHARACTER</h3>
                       <div className="stat-row"><span className="stat-label" style={{color: '#888'}}>Level</span><span className="stat-value" style={{color: '#fff'}}>{stats.level}</span></div>
+                      <div className="stat-row"><span className="stat-label" style={{color: '#888'}}>Experience</span><span className="stat-value" style={{color: '#fff'}}>{stats.xp} / {stats.xpToNextLevel}</span></div>
                       <div className="stat-row"><span className="stat-label" style={{color: '#888'}}>Skill Points</span><span className="stat-value" style={{color: '#e6c278'}}>{stats.skillPoints}</span></div>
+                      <div className="stat-row"><span className="stat-label" style={{color: '#888'}}>Quests Done</span><span className="stat-value" style={{color: '#fff'}}>{stats.completedQuestCount}</span></div>
+                      <div className="stat-row"><span className="stat-label" style={{color: '#888'}}>Race</span><span className="stat-value" style={{color: '#fff'}}>{stats.race}</span></div>
                     </div>
                     <div className="skyrim-card" style={{ padding: '1.5rem' }}>
-                      <h3 className="skyrim-font" style={{ color: '#e6c278', marginBottom: '1rem' }}>SKILLS</h3>
+                      <h3 className="skyrim-font" style={{ color: '#e6c278', marginBottom: '1rem' }}>VITALS</h3>
+                      <div className="stat-row"><span className="stat-label" style={{color: '#888'}}>Health Max</span><span className="stat-value" style={{color: '#c00'}}>{stats.healthMax}</span></div>
+                      <div className="stat-row"><span className="stat-label" style={{color: '#888'}}>Magicka Max</span><span className="stat-value" style={{color: '#4a90e2'}}>{stats.magickaMax}</span></div>
+                      <div className="stat-row"><span className="stat-label" style={{color: '#888'}}>Stamina Max</span><span className="stat-value" style={{color: '#4ae24a'}}>{stats.staminaMax}</span></div>
+                      <div className="stat-row"><span className="stat-label" style={{color: '#888'}}>Active Perks</span><span className="stat-value" style={{color: '#e6c278'}}>{stats.perks.length}</span></div>
+                      <div className="stat-row"><span className="stat-label" style={{color: '#888'}}>Inventory Size</span><span className="stat-value" style={{color: '#fff'}}>{stats.inventory.length}</span></div>
+                    </div>
+                  </div>
+                  <div className="skyrim-card" style={{ padding: '1.5rem' }}>
+                    <h3 className="skyrim-font" style={{ color: '#e6c278', marginBottom: '1rem' }}>SKILLS</h3>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                       {Object.entries(stats.skills).map(([name, data]) => (
                         <div key={name} className="stat-row" style={{ fontSize: '0.9rem' }}>
                           <span className="stat-label" style={{color: '#888'}}>{name}</span><span className="stat-value" style={{color: '#fff'}}>LVL {data.level}</span>
@@ -312,7 +325,7 @@ const PauseMenu: React.FC<PauseMenuProps> = ({ isOpen, onClose }) => {
               )}
 
               {activeTab === 'JOURNAL' && (
-                <div className="quest-menu-layout" style={{ flexWrap: 'wrap' }}>
+                <div className="quest-menu-layout" style={{ flexWrap: 'wrap', paddingBottom: '4rem' }}>
                   <div className="quest-list-column" style={{ minWidth: '250px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                       <div className="quest-category-title" style={{ margin: 0 }}>Past Chronicles</div>
