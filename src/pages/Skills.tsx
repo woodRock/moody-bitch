@@ -7,6 +7,12 @@ import type { Constellation, Perk } from '../data/constellations';
 import { motion, AnimatePresence } from 'framer-motion';
 import '../styles/Skyrim.css';
 
+const RACES = [
+  'Nord', 'Imperial', 'Breton', 'Redguard', 
+  'Altmer', 'Bosmer', 'Dunmer', 
+  'Orc', 'Khajiit', 'Argonian'
+];
+
 const NebulaFilters = () => (
   <svg className="nebula-defs">
     <defs>
@@ -25,7 +31,7 @@ const NebulaFilters = () => (
 
 const Skills: React.FC = () => {
   const { currentUser } = useAuth();
-  const { stats, spendSkillPoint, notify, setUI, advanceLevel, ui } = useGame();
+  const { stats, spendSkillPoint, notify, setUI, advanceLevel, ui, updateDisplayName, updateRace } = useGame();
   const { playSound } = useSound();
   const [selectedSkill, setSelectedSkill] = useState<Constellation | null>(null);
   const [focusedPerk, setFocusedPerk] = useState<Perk | null>(null);
@@ -33,6 +39,11 @@ const Skills: React.FC = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
   const lastPlayedIndex = useRef<number>(0);
+
+  // Editing State
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [isEditingRace, setIsEditingRace] = useState(false);
+  const [tempName, setTempName] = useState(stats.name);
 
   useEffect(() => {
     if (!selectedSkill && scrollRef.current) {
@@ -53,18 +64,18 @@ const Skills: React.FC = () => {
   };
 
   const scrollPrev = () => {
-    playSound('UI_CLICK');
     const newIndex = (currentIndex - 1 + CONSTELLATIONS.length) % CONSTELLATIONS.length;
     setCurrentIndex(newIndex);
     lastPlayedIndex.current = newIndex;
+    playSound('UI_CLICK');
     scrollRef.current?.scrollTo({ left: newIndex * window.innerWidth, behavior: 'smooth' });
   };
 
   const scrollNext = () => {
-    playSound('UI_CLICK');
     const newIndex = (currentIndex + 1) % CONSTELLATIONS.length;
     setCurrentIndex(newIndex);
     lastPlayedIndex.current = newIndex;
+    playSound('UI_CLICK');
     scrollRef.current?.scrollTo({ left: newIndex * window.innerWidth, behavior: 'smooth' });
   };
 
@@ -85,56 +96,68 @@ const Skills: React.FC = () => {
     }
   };
 
-  const userName = currentUser?.email?.split('@')[0].toUpperCase() || "DRAGONBORN";
+  const saveName = () => {
+    if (tempName.trim() && tempName !== stats.name) updateDisplayName(tempName);
+    setIsEditingName(false);
+  };
+
+  const saveRace = (newRace: string) => {
+    updateRace(newRace);
+    setIsEditingRace(false);
+  };
 
   return (
     <div className="skills-container" style={{ background: 'radial-gradient(circle at center, #0a0e14 0%, #000 100%)', width: '100vw', height: '100vh', overflow: 'hidden', position: 'relative' }}>
       <NebulaFilters />
       <div className="star-field"></div>
 
-      {/* --- Persistant Top Bar with Level Progress --- */}
+      {/* --- Persistent Top Bar --- */}
       {!ui.isMenuOpen && (
         <div className="character-info-bar" style={{ zIndex: 1000, gap: '4rem' }}>
-          <div className="info-item">NAME <span className="info-value">{userName}</span></div>
+          <div className="info-item" onDoubleClick={() => { setIsEditingName(true); setTempName(stats.name); }}>
+            NAME 
+            {isEditingName ? (
+              <input 
+                autoFocus className="parchment-input"
+                style={{ marginLeft: '10px', width: '200px', fontSize: '1.1rem', background: 'rgba(255,255,255,0.1)', color: '#fff', border: '1px solid var(--skyrim-gold-bright)' }}
+                value={tempName} onChange={e => setTempName(e.target.value)} onBlur={saveName} onKeyDown={e => e.key === 'Enter' && saveName()}
+              />
+            ) : <span className="info-value" style={{ cursor: 'pointer' }}>{stats.name}</span>}
+          </div>
           
           <div className="info-item" style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', minWidth: '400px' }}>
             <span style={{ whiteSpace: 'nowrap' }}>LEVEL {stats.level}</span>
             <div className="xp-bar-bg" style={{ flex: 1, height: '8px', marginTop: 0, background: 'rgba(255,255,255,0.1)', border: '1px solid #444' }}>
-              <div 
-                className="xp-bar-fill" 
-                style={{ width: `${(stats.xp / stats.xpToNextLevel) * 100}%`, height: '100%' }}
-              ></div>
+              <div className="xp-bar-fill" style={{ width: `${(stats.xp / stats.xpToNextLevel) * 100}%`, height: '100%' }}></div>
             </div>
           </div>
 
-          <div className="info-item">RACE <span className="info-value">{stats.race}</span></div>
+          <div className="info-item" onDoubleClick={() => setIsEditingRace(true)}>
+            RACE 
+            {isEditingRace ? (
+              <select 
+                autoFocus className="parchment-input"
+                style={{ marginLeft: '10px', background: '#1a1a1a', color: '#fff', border: '1px solid var(--skyrim-gold-bright)' }}
+                value={stats.race} onChange={e => saveRace(e.target.value)} onBlur={() => setIsEditingRace(false)}
+              >
+                {RACES.map(r => <option key={r} value={r}>{r.toUpperCase()}</option>)}
+              </select>
+            ) : <span className="info-value" style={{ cursor: 'pointer' }}>{stats.race}</span>}
+          </div>
         </div>
       )}
 
       {/* --- Perks Remaining Bar --- */}
       {!selectedSkill && (
-        <div style={{ 
-          position: 'fixed', top: '5rem', left: '50%', transform: 'translateX(-50%)',
-          textAlign: 'center', zIndex: 100, width: '100%', pointerEvents: 'none'
-        }}>
-          <div className="skyrim-font" style={{ color: 'var(--skyrim-gold-bright)', fontSize: '1.2rem', letterSpacing: '4px' }}>
-            PERKS TO SPEND: <span style={{ color: '#fff' }}>{stats.skillPoints}</span>
-          </div>
+        <div style={{ position: 'fixed', top: '5rem', left: '50%', transform: 'translateX(-50%)', textAlign: 'center', zIndex: 100, width: '100%', pointerEvents: 'none' }}>
+          <div className="skyrim-font" style={{ color: 'var(--skyrim-gold-bright)', fontSize: '1.2rem', letterSpacing: '4px' }}>PERKS TO SPEND: <span style={{ color: '#fff' }}>{stats.skillPoints}</span></div>
           <div className="menu-separator" style={{ margin: '0.5rem auto', width: '200px', opacity: 0.5 }}></div>
         </div>
       )}
       
       {!selectedSkill && (
         <>
-          <div 
-            className="horizontal-skills-wrapper" 
-            ref={scrollRef}
-            onScroll={handleScroll}
-            style={{ 
-              display: 'flex', overflowX: 'auto', width: '100vw', height: '100vh',
-              scrollSnapType: 'x mandatory', padding: 0, scrollbarWidth: 'none'
-            }}
-          >
+          <div className="horizontal-skills-wrapper" ref={scrollRef} onScroll={handleScroll} style={{ display: 'flex', overflowX: 'auto', width: '100vw', height: '100vh', scrollSnapType: 'x mandatory', padding: 0, scrollbarWidth: 'none' }}>
             {CONSTELLATIONS.map((con, idx) => {
               const skill = stats.skills[con.skillKey] || { level: 0, xp: 0, xpToNextLevel: 100 };
               return (
@@ -152,10 +175,8 @@ const Skills: React.FC = () => {
               );
             })}
           </div>
-
           <button onClick={scrollPrev} className="skyrim-font" style={{ position: 'fixed', left: '2rem', top: '50%', transform: 'translateY(-50%)', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--skyrim-gold-dim)', color: 'var(--skyrim-gold-bright)', fontSize: '2rem', padding: '1rem 0.5rem', cursor: 'pointer', zIndex: 100 }}>&larr;</button>
           <button onClick={scrollNext} className="skyrim-font" style={{ position: 'fixed', right: '2rem', top: '50%', transform: 'translateY(-50%)', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--skyrim-gold-dim)', color: 'var(--skyrim-gold-bright)', fontSize: '2rem', padding: '1rem 0.5rem', cursor: 'pointer', zIndex: 100 }}>&rarr;</button>
-
           <button onClick={() => { setUI({ isMenuOpen: true }); playSound('UI_CLICK'); }} className="skyrim-font" style={{ position: 'fixed', bottom: '6rem', left: '50%', transform: 'translateX(-50%)', background: 'none', border: 'none', color: 'var(--skyrim-gold-bright)', fontSize: '3rem', cursor: 'pointer', zIndex: 100, opacity: 0.6 }}>&darr;</button>
         </>
       )}
@@ -167,18 +188,9 @@ const Skills: React.FC = () => {
             <div style={{ textAlign: 'center', maxWidth: '800px' }}>
               <h1 className="skyrim-font" style={{ fontSize: '3rem', color: '#fff', marginBottom: '1rem', letterSpacing: '8px' }}>LEVEL UP!</h1>
               <p className="skyrim-serif" style={{ fontSize: '1.5rem', color: 'var(--skyrim-gold-dim)', marginBottom: '4rem' }}>CHOOSE AN ATTRIBUTE TO ADVANCE</p>
-              
               <div style={{ display: 'flex', gap: '4rem', justifyContent: 'center' }}>
                 {(['magicka', 'health', 'stamina'] as const).map(attr => (
-                  <div 
-                    key={attr} 
-                    onClick={() => advanceLevel(attr)}
-                    className="skyrim-font"
-                    style={{ 
-                      cursor: 'pointer', textAlign: 'center', transition: 'all 0.2s',
-                      color: attr === 'magicka' ? '#4a90e2' : attr === 'health' ? '#e24a4a' : '#4ae24a'
-                    }}
-                  >
+                  <div key={attr} onClick={() => advanceLevel(attr)} className="skyrim-font" style={{ cursor: 'pointer', textAlign: 'center', transition: 'all 0.2s', color: attr === 'magicka' ? '#4a90e2' : attr === 'health' ? '#e24a4a' : '#4ae24a' }}>
                     <div style={{ fontSize: '1rem', color: '#888', marginBottom: '0.5rem' }}>{attr === 'magicka' ? stats.magickaMax : attr === 'health' ? stats.healthMax : stats.staminaMax}</div>
                     <div style={{ fontSize: '2.5rem', letterSpacing: '4px' }} className="menu-item">{attr.toUpperCase()}</div>
                     <div style={{ fontSize: '0.8rem', marginTop: '0.5rem', color: '#555' }}>+10</div>
@@ -193,7 +205,6 @@ const Skills: React.FC = () => {
       {selectedSkill && (
         <div className="skill-detail-overlay" style={{ zIndex: 600 }}>
           <button onClick={(e) => { e.stopPropagation(); setSelectedSkill(null); setFocusedPerk(null); playSound('UI_CLICK'); }} className="btn skyrim-font" style={{ position: 'fixed', top: '5rem', left: '2rem', zIndex: 1000, background: 'rgba(0,0,0,0.6)', border: '1px solid var(--skyrim-gold-dim)' }}>&larr; BACK</button>
-          
           <div className="constellation-container" style={{ transform: focusedPerk ? `translate(${250 - focusedPerk.x}px, ${300 - focusedPerk.y}px) scale(1.5)` : 'translate(0, 0) scale(1)' }}>
             <svg width="500" height="600" viewBox="0 0 500 600" className="constellation-svg">
               {selectedSkill.spectralPaths.map((path, i) => <path key={i} d={path} className="constellation-art" />)}
@@ -213,28 +224,7 @@ const Skills: React.FC = () => {
               })}
             </svg>
           </div>
-
-          {/* BACK TO OVERVIEW ARROW (DOWN) */}
-          <button 
-            onClick={() => { setSelectedSkill(null); setFocusedPerk(null); playSound('UI_CLICK'); }}
-            className="skyrim-font"
-            style={{
-              position: 'fixed',
-              bottom: '6rem',
-              left: '50%',
-              transform: 'translateX(-50%)',
-              background: 'none',
-              border: 'none',
-              color: 'var(--skyrim-gold-bright)',
-              fontSize: '3rem',
-              cursor: 'pointer',
-              zIndex: 1000,
-              opacity: 0.6
-            }}
-          >
-            &darr;
-          </button>
-
+          <button onClick={() => { setSelectedSkill(null); setFocusedPerk(null); playSound('UI_CLICK'); }} className="skyrim-font" style={{ position: 'fixed', bottom: '6rem', left: '50%', transform: 'translateX(-50%)', background: 'none', border: 'none', color: 'var(--skyrim-gold-bright)', fontSize: '3rem', cursor: 'pointer', zIndex: 1000, opacity: 0.6 }}>&darr;</button>
           {focusedPerk && (
             <>
               <div style={{ position: 'fixed', top: '38vh', left: '50%', transform: 'translateX(-50%)', textAlign: 'center', zIndex: 700, width: '100%', pointerEvents: 'none' }}>

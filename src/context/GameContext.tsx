@@ -32,6 +32,7 @@ export interface InventoryItem {
 }
 
 interface UserStats {
+  name: string;
   level: number;
   xp: number;
   xpToNextLevel: number;
@@ -42,7 +43,7 @@ interface UserStats {
   magickaMax: number;
   staminaMax: number;
   skillPoints: number;
-  pendingLevelUps: number; // Skyrim style: level up waiting
+  pendingLevelUps: number;
   race: string;
   perks: string[];
   skills: { [key: string]: SkillData };
@@ -72,6 +73,8 @@ interface GameContextType {
   useItem: (item: InventoryItem) => void;
   toggleEquip: (uid: string) => void;
   advanceLevel: (attribute: 'health' | 'magicka' | 'stamina') => void;
+  updateDisplayName: (newName: string) => void;
+  updateRace: (newRace: string) => void;
 }
 
 const GameContext = createContext<GameContextType | undefined>(undefined);
@@ -118,6 +121,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
   });
 
   const [stats, setStats] = useState<UserStats>({
+    name: 'DRAGONBORN',
     level: 1, xp: 0, xpToNextLevel: 100,
     health: 50, magicka: 50, stamina: 50,
     healthMax: 100, magickaMax: 100, staminaMax: 100,
@@ -166,6 +170,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setActiveEffects(effects);
 
         setStats({
+          name: data.name || currentUser.email?.split('@')[0].toUpperCase() || 'DRAGONBORN',
           level: data.level || 1,
           xp: data.xp || 0,
           xpToNextLevel: data.xpToNextLevel || 100,
@@ -186,6 +191,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
         });
       } else {
         const initialStats = {
+          name: currentUser.email?.split('@')[0].toUpperCase() || 'DRAGONBORN',
           level: 1, xp: 0, xpToNextLevel: 100,
           health: 50, magicka: 70, stamina: 50,
           healthMax: 100, magickaMax: 100, staminaMax: 100,
@@ -199,6 +205,22 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     });
   }, [currentUser]);
+
+  const updateDisplayName = async (newName: string) => {
+    if (!currentUser) return;
+    const uid = currentUser.uid;
+    await updateDoc(doc(db, 'userStats', uid), { name: newName.toUpperCase() });
+    notify("NAME CHANGED", newName.toUpperCase());
+    playSound('UI_CLICK');
+  };
+
+  const updateRace = async (newRace: string) => {
+    if (!currentUser) return;
+    const uid = currentUser.uid;
+    await updateDoc(doc(db, 'userStats', uid), { race: newRace });
+    notify("HERITAGE CHANGED", newRace.toUpperCase());
+    playSound('UI_CLICK');
+  };
 
   const addXP = async (amount: number, skillName?: string) => {
     if (!currentUser) return;
@@ -223,11 +245,10 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
         s.xpToNextLevel = Math.floor(s.xpToNextLevel * 1.2);
         notify("SKILL INCREASED", `${skillName} TO ${s.level}`);
         playSound('SKILL_UP');
-        
         let charXP = stats.xp + (s.level * 10);
+        let charLevel = stats.level;
         let charXPNext = stats.xpToNextLevel;
         let charPending = stats.pendingLevelUps;
-
         if (charXP >= charXPNext) {
           charXP -= charXPNext;
           charPending += 1;
@@ -250,17 +271,14 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!currentUser || stats.pendingLevelUps <= 0) return;
     const uid = currentUser.uid;
     const docRef = doc(db, 'userStats', uid);
-    
     let updates: any = {
       level: stats.level + 1,
       pendingLevelUps: stats.pendingLevelUps - 1,
       skillPoints: stats.skillPoints + 1
     };
-
     if (attribute === 'health') updates.healthMax = stats.healthMax + 10;
     if (attribute === 'magicka') updates.magickaMax = stats.magickaMax + 10;
     if (attribute === 'stamina') updates.staminaMax = stats.staminaMax + 10;
-
     await updateDoc(docRef, updates);
     notify("LEVEL INCREASED", `LEVEL ${stats.level + 1}`);
     playSound('LEVEL_UP');
@@ -315,7 +333,6 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const docRef = doc(db, 'userStats', uid);
     updateDoc(docRef, { magicka: stats.magicka - cost });
     notify("SPELL CAST", spellName.toUpperCase());
-    playSound('SPELL_CAST');
     return true;
   };
 
@@ -348,7 +365,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <GameContext.Provider value={{ stats, notification, activeEffects, ui, setUI, addXP, updateAttributes, notify, spendSkillPoint, castSpell, completeQuest, useItem, toggleEquip, advanceLevel }}>
+    <GameContext.Provider value={{ stats, notification, activeEffects, ui, setUI, addXP, updateAttributes, notify, spendSkillPoint, castSpell, completeQuest, useItem, toggleEquip, advanceLevel, updateDisplayName, updateRace }}>
       {children}
     </GameContext.Provider>
   );
