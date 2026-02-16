@@ -1,5 +1,4 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useAuth } from '../context/AuthContext';
 import { useGame } from '../context/GameContext';
 import { useSound } from '../context/SoundContext';
 import { CONSTELLATIONS } from '../data/constellations';
@@ -30,7 +29,6 @@ const NebulaFilters = () => (
 );
 
 const Skills: React.FC = () => {
-  const { currentUser } = useAuth();
   const { stats, spendSkillPoint, notify, setUI, advanceLevel, ui, updateDisplayName, updateRace } = useGame();
   const { playSound } = useSound();
   const [selectedSkill, setSelectedSkill] = useState<Constellation | null>(null);

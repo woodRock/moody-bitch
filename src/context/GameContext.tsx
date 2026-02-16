@@ -246,7 +246,6 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
         notify("SKILL INCREASED", `${skillName} TO ${s.level}`);
         playSound('SKILL_UP');
         let charXP = stats.xp + (s.level * 10);
-        let charLevel = stats.level;
         let charXPNext = stats.xpToNextLevel;
         let charPending = stats.pendingLevelUps;
         if (charXP >= charXPNext) {
