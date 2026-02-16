@@ -42,6 +42,7 @@ function App() {
   const isAuthPage = ['/signin', '/signup', '/forgot-password'].includes(location.pathname);
   const showHUD = !!currentUser && !isAuthPage && !isFirstLoad;
   const showMenuButton = !['/magic', '/inventory'].includes(location.pathname);
+  const isSkillsPage = location.pathname === '/skills';
 
   // Keyboard Shortcuts
   useEffect(() => {
@@ -73,7 +74,9 @@ function App() {
             onClick={() => setUI({ isPauseMenuOpen: !ui.isPauseMenuOpen, isMenuOpen: false })}
             className="skyrim-font"
             style={{
-              position: 'fixed', top: '1.5rem', left: '2rem',
+              position: 'fixed', 
+              top: isSkillsPage ? '5rem' : '1.5rem', 
+              left: '2rem',
               background: 'rgba(0,0,0,0.5)', border: '1px solid var(--skyrim-gold-dim)',
               color: '#aaa', fontSize: '0.8rem', padding: '0.4rem 0.8rem',
               cursor: 'pointer', zIndex: 200, textShadow: '1px 1px 0 #000'

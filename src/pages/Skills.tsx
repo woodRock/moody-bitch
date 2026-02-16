@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
 import { useGame } from '../context/GameContext';
 import { useSound } from '../context/SoundContext';
 import { CONSTELLATIONS } from '../data/constellations';
@@ -23,7 +24,8 @@ const NebulaFilters = () => (
 );
 
 const Skills: React.FC = () => {
-  const { stats, spendSkillPoint, notify, setUI, advanceLevel } = useGame();
+  const { currentUser } = useAuth();
+  const { stats, spendSkillPoint, notify, setUI, advanceLevel, ui } = useGame();
   const { playSound } = useSound();
   const [selectedSkill, setSelectedSkill] = useState<Constellation | null>(null);
   const [focusedPerk, setFocusedPerk] = useState<Perk | null>(null);
@@ -83,12 +85,33 @@ const Skills: React.FC = () => {
     }
   };
 
+  const userName = currentUser?.email?.split('@')[0].toUpperCase() || "DRAGONBORN";
+
   return (
     <div className="skills-container" style={{ background: 'radial-gradient(circle at center, #0a0e14 0%, #000 100%)', width: '100vw', height: '100vh', overflow: 'hidden', position: 'relative' }}>
       <NebulaFilters />
       <div className="star-field"></div>
 
-      {/* --- Perks Remaining Bar (Visible in overview) --- */}
+      {/* --- Persistant Top Bar with Level Progress --- */}
+      {!ui.isMenuOpen && (
+        <div className="character-info-bar" style={{ zIndex: 1000, gap: '4rem' }}>
+          <div className="info-item">NAME <span className="info-value">{userName}</span></div>
+          
+          <div className="info-item" style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', minWidth: '400px' }}>
+            <span style={{ whiteSpace: 'nowrap' }}>LEVEL {stats.level}</span>
+            <div className="xp-bar-bg" style={{ flex: 1, height: '8px', marginTop: 0, background: 'rgba(255,255,255,0.1)', border: '1px solid #444' }}>
+              <div 
+                className="xp-bar-fill" 
+                style={{ width: `${(stats.xp / stats.xpToNextLevel) * 100}%`, height: '100%' }}
+              ></div>
+            </div>
+          </div>
+
+          <div className="info-item">RACE <span className="info-value">{stats.race}</span></div>
+        </div>
+      )}
+
+      {/* --- Perks Remaining Bar --- */}
       {!selectedSkill && (
         <div style={{ 
           position: 'fixed', top: '5rem', left: '50%', transform: 'translateX(-50%)',

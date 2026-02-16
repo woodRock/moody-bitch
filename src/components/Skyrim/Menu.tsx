@@ -66,12 +66,16 @@ const SkyrimMenu: React.FC<SkyrimMenuProps> = ({ disabledGestures = false, hideB
   if (!ui.isMenuOpen) {
     if (hideButton) return null;
     
+    const isSkillsPage = location.pathname === '/skills';
+
     return (
       <button 
         onClick={() => setUI({ isMenuOpen: true, isPauseMenuOpen: false })}
         className="skyrim-font"
         style={{
-          position: 'fixed', top: '1.5rem', right: '2rem',
+          position: 'fixed', 
+          top: isSkillsPage ? '5rem' : '1.5rem', // Move down if on skills
+          right: '2rem',
           background: 'rgba(0,0,0,0.5)', border: '1px solid var(--skyrim-gold-dim)',
           color: stats.pendingLevelUps > 0 ? 'var(--skyrim-gold-bright)' : '#aaa', 
           fontSize: '0.8rem', padding: '0.4rem 0.8rem',
@@ -93,7 +97,7 @@ const SkyrimMenu: React.FC<SkyrimMenuProps> = ({ disabledGestures = false, hideB
         }}
         className="skyrim-font"
         style={{
-          position: 'fixed', top: '2rem', left: '2rem',
+          position: 'fixed', top: '5rem', left: '2rem',
           background: 'rgba(255, 255, 255, 0.05)', border: '1px solid var(--skyrim-gold-dim)',
           color: '#fff', padding: '0.5rem 1.5rem', cursor: 'pointer', zIndex: 1100,
           fontSize: '0.9rem', letterSpacing: '2px'
@@ -106,9 +110,10 @@ const SkyrimMenu: React.FC<SkyrimMenuProps> = ({ disabledGestures = false, hideB
         onClick={(e) => { e.stopPropagation(); handleLogout(); }}
         className="skyrim-font"
         style={{
-          position: 'fixed', top: '2rem', right: '2rem',
+          position: 'fixed', top: '5rem', right: '2rem',
           background: 'rgba(169, 41, 41, 0.2)', border: '1px solid #a92929',
-          color: '#a92929', padding: '0.5rem 1rem', cursor: 'pointer', zIndex: 1100, fontSize: '0.8rem'
+          color: '#a92929', padding: '0.5rem 1rem', cursor: 'pointer',
+          zIndex: 1100, fontSize: '0.8rem'
         }}
       >
         QUIT REALM [ESC]
@@ -137,8 +142,8 @@ const SkyrimMenu: React.FC<SkyrimMenuProps> = ({ disabledGestures = false, hideB
         </Link>
 
         <Link to="/inventory" className="diamond-item item-right" onClick={() => { setUI({ isMenuOpen: false }); playSound('UI_CLICK'); }}>
-          <div className="diamond-line-right"></div>
           <div className="diamond-label skyrim-font">ITEMS</div>
+          <div className="diamond-line-right"></div>
         </Link>
 
         <div className="diamond-center">
