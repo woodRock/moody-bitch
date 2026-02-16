@@ -53,18 +53,18 @@ const Skills: React.FC = () => {
   };
 
   const scrollPrev = () => {
+    playSound('UI_CLICK');
     const newIndex = (currentIndex - 1 + CONSTELLATIONS.length) % CONSTELLATIONS.length;
     setCurrentIndex(newIndex);
     lastPlayedIndex.current = newIndex;
-    playSound('UI_CLICK');
     scrollRef.current?.scrollTo({ left: newIndex * window.innerWidth, behavior: 'smooth' });
   };
 
   const scrollNext = () => {
+    playSound('UI_CLICK');
     const newIndex = (currentIndex + 1) % CONSTELLATIONS.length;
     setCurrentIndex(newIndex);
     lastPlayedIndex.current = newIndex;
-    playSound('UI_CLICK');
     scrollRef.current?.scrollTo({ left: newIndex * window.innerWidth, behavior: 'smooth' });
   };
 
@@ -193,6 +193,7 @@ const Skills: React.FC = () => {
       {selectedSkill && (
         <div className="skill-detail-overlay" style={{ zIndex: 600 }}>
           <button onClick={(e) => { e.stopPropagation(); setSelectedSkill(null); setFocusedPerk(null); playSound('UI_CLICK'); }} className="btn skyrim-font" style={{ position: 'fixed', top: '5rem', left: '2rem', zIndex: 1000, background: 'rgba(0,0,0,0.6)', border: '1px solid var(--skyrim-gold-dim)' }}>&larr; BACK</button>
+          
           <div className="constellation-container" style={{ transform: focusedPerk ? `translate(${250 - focusedPerk.x}px, ${300 - focusedPerk.y}px) scale(1.5)` : 'translate(0, 0) scale(1)' }}>
             <svg width="500" height="600" viewBox="0 0 500 600" className="constellation-svg">
               {selectedSkill.spectralPaths.map((path, i) => <path key={i} d={path} className="constellation-art" />)}
@@ -212,6 +213,28 @@ const Skills: React.FC = () => {
               })}
             </svg>
           </div>
+
+          {/* BACK TO OVERVIEW ARROW (DOWN) */}
+          <button 
+            onClick={() => { setSelectedSkill(null); setFocusedPerk(null); playSound('UI_CLICK'); }}
+            className="skyrim-font"
+            style={{
+              position: 'fixed',
+              bottom: '6rem',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              background: 'none',
+              border: 'none',
+              color: 'var(--skyrim-gold-bright)',
+              fontSize: '3rem',
+              cursor: 'pointer',
+              zIndex: 1000,
+              opacity: 0.6
+            }}
+          >
+            &darr;
+          </button>
+
           {focusedPerk && (
             <>
               <div style={{ position: 'fixed', top: '38vh', left: '50%', transform: 'translateX(-50%)', textAlign: 'center', zIndex: 700, width: '100%', pointerEvents: 'none' }}>
