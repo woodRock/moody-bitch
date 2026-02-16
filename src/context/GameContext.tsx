@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from './AuthContext';
 import { useSound } from './SoundContext';
 import { db } from '../firebaseConfig';
-import { doc, setDoc, onSnapshot, updateDoc, arrayUnion, increment } from 'firebase/firestore';
+import { doc, setDoc, onSnapshot, updateDoc, arrayUnion } from 'firebase/firestore';
 
 interface SkillData {
   level: number;

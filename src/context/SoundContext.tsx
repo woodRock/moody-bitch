@@ -26,7 +26,7 @@ export const useSound = () => {
 // Map Sound Types to local file names in /public/sounds/
 const FILE_MAP: Record<SoundType, string> = {
   UI_CLICK: 'click.mp3',
-  UI_SWISH: 'click.mp3', // Changed from swish.mp3 to click.mp3
+  UI_SWISH: 'click.mp3', 
   MENU_OPEN: 'click.mp3',
   MENU_CLOSE: 'click.mp3',
   LEVEL_UP: 'levelup.mp3',
@@ -58,8 +58,7 @@ export const SoundProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     };
   }, []);
 
-  // --- SYNTH FALLBACKS (If file fails) ---
-  const playFallback = (type: SoundType) => {
+  const playFallback = () => {
     if (!audioCtx.current) return;
     const ctx = audioCtx.current;
     const osc = ctx.createOscillator();
@@ -78,10 +77,8 @@ export const SoundProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       const fileName = FILE_MAP[type];
       const isProd = import.meta.env.PROD;
       const basePath = isProd ? '/moody-bitch/sounds/' : '/sounds/';
-      
       const audio = new Audio(`${basePath}${fileName}`);
       
-      // Dynamic volume based on sound importance
       let volume = 0.3;
       if (type === 'LEVEL_UP') volume = 0.8;
       if (type === 'QUEST_COMPLETE') volume = 0.6;
@@ -89,10 +86,10 @@ export const SoundProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
       audio.volume = volume;
       audio.play().catch(() => {
-        playFallback(type);
+        playFallback();
       });
     } catch (e) {
-      playFallback(type);
+      playFallback();
     }
   };
 
