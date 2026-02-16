@@ -132,8 +132,8 @@ const Skills: React.FC = () => {
           
           <div className="info-item" style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', minWidth: '400px' }}>
             <span style={{ whiteSpace: 'nowrap' }}>LEVEL {stats.level}</span>
-            <div className="xp-bar-bg" style={{ flex: 1, height: '8px', marginTop: 0, background: 'rgba(255,255,255,0.1)', border: '1px solid #444' }}>
-              <div className="xp-bar-fill" style={{ width: `${(stats.xp / stats.xpToNextLevel) * 100}%`, height: '100%' }}></div>
+            <div className="xp-bar-bg">
+              <div className="xp-bar-fill" style={{ width: `${(stats.xp / stats.xpToNextLevel) * 100}%` }}></div>
             </div>
           </div>
 

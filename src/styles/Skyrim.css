@@ -190,6 +190,40 @@
   margin-top: -10px;
 }
 
+/* --- XP PROGRESS BAR --- */
+.xp-bar-bg {
+  flex: 1;
+  height: 8px;
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid #444;
+  position: relative;
+  overflow: hidden;
+}
+
+.xp-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--skyrim-gold-dim), var(--skyrim-gold-bright));
+  box-shadow: 0 0 10px var(--skyrim-gold-bright);
+  transition: width 0.5s ease-out;
+}
+
+.level-progress-container {
+  position: fixed;
+  top: 5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 400px;
+  text-align: center;
+  z-index: 100;
+}
+
+.level-text {
+  color: #fff;
+  font-size: 1rem;
+  margin-bottom: 5px;
+  letter-spacing: 2px;
+}
+
 @keyframes banner-in-out {
   0% { opacity: 0; transform: translate(-50%, -20px) scale(0.9); }
   10% { opacity: 1; transform: translate(-50%, 0) scale(1); }

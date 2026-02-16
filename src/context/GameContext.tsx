@@ -236,6 +236,11 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
     const finalAmount = Math.floor(amount * multiplier);
     let updates: any = {};
+    
+    let charXP = stats.xp;
+    let charXPNext = stats.xpToNextLevel;
+    let charPending = stats.pendingLevelUps;
+
     if (skillName && stats.skills[skillName]) {
       let s = { ...stats.skills[skillName] };
       s.xp += finalAmount;
@@ -245,23 +250,24 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
         s.xpToNextLevel = Math.floor(s.xpToNextLevel * 1.2);
         notify("SKILL INCREASED", `${skillName} TO ${s.level}`);
         playSound('SKILL_UP');
-        let charXP = stats.xp + (s.level * 10);
-        let charXPNext = stats.xpToNextLevel;
-        let charPending = stats.pendingLevelUps;
-        if (charXP >= charXPNext) {
-          charXP -= charXPNext;
-          charPending += 1;
-          charXPNext = Math.floor(charXPNext * 1.5);
-          notify("LEVEL UP AVAILABLE", "Open Skills to Advance");
-        }
-        updates.xp = charXP;
-        updates.pendingLevelUps = charPending;
-        updates.xpToNextLevel = charXPNext;
+        charXP += (s.level * 10);
       }
       updates[`skills.${skillName}`] = s;
     } else {
-      updates.xp = stats.xp + finalAmount;
+      charXP += finalAmount;
     }
+
+    if (charXP >= charXPNext) {
+      charXP -= charXPNext;
+      charPending += 1;
+      charXPNext = Math.floor(charXPNext * 1.5);
+      notify("LEVEL UP AVAILABLE", "Open Skills to Advance");
+    }
+
+    updates.xp = charXP;
+    updates.pendingLevelUps = charPending;
+    updates.xpToNextLevel = charXPNext;
+
     await updateDoc(doc(db, 'userStats', uid), updates);
   };
 
