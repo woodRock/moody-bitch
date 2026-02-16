@@ -79,6 +79,7 @@
   background: linear-gradient(90deg, transparent, rgba(0,0,0,0.8) 20%, rgba(0,0,0,0.8) 80%, transparent);
   overflow: hidden;
   mask-image: linear-gradient(to right, transparent, black 30%, black 70%, transparent);
+  pointer-events: none;
 }
 
 .compass-strip {
@@ -215,6 +216,7 @@
   width: 400px;
   text-align: center;
   z-index: 100;
+  pointer-events: none;
 }
 
 .level-text {

@@ -89,7 +89,7 @@ const SkyrimMenu: React.FC<SkyrimMenuProps> = ({ disabledGestures = false, hideB
   }
 
   return (
-    <div className="skyrim-menu-overlay" onClick={() => setUI({ isMenuOpen: false })} style={{ background: 'rgba(0,0,0,0.9)' }}>
+    <div className="skyrim-menu-overlay" onClick={() => setUI({ isMenuOpen: false })} style={{ background: '#000' }}>
       <button 
         onClick={(e) => { 
           e.stopPropagation(); 

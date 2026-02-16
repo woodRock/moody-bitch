@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useAuth } from './AuthContext';
 import { useSound } from './SoundContext';
 import { db } from '../firebaseConfig';
@@ -132,13 +132,15 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     completedQuestCount: 0
   });
 
-  const setUI = (updates: Partial<GameContextType['ui']>) => {
-    if (updates.isMenuOpen === true && !ui.isMenuOpen) playSound('MENU_OPEN');
-    if (updates.isMenuOpen === false && ui.isMenuOpen) playSound('MENU_CLOSE');
-    if (updates.isPauseMenuOpen === true && !ui.isPauseMenuOpen) playSound('MENU_OPEN');
-    if (updates.isPauseMenuOpen === false && ui.isPauseMenuOpen) playSound('MENU_CLOSE');
-    setUIState(prev => ({ ...prev, ...updates }));
-  };
+  const setUI = useCallback((updates: Partial<GameContextType['ui']>) => {
+    setUIState(prev => {
+      if (updates.isMenuOpen === true && !prev.isMenuOpen) playSound('MENU_OPEN');
+      if (updates.isMenuOpen === false && prev.isMenuOpen) playSound('MENU_CLOSE');
+      if (updates.isPauseMenuOpen === true && !prev.isPauseMenuOpen) playSound('MENU_OPEN');
+      if (updates.isPauseMenuOpen === false && prev.isPauseMenuOpen) playSound('MENU_CLOSE');
+      return { ...prev, ...updates };
+    });
+  }, [playSound]);
 
   const notify = (title: string, subtitle: string) => {
     setNotification({ title, subtitle });
