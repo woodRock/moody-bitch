@@ -253,7 +253,6 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
           charPending += 1;
           charXPNext = Math.floor(charXPNext * 1.5);
           notify("LEVEL UP AVAILABLE", "Open Skills to Advance");
-          playSound('LEVEL_UP');
         }
         updates.xp = charXP;
         updates.pendingLevelUps = charPending;

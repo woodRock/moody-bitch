@@ -31,14 +31,17 @@ const Dashboard: React.FC = () => {
   useEffect(() => {
     if (currentUser) {
       loadHistory();
+      
       const handleOrientation = (e: any) => {
+        if (ui.isPauseMenuOpen) return;
         const heading = e.webkitCompassHeading || (360 - (e.alpha || 0));
         setUI({ heading });
       };
+      
       window.addEventListener('deviceorientation', handleOrientation, true);
       return () => window.removeEventListener('deviceorientation', handleOrientation);
     }
-  }, [currentUser]);
+  }, [currentUser, ui.isPauseMenuOpen]);
 
   const loadHistory = async () => {
     if (!currentUser) return;
