@@ -71,7 +71,7 @@ function App() {
             <>
               <HUD 
                 showCompass={location.pathname === '/dashboard' || location.pathname === '/quests'} 
-                showLevel={location.pathname !== '/skills'} 
+                showLevel={location.pathname === '/skills'} 
               />
               <button 
                 onClick={() => setUI({ isPauseMenuOpen: !ui.isPauseMenuOpen, isMenuOpen: false })}

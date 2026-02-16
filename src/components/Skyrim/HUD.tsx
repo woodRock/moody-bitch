@@ -14,7 +14,10 @@ const HUD: React.FC<HUDProps> = ({
   const { stats, notification, ui } = useGame();
 
   const degreeToPixels = 400 / 360;
-  const offset = -(ui.heading * degreeToPixels);
+  // The strip is centered by flexbox. Index 4 (S) is at the center (200px).
+  // Index 2 (N) is 200px to the left of Index 4.
+  // To bring Index 2 to the center, we need a translateX of +200px.
+  const offset = 200 - (ui.heading * degreeToPixels);
 
   return (
     <>

@@ -31,17 +31,10 @@ const Dashboard: React.FC = () => {
   useEffect(() => {
     if (currentUser) {
       loadHistory();
-      
-      const handleOrientation = (e: any) => {
-        if (ui.isPauseMenuOpen) return;
-        const heading = e.webkitCompassHeading || (360 - (e.alpha || 0));
-        setUI({ heading });
-      };
-      
-      window.addEventListener('deviceorientation', handleOrientation, true);
-      return () => window.removeEventListener('deviceorientation', handleOrientation);
+      // On the map, we want the compass fixed to North (0)
+      setUI({ heading: 0 });
     }
-  }, [currentUser, ui.isPauseMenuOpen]);
+  }, [currentUser, setUI]);
 
   const loadHistory = async () => {
     if (!currentUser) return;
@@ -69,7 +62,7 @@ const Dashboard: React.FC = () => {
       
       return {
         id: loc.id || Math.random().toString(),
-        offset: relativeBearing * (400 / 180),
+        offset: relativeBearing * (400 / 360),
         icon: loc.label?.includes('Quest') ? '📍' : '📜'
       };
     }).filter(m => Math.abs(m.offset) < 200);
