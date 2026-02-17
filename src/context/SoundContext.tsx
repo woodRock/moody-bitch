@@ -38,6 +38,7 @@ const FILE_MAP: Record<SoundType, string> = {
 
 export const SoundProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const audioCtx = useRef<AudioContext | null>(null);
+  const hasInteracted = useRef(false);
 
   useEffect(() => {
     const init = () => {
@@ -47,10 +48,11 @@ export const SoundProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       if (audioCtx.current.state === 'suspended') {
         audioCtx.current.resume();
       }
+      hasInteracted.current = true;
     };
-    window.addEventListener('mousedown', init);
-    window.addEventListener('keydown', init);
-    window.addEventListener('touchstart', init);
+    window.addEventListener('mousedown', init, { once: false });
+    window.addEventListener('keydown', init, { once: false });
+    window.addEventListener('touchstart', init, { once: false });
     return () => {
       window.removeEventListener('mousedown', init);
       window.removeEventListener('keydown', init);
@@ -59,20 +61,26 @@ export const SoundProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, []);
 
   const playFallback = () => {
-    if (!audioCtx.current) return;
+    if (!audioCtx.current || audioCtx.current.state === 'suspended') return;
     const ctx = audioCtx.current;
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.type = 'triangle';
-    osc.frequency.setValueAtTime(100, ctx.currentTime);
-    gain.gain.setValueAtTime(0.1, ctx.currentTime);
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.start();
-    osc.stop(ctx.currentTime + 0.2);
+    try {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(100, ctx.currentTime);
+      gain.gain.setValueAtTime(0.1, ctx.currentTime);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.2);
+    } catch (e) {
+      // Ignore fallback errors
+    }
   };
 
   const playSound = (type: SoundType) => {
+    if (!hasInteracted.current) return;
+
     try {
       const fileName = FILE_MAP[type];
       const isProd = import.meta.env.PROD;
@@ -85,7 +93,8 @@ export const SoundProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       if (type === 'UI_CLICK' || type === 'UI_SWISH') volume = 0.2;
 
       audio.volume = volume;
-      audio.play().catch(() => {
+      audio.play().catch((err) => {
+        console.warn("Audio play blocked or failed:", err);
         playFallback();
       });
     } catch (e) {

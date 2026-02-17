@@ -279,7 +279,7 @@ const PauseMenu: React.FC<PauseMenuProps> = ({ isOpen, onClose }) => {
                   <div style={{ background: 'rgba(0,0,0,0.3)', padding: '2rem', border: '1px solid rgba(255,255,255,0.1)' }}>
                     <h2 className="skyrim-title" style={{ border: 'none', textAlign: 'center', marginBottom: '2rem' }}>LINEAGE OF SPIRIT</h2>
                     <div style={{ width: '100%', height: 350 }}>
-                      <ResponsiveContainer>
+                      <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                         <LineChart data={chartData}>
                           <CartesianGrid strokeDasharray="3 3" stroke="#444" />
                           <XAxis dataKey="date" stroke="#e6c278" fontSize={12} />
