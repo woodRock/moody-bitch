@@ -1,6 +1,6 @@
 # 🏔️ Skyrim Wellbeing Manager (Moody Bitch)
 
-[![Deploy to GitHub Pages](https://github.com/woodj/moody-bitch/actions/workflows/deploy.yml/badge.svg)](https://github.com/woodj/moody-bitch/actions/workflows/deploy.yml)
+[![Deploy to GitHub Pages](https://github.com/woodRock/moody-bitch/actions/workflows/deploy.yml/badge.svg)](https://github.com/woodRock/moody-bitch/actions/workflows/deploy.yml)
 [![HackerNoon Featured](https://img.shields.io/badge/HackerNoon-Featured-green?logo=hackernoon)](https://hackernoon.com/skyrim-wellbeing-manager)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
