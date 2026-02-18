@@ -13,6 +13,21 @@ const HUD: React.FC<HUDProps> = ({
 }) => {
   const { stats, notification, ui, activeEffects } = useGame();
 
+  if (ui.isZenMode) return (
+    <>
+      {notification && (
+        <div className="skyrim-banner">
+          <h1 className="banner-text">{notification.title}</h1>
+          <div className="menu-separator" style={{ margin: '0.5rem auto', width: '300px' }}></div>
+          <p className="banner-subtext">{notification.subtitle}</p>
+        </div>
+      )}
+      <div style={{ position: 'fixed', top: '2rem', left: '50%', transform: 'translateX(-50%)', opacity: 0.2 }} className="skyrim-font">
+        ETHEREAL PEACE
+      </div>
+    </>
+  );
+
   const degreeToPixels = 400 / 360;
   // The strip is centered by flexbox. Index 4 (S) is at the center (200px).
   // Index 2 (N) is 200px to the left of Index 4.

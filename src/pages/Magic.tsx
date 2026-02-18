@@ -33,14 +33,22 @@ const SHOUTS: Spell[] = [
     description: 'Force your will upon the world and crush procrastination. A powerful shout that focuses your spirit for a brief period of intense productivity.', 
     effect: 'Quests completed within the next 5 minutes grant double XP.' 
   },
-  { id: 'feim', name: 'Ethereal Peace', school: 'SHOUTS', cost: 0, words: ['FEIM', 'ZII', 'GRON'], description: 'Immune to anxiety.', effect: 'Minimalist Zen mode.' },
+  { 
+    id: 'feim', 
+    name: 'Ethereal Peace', 
+    school: 'SHOUTS', 
+    cost: 0, 
+    words: ['FEIM', 'ZII', 'GRON'], 
+    description: 'Enter a state of ethereal calm where the distractions of the world fade away. This shout grants immunity to the anxieties of the UI.', 
+    effect: 'Toggles Zen Mode: Hides all HUD elements for a minimalist experience.' 
+  },
   { id: 'tiid', name: 'Slow Time', school: 'SHOUTS', cost: 0, words: ['TIID', 'KLO', 'UL'], description: 'Control flow of day.', effect: 'Pauses notifications.' }
 ];
 
 const SCHOOLS = ['ALL', 'SHOUTS', 'ALTERATION', 'CONJURATION', 'ILLUSION', 'RESTORATION', 'ACTIVE EFFECTS'];
 
 const Magic: React.FC = () => {
-  const { stats, activeEffects, castSpell, notify, setUI, addXP, startSurge } = useGame();
+  const { stats, activeEffects, castSpell, notify, setUI, addXP, startSurge, ui } = useGame();
   const { playSound } = useSound();
   const [selectedSchool, setSelectedSchool] = useState('ALL');
   const [selectedSpell, setSelectedSpell] = useState<Spell | null>(null);
@@ -74,6 +82,9 @@ const Magic: React.FC = () => {
       playSound('SPELL_CAST');
       if (spell.id === 'fus') {
         startSurge(5);
+      } else if (spell.id === 'feim') {
+        setUI({ isZenMode: !ui.isZenMode });
+        notify(ui.isZenMode ? "SPIRIT DISTURBED" : "ETHEREAL PEACE", ui.isZenMode ? "World returns to focus." : "Calm and quiet in the mind.");
       }
       return;
     }
