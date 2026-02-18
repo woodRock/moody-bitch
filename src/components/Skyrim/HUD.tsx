@@ -11,7 +11,7 @@ const HUD: React.FC<HUDProps> = ({
   showCompass = true, 
   showLevel = true
 }) => {
-  const { stats, notification, ui, activeEffects, worldMessages } = useGame();
+  const { stats, notification, ui, worldMessages } = useGame();
 
   if (ui.isZenMode) return (
     <>
@@ -88,14 +88,6 @@ const HUD: React.FC<HUDProps> = ({
           <div style={{ position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)', width: '2px', height: '100%', background: '#fff', boxShadow: '0 0 5px #fff', zIndex: 2 }}></div>
         </div>
       )}
-
-      <div style={{ position: 'fixed', right: '1.5rem', top: '50%', transform: 'translateY(-50%)', display: 'flex', flexDirection: 'column', gap: '1rem', zIndex: 10 }}>
-        {activeEffects.map(effect => (
-          <div key={effect.id} style={{ fontSize: '2rem', filter: 'drop-shadow(0 0 10px rgba(255,255,255,0.5))', animation: 'pulse 2s infinite ease-in-out' }}>
-            {effect.icon}
-          </div>
-        ))}
-      </div>
 
       {showLevel && (
         <div className="level-progress-container skyrim-font">
