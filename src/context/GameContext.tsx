@@ -51,11 +51,18 @@ interface UserStats {
   equippedItemId: string | null;
   completedQuestCount: number;
   surgeEndTime?: number;
+  slowTimeEndTime?: number;
+}
+
+interface WorldMessage {
+  id: string;
+  text: string;
 }
 
 interface GameContextType {
   stats: UserStats;
   notification: { title: string; subtitle: string } | null;
+  worldMessages: WorldMessage[];
   activeEffects: ActiveEffect[];
   ui: {
     heading: number;
@@ -78,6 +85,8 @@ interface GameContextType {
   updateDisplayName: (newName: string) => void;
   updateRace: (newRace: string) => void;
   startSurge: (durationMinutes: number) => void;
+  startSlowTime: (durationMinutes: number) => void;
+  addWorldMessage: (text: string) => void;
 }
 
 const GameContext = createContext<GameContextType | undefined>(undefined);
@@ -114,6 +123,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const { currentUser } = useAuth();
   const { playSound } = useSound();
   const [notification, setNotification] = useState<{ title: string; subtitle: string } | null>(null);
+  const [worldMessages, setWorldMessages] = useState<WorldMessage[]>([]);
   const [activeEffects, setActiveEffects] = useState<ActiveEffect[]>([]);
   const [ui, setUIState] = useState<GameContextType['ui']>({
     heading: 0,
@@ -133,7 +143,9 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     skills: DEFAULT_SKILLS,
     inventory: [],
     equippedItemId: null,
-    completedQuestCount: 0
+    completedQuestCount: 0,
+    surgeEndTime: 0,
+    slowTimeEndTime: 0
   });
 
   const setUI = useCallback((updates: Partial<GameContextType['ui']>) => {
@@ -147,8 +159,24 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [playSound]);
 
   const notify = (title: string, subtitle: string) => {
+    // If Slow Time is active, skip intrusive banners
+    if (stats.slowTimeEndTime && stats.slowTimeEndTime > Date.now()) {
+      return;
+    }
     setNotification({ title, subtitle });
     setTimeout(() => setNotification(null), 4000);
+  };
+
+  const addWorldMessage = (text: string) => {
+    // If Slow Time is active, skip messages
+    if (stats.slowTimeEndTime && stats.slowTimeEndTime > Date.now()) {
+      return;
+    }
+    const id = Math.random().toString(36).substring(2, 9);
+    setWorldMessages(prev => [...prev, { id, text }]);
+    setTimeout(() => {
+      setWorldMessages(prev => prev.filter(m => m.id !== id));
+    }, 5000);
   };
 
   useEffect(() => {
@@ -168,6 +196,10 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         if (data.surgeEndTime && data.surgeEndTime > Date.now()) {
           effects.push({ id: 'focus_surge', name: 'Focus Surge', description: 'Quests grant double XP.', icon: '🔥' });
+        }
+
+        if (data.slowTimeEndTime && data.slowTimeEndTime > Date.now()) {
+          effects.push({ id: 'slow_time', name: 'Slow Time', description: 'Notifications are paused.', icon: '⏳' });
         }
         
         if (data.equippedItemId) {
@@ -198,7 +230,8 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
           inventory: data.inventory || [],
           equippedItemId: data.equippedItemId || null,
           completedQuestCount: data.completedQuestCount || 0,
-          surgeEndTime: data.surgeEndTime || 0
+          surgeEndTime: data.surgeEndTime || 0,
+          slowTimeEndTime: data.slowTimeEndTime || 0
         });
       } else {
         const initialStats = {
@@ -211,7 +244,8 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
           inventory: [],
           equippedItemId: null,
           completedQuestCount: 0,
-          surgeEndTime: 0
+          surgeEndTime: 0,
+          slowTimeEndTime: 0
         };
         setDoc(docRef, initialStats);
       }
@@ -240,6 +274,15 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const endTime = Date.now() + durationMinutes * 60 * 1000;
     await updateDoc(doc(db, 'userStats', uid), { surgeEndTime: endTime });
     notify("FOCUS SURGE", `${durationMinutes} MIN OF DOUBLE XP`);
+    playSound('SPELL_CAST');
+  };
+
+  const startSlowTime = async (durationMinutes: number) => {
+    if (!currentUser) return;
+    const uid = currentUser.uid;
+    const endTime = Date.now() + durationMinutes * 60 * 1000;
+    await updateDoc(doc(db, 'userStats', uid), { slowTimeEndTime: endTime });
+    notify("SLOW TIME", `${durationMinutes} MIN OF NO INTERRUPTIONS`);
     playSound('SPELL_CAST');
   };
 
@@ -396,7 +439,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <GameContext.Provider value={{ stats, notification, activeEffects, ui, setUI, addXP, updateAttributes, notify, spendSkillPoint, castSpell, completeQuest, useItem, toggleEquip, advanceLevel, updateDisplayName, updateRace, startSurge }}>
+    <GameContext.Provider value={{ stats, notification, worldMessages, activeEffects, ui, setUI, addXP, updateAttributes, notify, spendSkillPoint, castSpell, completeQuest, useItem, toggleEquip, advanceLevel, updateDisplayName, updateRace, startSurge, startSlowTime, addWorldMessage }}>
       {children}
     </GameContext.Provider>
   );

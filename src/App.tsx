@@ -6,6 +6,7 @@ import HUD from './components/Skyrim/HUD';
 import SkyrimMenu from './components/Skyrim/Menu';
 import PauseMenu from './components/Skyrim/PauseMenu';
 import LoadingScreen from './components/Skyrim/LoadingScreen';
+import WisdomTicker from './components/WisdomTicker';
 import SignUp from './components/Auth/SignUp';
 import SignIn from './components/Auth/SignIn';
 import ForgotPassword from './components/Auth/ForgotPassword';
@@ -64,6 +65,7 @@ function App() {
   return (
     <div className="app-root">
       <LoadingScreen isLoading={isFirstLoad} />
+      {currentUser && <WisdomTicker />}
 
       {showHUD && (
         <>

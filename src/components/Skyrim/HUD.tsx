@@ -11,7 +11,7 @@ const HUD: React.FC<HUDProps> = ({
   showCompass = true, 
   showLevel = true
 }) => {
-  const { stats, notification, ui, activeEffects } = useGame();
+  const { stats, notification, ui, activeEffects, worldMessages } = useGame();
 
   if (ui.isZenMode) return (
     <>
@@ -36,6 +36,14 @@ const HUD: React.FC<HUDProps> = ({
 
   return (
     <>
+      <div className="world-messages-container">
+        {worldMessages.map(m => (
+          <div key={m.id} className="world-message skyrim-font">
+            {m.text}
+          </div>
+        ))}
+      </div>
+
       {notification && (
         <div className="skyrim-banner">
           <h1 className="banner-text">{notification.title}</h1>

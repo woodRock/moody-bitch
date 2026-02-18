@@ -42,13 +42,21 @@ const SHOUTS: Spell[] = [
     description: 'Enter a state of ethereal calm where the distractions of the world fade away. This shout grants immunity to the anxieties of the UI.', 
     effect: 'Toggles Zen Mode: Hides all HUD elements for a minimalist experience.' 
   },
-  { id: 'tiid', name: 'Slow Time', school: 'SHOUTS', cost: 0, words: ['TIID', 'KLO', 'UL'], description: 'Control flow of day.', effect: 'Pauses notifications.' }
+  { 
+    id: 'tiid', 
+    name: 'Slow Time', 
+    school: 'SHOUTS', 
+    cost: 0, 
+    words: ['TIID', 'KLO', 'UL'], 
+    description: 'Bending time to your will, you silence the noise of the world. All non-essential banners and world messages are suppressed, allowing for total concentration.', 
+    effect: 'Pauses all notifications and world messages for 10 minutes.' 
+  }
 ];
 
 const SCHOOLS = ['ALL', 'SHOUTS', 'ALTERATION', 'CONJURATION', 'ILLUSION', 'RESTORATION', 'ACTIVE EFFECTS'];
 
 const Magic: React.FC = () => {
-  const { stats, activeEffects, castSpell, notify, setUI, addXP, startSurge, ui } = useGame();
+  const { stats, activeEffects, castSpell, notify, setUI, addXP, startSurge, startSlowTime, ui } = useGame();
   const { playSound } = useSound();
   const [selectedSchool, setSelectedSchool] = useState('ALL');
   const [selectedSpell, setSelectedSpell] = useState<Spell | null>(null);
@@ -85,6 +93,8 @@ const Magic: React.FC = () => {
       } else if (spell.id === 'feim') {
         setUI({ isZenMode: !ui.isZenMode });
         notify(ui.isZenMode ? "SPIRIT DISTURBED" : "ETHEREAL PEACE", ui.isZenMode ? "World returns to focus." : "Calm and quiet in the mind.");
+      } else if (spell.id === 'tiid') {
+        startSlowTime(10);
       }
       return;
     }
