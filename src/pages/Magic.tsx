@@ -24,7 +24,15 @@ const SPELLS: Spell[] = [
 ];
 
 const SHOUTS: Spell[] = [
-  { id: 'fus', name: 'Unrelenting Focus', school: 'SHOUTS', cost: 0, words: ['FUS', 'RO', 'DAH'], description: 'Push aside procrastination.', effect: ' old quest surge timer.' },
+  { 
+    id: 'fus', 
+    name: 'Unrelenting Focus', 
+    school: 'SHOUTS', 
+    cost: 0, 
+    words: ['FUS', 'RO', 'DAH'], 
+    description: 'Force your will upon the world and crush procrastination. A powerful shout that focuses your spirit for a brief period of intense productivity.', 
+    effect: 'Quests completed within the next 5 minutes grant double XP.' 
+  },
   { id: 'feim', name: 'Ethereal Peace', school: 'SHOUTS', cost: 0, words: ['FEIM', 'ZII', 'GRON'], description: 'Immune to anxiety.', effect: 'Minimalist Zen mode.' },
   { id: 'tiid', name: 'Slow Time', school: 'SHOUTS', cost: 0, words: ['TIID', 'KLO', 'UL'], description: 'Control flow of day.', effect: 'Pauses notifications.' }
 ];
@@ -32,7 +40,7 @@ const SHOUTS: Spell[] = [
 const SCHOOLS = ['ALL', 'SHOUTS', 'ALTERATION', 'CONJURATION', 'ILLUSION', 'RESTORATION', 'ACTIVE EFFECTS'];
 
 const Magic: React.FC = () => {
-  const { stats, activeEffects, castSpell, notify, setUI, addXP } = useGame();
+  const { stats, activeEffects, castSpell, notify, setUI, addXP, startSurge } = useGame();
   const { playSound } = useSound();
   const [selectedSchool, setSelectedSchool] = useState('ALL');
   const [selectedSpell, setSelectedSpell] = useState<Spell | null>(null);
@@ -64,6 +72,9 @@ const Magic: React.FC = () => {
     if (spell.school === 'SHOUTS') {
       notify("SHOUT UNLEASHED", spell.words?.join(' ') || '');
       playSound('SPELL_CAST');
+      if (spell.id === 'fus') {
+        startSurge(5);
+      }
       return;
     }
     if (castSpell(spell.cost, spell.name)) {

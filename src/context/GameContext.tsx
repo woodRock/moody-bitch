@@ -50,6 +50,7 @@ interface UserStats {
   inventory: InventoryItem[];
   equippedItemId: string | null;
   completedQuestCount: number;
+  surgeEndTime?: number;
 }
 
 interface GameContextType {
@@ -75,6 +76,7 @@ interface GameContextType {
   advanceLevel: (attribute: 'health' | 'magicka' | 'stamina') => void;
   updateDisplayName: (newName: string) => void;
   updateRace: (newRace: string) => void;
+  startSurge: (durationMinutes: number) => void;
 }
 
 const GameContext = createContext<GameContextType | undefined>(undefined);
@@ -162,6 +164,10 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (data.health >= 80) effects.push({ id: 'heroic', name: 'Heroic Spirit', description: 'Increased mental fortitude.', icon: '⚔️' });
         if (data.stamina >= 80) effects.push({ id: 'vitality', name: 'Vitality', description: 'Stamina regenerates faster.', icon: '⚡' });
         
+        if (data.surgeEndTime && data.surgeEndTime > Date.now()) {
+          effects.push({ id: 'focus_surge', name: 'Focus Surge', description: 'Quests grant double XP.', icon: '🔥' });
+        }
+        
         if (data.equippedItemId) {
           const equipped = (data.inventory as InventoryItem[] || []).find(i => i.uid === data.equippedItemId);
           if (equipped) {
@@ -189,7 +195,8 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
           skills: updatedSkills,
           inventory: data.inventory || [],
           equippedItemId: data.equippedItemId || null,
-          completedQuestCount: data.completedQuestCount || 0
+          completedQuestCount: data.completedQuestCount || 0,
+          surgeEndTime: data.surgeEndTime || 0
         });
       } else {
         const initialStats = {
@@ -201,7 +208,8 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
           skills: DEFAULT_SKILLS,
           inventory: [],
           equippedItemId: null,
-          completedQuestCount: 0
+          completedQuestCount: 0,
+          surgeEndTime: 0
         };
         setDoc(docRef, initialStats);
       }
@@ -224,10 +232,25 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     playSound('UI_CLICK');
   };
 
+  const startSurge = async (durationMinutes: number) => {
+    if (!currentUser) return;
+    const uid = currentUser.uid;
+    const endTime = Date.now() + durationMinutes * 60 * 1000;
+    await updateDoc(doc(db, 'userStats', uid), { surgeEndTime: endTime });
+    notify("FOCUS SURGE", `${durationMinutes} MIN OF DOUBLE XP`);
+    playSound('SPELL_CAST');
+  };
+
   const addXP = async (amount: number, skillName?: string) => {
     if (!currentUser) return;
     const uid = currentUser.uid;
     let multiplier = activeEffects.some(e => e.id === 'well_rested') ? 1.1 : 1.0;
+    
+    // Check for focus surge
+    if (stats.surgeEndTime && stats.surgeEndTime > Date.now()) {
+      multiplier *= 2.0;
+    }
+
     if (stats.equippedItemId) {
       const equipped = stats.inventory.find(i => i.uid === stats.equippedItemId);
       if (equipped && equipped.effectType === 'XP_BOOST') {
@@ -371,7 +394,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <GameContext.Provider value={{ stats, notification, activeEffects, ui, setUI, addXP, updateAttributes, notify, spendSkillPoint, castSpell, completeQuest, useItem, toggleEquip, advanceLevel, updateDisplayName, updateRace }}>
+    <GameContext.Provider value={{ stats, notification, activeEffects, ui, setUI, addXP, updateAttributes, notify, spendSkillPoint, castSpell, completeQuest, useItem, toggleEquip, advanceLevel, updateDisplayName, updateRace, startSurge }}>
       {children}
     </GameContext.Provider>
   );
