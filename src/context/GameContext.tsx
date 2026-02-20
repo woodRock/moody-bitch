@@ -70,7 +70,6 @@ interface GameContextType {
     isPauseMenuOpen: boolean;
     isMenuOpen: boolean;
     disabledGestures: boolean;
-    isZenMode: boolean;
   };
   setUI: (updates: Partial<GameContextType['ui']>) => void;
   addXP: (amount: number, skillName?: string) => void;
@@ -130,8 +129,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     compassMarkers: [],
     isPauseMenuOpen: false,
     isMenuOpen: false,
-    disabledGestures: false,
-    isZenMode: false
+    disabledGestures: false
   });
 
   const [stats, setStats] = useState<UserStats>({

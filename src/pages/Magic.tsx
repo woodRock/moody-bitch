@@ -34,22 +34,13 @@ const SHOUTS: Spell[] = [
     effect: 'Quests completed within the next 5 minutes grant double XP.' 
   },
   { 
-    id: 'feim', 
-    name: 'Ethereal Peace', 
-    school: 'SHOUTS', 
-    cost: 0, 
-    words: ['FEIM', 'ZII', 'GRON'], 
-    description: 'Enter a state of ethereal calm where the distractions of the world fade away. This shout grants immunity to the anxieties of the UI.', 
-    effect: 'Toggles Zen Mode: Hides all HUD elements for a minimalist experience.' 
-  },
-  { 
     id: 'tiid', 
     name: 'Slow Time', 
     school: 'SHOUTS', 
     cost: 0, 
     words: ['TIID', 'KLO', 'UL'], 
-    description: 'Bending time to your will, you silence the noise of the world. All non-essential banners and world messages are suppressed, allowing for total concentration.', 
-    effect: 'Pauses all notifications and world messages for 10 minutes.' 
+    description: 'Bending time to your will, you silence the noise of the world. All non-essential banners and world messages are suppressed, and the HUD fades from view, allowing for total concentration.', 
+    effect: 'Pauses all notifications and hides the HUD for 10 minutes.' 
   }
 ];
 
@@ -90,9 +81,6 @@ const Magic: React.FC = () => {
       playSound('SPELL_CAST');
       if (spell.id === 'fus') {
         startSurge(5);
-      } else if (spell.id === 'feim') {
-        setUI({ isZenMode: !ui.isZenMode });
-        notify(ui.isZenMode ? "SPIRIT DISTURBED" : "ETHEREAL PEACE", ui.isZenMode ? "World returns to focus." : "Calm and quiet in the mind.");
       } else if (spell.id === 'tiid') {
         startSlowTime(10);
       }

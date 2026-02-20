@@ -123,27 +123,25 @@ const Dashboard: React.FC = () => {
       </button>
 
       {/* BACK TO MENU ARROW (UP) */}
-      {!ui.isZenMode && (
-        <button 
-          onClick={() => { setUI({ isMenuOpen: true }); playSound('UI_CLICK'); }}
-          className="skyrim-font"
-          style={{
-            position: 'fixed',
-            top: '4rem',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            background: 'none',
-            border: 'none',
-            color: 'var(--skyrim-gold-bright)',
-            fontSize: '3rem',
-            cursor: 'pointer',
-            zIndex: 100,
-            opacity: 0.6
-          }}
-        >
-          &uarr;
-        </button>
-      )}
+      <button 
+        onClick={() => { setUI({ isMenuOpen: true }); playSound('UI_CLICK'); }}
+        className="skyrim-font"
+        style={{
+          position: 'fixed',
+          top: '4rem',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          background: 'none',
+          border: 'none',
+          color: 'var(--skyrim-gold-bright)',
+          fontSize: '3rem',
+          cursor: 'pointer',
+          zIndex: 100,
+          opacity: 0.6
+        }}
+      >
+        &uarr;
+      </button>
 
       <div className="map-wrapper" style={{ width: '100vw', height: '100vh', zIndex: 1 }}>
         {hasLocation ? (
@@ -195,11 +193,9 @@ const Dashboard: React.FC = () => {
         </div>
       )}
 
-      {!ui.isZenMode && (
-        <div style={{ position: 'fixed', bottom: '8rem', left: '50%', transform: 'translateX(-50%)', color: '#fff', zIndex: 10, textShadow: '2px 2px 4px #000', pointerEvents: 'none' }} className="skyrim-font">
-          PAN THE MAP TO DISCOVER YOUR PATH
-        </div>
-      )}
+      <div style={{ position: 'fixed', bottom: '8rem', left: '50%', transform: 'translateX(-50%)', color: '#fff', zIndex: 10, textShadow: '2px 2px 4px #000', pointerEvents: 'none' }} className="skyrim-font">
+        PAN THE MAP TO DISCOVER YOUR PATH
+      </div>
     </div>
   );
 };

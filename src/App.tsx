@@ -69,7 +69,7 @@ function App() {
 
       {showHUD && (
         <>
-          {!hideHUDForMenus && !ui.isZenMode && (
+          {!hideHUDForMenus && (
             <>
               <HUD 
                 showCompass={location.pathname === '/dashboard' || location.pathname === '/quests'} 
@@ -91,10 +91,9 @@ function App() {
               </button>
             </>
           )}
-          {ui.isZenMode && <HUD showCompass={false} showLevel={false} />}
           <SkyrimMenu 
-            disabledGestures={ui.disabledGestures || ui.isZenMode}
-            hideButton={!showMenuButton || hideHUDForMenus || ui.isZenMode}
+            disabledGestures={ui.disabledGestures}
+            hideButton={!showMenuButton || hideHUDForMenus}
           />
           <PauseMenu 
             isOpen={ui.isPauseMenuOpen} 

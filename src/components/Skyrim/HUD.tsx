@@ -13,17 +13,12 @@ const HUD: React.FC<HUDProps> = ({
 }) => {
   const { stats, notification, ui, worldMessages } = useGame();
 
-  if (ui.isZenMode) return (
+  const isSlowTime = stats.slowTimeEndTime && stats.slowTimeEndTime > Date.now();
+
+  if (isSlowTime) return (
     <>
-      {notification && (
-        <div className="skyrim-banner">
-          <h1 className="banner-text">{notification.title}</h1>
-          <div className="menu-separator" style={{ margin: '0.5rem auto', width: '300px' }}></div>
-          <p className="banner-subtext">{notification.subtitle}</p>
-        </div>
-      )}
       <div style={{ position: 'fixed', top: '2rem', left: '50%', transform: 'translateX(-50%)', opacity: 0.2 }} className="skyrim-font">
-        ETHEREAL PEACE
+        SLOW TIME ACTIVE
       </div>
     </>
   );
