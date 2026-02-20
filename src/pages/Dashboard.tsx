@@ -7,6 +7,7 @@ import { MapContainer, TileLayer, Marker, Popup, Polyline, useMapEvents } from '
 import { fetchLocationHistory } from '../services/locationService';
 import type { UserLocation } from '../services/locationService';
 import L from 'leaflet';
+import Penguin3D from '../components/Penguin3D';
 
 import icon from 'leaflet/dist/images/marker-icon.png';
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
@@ -22,7 +23,7 @@ const MapController = ({ onMove }: { onMove: (center: L.LatLng) => void }) => {
 
 const Dashboard: React.FC = () => {
   const { currentUser } = useAuth();
-  const { setUI, ui } = useGame();
+  const { setUI, ui, stats } = useGame();
   const { playSound } = useSound();
   const [locations, setLocations] = useState<UserLocation[]>([]);
   const [mapCenter, setMapCenter] = useState<[number, number]>([0, 0]);
@@ -72,11 +73,54 @@ const Dashboard: React.FC = () => {
 
   const pathPositions = locations.map(loc => [loc.lat, loc.lng] as [number, number]);
 
+  const penguinMood = (stats.health / stats.healthMax) * 10;
+  const penguinEnergy = (stats.stamina / stats.staminaMax) * 10;
+  const penguinSleep = (stats.magicka / stats.magickaMax) * 24;
+
   return (
     <div className="dashboard-container" style={{ padding: 0, overflow: 'hidden' }}>
       <style>{`
         .skyrim-font[style*="top: 1.5rem"], .skyrim-font[style*="top: 2rem"] { top: 1.5rem !important; }
+        .penguin-overlay {
+          position: fixed;
+          bottom: 2rem;
+          right: 2rem;
+          width: 180px;
+          height: 220px;
+          z-index: 100;
+          pointer-events: auto;
+          transition: all 0.5s ease;
+          border: 1px solid var(--skyrim-gold-dim);
+          border-radius: 0.5rem;
+          background: rgba(0,0,0,0.3) !important;
+          backdrop-filter: blur(8px);
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          padding: 10px;
+        }
+        .zen-toggle {
+          position: fixed;
+          bottom: 2rem;
+          left: 2rem;
+          z-index: 100;
+          background: rgba(0,0,0,0.5);
+          border: 1px solid var(--skyrim-gold-dim);
+          color: var(--skyrim-gold-bright);
+          padding: 0.5rem 1rem;
+          cursor: pointer;
+          opacity: 0.6;
+          transition: opacity 0.3s;
+        }
+        .zen-toggle:hover { opacity: 1; }
       `}</style>
+
+      <button 
+        className="zen-toggle skyrim-font" 
+        onClick={() => { setUI({ isZenMode: !ui.isZenMode }); playSound('UI_CLICK'); }}
+      >
+        {ui.isZenMode ? 'EXIT ZEN MODE' : 'ZEN MODE'}
+      </button>
 
       {/* BACK TO MENU ARROW (UP) */}
       {!ui.isZenMode && (
@@ -106,7 +150,7 @@ const Dashboard: React.FC = () => {
           <MapContainer 
             center={mapCenter} 
             zoom={13} 
-            style={{ width: '100%', height: '100%', filter: 'sepia(0.8) hue-rotate(-15deg) contrast(1.2) brightness(0.8)' }}
+            style={{ width: '100%', height: '100%', filter: ui.isZenMode ? 'sepia(1) brightness(0.5)' : 'sepia(0.8) hue-rotate(-15deg) contrast(1.2) brightness(0.8)' }}
             zoomControl={false}
           >
             <TileLayer attribution='&copy; OpenStreetMap' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
@@ -130,6 +174,26 @@ const Dashboard: React.FC = () => {
           </div>
         )}
       </div>
+
+      {!ui.isZenMode && (
+        <div className="penguin-overlay">
+          <Penguin3D 
+            mood={penguinMood} 
+            energy={penguinEnergy} 
+            sleep={penguinSleep} 
+            style={{ width: '100%', height: '160px', background: 'transparent', boxShadow: 'none' }} 
+          />
+          <div className="skyrim-font" style={{ 
+            marginTop: '5px',
+            color: 'var(--skyrim-gold-bright)',
+            fontSize: '0.6rem',
+            letterSpacing: '2px',
+            textShadow: '1px 1px 2px #000'
+          }}>
+            SPIRIT COMPANION
+          </div>
+        </div>
+      )}
 
       {!ui.isZenMode && (
         <div style={{ position: 'fixed', bottom: '8rem', left: '50%', transform: 'translateX(-50%)', color: '#fff', zIndex: 10, textShadow: '2px 2px 4px #000', pointerEvents: 'none' }} className="skyrim-font">
