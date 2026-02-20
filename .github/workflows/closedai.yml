@@ -6,7 +6,7 @@ on:
 
 permissions:
   contents: write         # Required for the bot to push code changes
-
+  workflows: write
 jobs:
   run-bot:
     runs-on: ubuntu-latest
