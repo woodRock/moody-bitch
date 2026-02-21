@@ -52,6 +52,7 @@ interface UserStats {
   completedQuestCount: number;
   surgeEndTime?: number;
   slowTimeEndTime?: number;
+  zenMode?: boolean;
 }
 
 interface WorldMessage {
@@ -85,6 +86,7 @@ interface GameContextType {
   updateRace: (newRace: string) => void;
   startSurge: (durationMinutes: number) => void;
   startSlowTime: (durationMinutes: number) => void;
+  toggleZenMode: () => void;
   addWorldMessage: (text: string) => void;
 }
 
@@ -143,7 +145,8 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     equippedItemId: null,
     completedQuestCount: 0,
     surgeEndTime: 0,
-    slowTimeEndTime: 0
+    slowTimeEndTime: 0,
+    zenMode: false
   });
 
   const setUI = useCallback((updates: Partial<GameContextType['ui']>) => {
@@ -199,6 +202,10 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (data.slowTimeEndTime && data.slowTimeEndTime > Date.now()) {
           effects.push({ id: 'slow_time', name: 'Slow Time', description: 'Notifications are paused.', icon: '⏳' });
         }
+
+        if (data.zenMode) {
+          effects.push({ id: 'zen_mode', name: 'Zen Mode', description: 'HUD is hidden.', icon: '🧘' });
+        }
         
         if (data.equippedItemId) {
           const equipped = (data.inventory as InventoryItem[] || []).find(i => i.uid === data.equippedItemId);
@@ -229,7 +236,8 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
           equippedItemId: data.equippedItemId || null,
           completedQuestCount: data.completedQuestCount || 0,
           surgeEndTime: data.surgeEndTime || 0,
-          slowTimeEndTime: data.slowTimeEndTime || 0
+          slowTimeEndTime: data.slowTimeEndTime || 0,
+          zenMode: data.zenMode || false
         });
       } else {
         const initialStats = {
@@ -243,7 +251,8 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
           equippedItemId: null,
           completedQuestCount: 0,
           surgeEndTime: 0,
-          slowTimeEndTime: 0
+          slowTimeEndTime: 0,
+          zenMode: false
         };
         setDoc(docRef, initialStats);
       }
@@ -281,6 +290,15 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const endTime = Date.now() + durationMinutes * 60 * 1000;
     await updateDoc(doc(db, 'userStats', uid), { slowTimeEndTime: endTime });
     notify("SLOW TIME", `${durationMinutes} MIN OF NO INTERRUPTIONS`);
+    playSound('SPELL_CAST');
+  };
+
+  const toggleZenMode = async () => {
+    if (!currentUser) return;
+    const uid = currentUser.uid;
+    const newZenMode = !stats.zenMode;
+    await updateDoc(doc(db, 'userStats', uid), { zenMode: newZenMode });
+    notify(newZenMode ? "ZEN MODE ACTIVE" : "ZEN MODE DEACTIVATED", "");
     playSound('SPELL_CAST');
   };
 
@@ -437,7 +455,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <GameContext.Provider value={{ stats, notification, worldMessages, activeEffects, ui, setUI, addXP, updateAttributes, notify, spendSkillPoint, castSpell, completeQuest, useItem, toggleEquip, advanceLevel, updateDisplayName, updateRace, startSurge, startSlowTime, addWorldMessage }}>
+    <GameContext.Provider value={{ stats, notification, worldMessages, activeEffects, ui, setUI, addXP, updateAttributes, notify, spendSkillPoint, castSpell, completeQuest, useItem, toggleEquip, advanceLevel, updateDisplayName, updateRace, startSurge, startSlowTime, toggleZenMode, addWorldMessage }}>
       {children}
     </GameContext.Provider>
   );

@@ -39,15 +39,24 @@ const SHOUTS: Spell[] = [
     school: 'SHOUTS', 
     cost: 0, 
     words: ['TIID', 'KLO', 'UL'], 
-    description: 'Bending time to your will, you silence the noise of the world. All non-essential banners and world messages are suppressed, and the HUD fades from view, allowing for total concentration.', 
-    effect: 'Pauses all notifications and hides the HUD for 10 minutes.' 
+    description: 'Bending time to your will, you silence the noise of the world. All notifications and world messages are suppressed, allowing for total concentration.', 
+    effect: 'Pauses all notifications for 10 minutes.' 
+  },
+  { 
+    id: 'feim', 
+    name: 'Ethereal Peace', 
+    school: 'SHOUTS', 
+    cost: 0, 
+    words: ['FEIM', 'ZII', 'GRON'], 
+    description: 'The Voice is that of the spirit, not the body. You become as a ghost, untethered from the distractions of the physical world. The HUD vanishes, leaving only your focus.', 
+    effect: 'Toggles Zen Mode (hides the HUD).' 
   }
 ];
 
 const SCHOOLS = ['ALL', 'SHOUTS', 'ALTERATION', 'CONJURATION', 'ILLUSION', 'RESTORATION', 'ACTIVE EFFECTS'];
 
 const Magic: React.FC = () => {
-  const { stats, activeEffects, castSpell, notify, setUI, addXP, startSurge, startSlowTime, ui } = useGame();
+  const { stats, activeEffects, castSpell, notify, setUI, addXP, startSurge, startSlowTime, toggleZenMode, ui } = useGame();
   const { playSound } = useSound();
   const [selectedSchool, setSelectedSchool] = useState('ALL');
   const [selectedSpell, setSelectedSpell] = useState<Spell | null>(null);
@@ -83,6 +92,8 @@ const Magic: React.FC = () => {
         startSurge(5);
       } else if (spell.id === 'tiid') {
         startSlowTime(10);
+      } else if (spell.id === 'feim') {
+        toggleZenMode();
       }
       return;
     }

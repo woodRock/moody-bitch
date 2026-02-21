@@ -14,23 +14,20 @@ const HUD: React.FC<HUDProps> = ({
   const { stats, notification, ui, worldMessages } = useGame();
 
   const isSlowTime = stats.slowTimeEndTime && stats.slowTimeEndTime > Date.now();
+  const isZenMode = stats.zenMode;
 
-  if (isSlowTime) return (
-    <>
-      <div style={{ position: 'fixed', top: '2rem', left: '50%', transform: 'translateX(-50%)', opacity: 0.2 }} className="skyrim-font">
-        SLOW TIME ACTIVE
-      </div>
-    </>
-  );
+  if (isZenMode) return null;
 
   const degreeToPixels = 400 / 360;
-  // The strip is centered by flexbox. Index 4 (S) is at the center (200px).
-  // Index 2 (N) is 200px to the left of Index 4.
-  // To bring Index 2 to the center, we need a translateX of +200px.
   const offset = 200 - (ui.heading * degreeToPixels);
 
   return (
     <>
+      {isSlowTime && (
+        <div style={{ position: 'fixed', top: '2rem', left: '50%', transform: 'translateX(-50%)', opacity: 0.2, zIndex: 1000 }} className="skyrim-font">
+          SLOW TIME ACTIVE
+        </div>
+      )}
       <div className="world-messages-container">
         {worldMessages.map(m => (
           <div key={m.id} className="world-message skyrim-font">
