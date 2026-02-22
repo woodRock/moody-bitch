@@ -40,6 +40,33 @@ Check out the full article here: [**Skyrim Wellbeing Manager: Turning Life into 
 
 ---
 
+## 🔥 Firebase Setup Guide
+
+To get this project running with your own backend, follow these steps:
+
+### 1. Create a Firebase Project
+- Go to the [Firebase Console](https://console.firebase.google.com/).
+- Click **"Add project"** and follow the prompts to create a new project.
+
+### 2. Enable Authentication
+- In the left-hand menu, navigate to **Build > Authentication**.
+- Click **"Get started"**.
+- Under the **"Sign-in method"** tab, select **Email/Password** and enable it.
+
+### 3. Enable Cloud Firestore
+- In the left-hand menu, navigate to **Build > Firestore Database**.
+- Click **"Create database"**.
+- Choose a location and start in **Test Mode** for initial development (you can apply the `firestore.rules` from this repository later for production).
+
+### 4. Register Your Web App & Get Config
+- Click the **Project Settings** (gear icon next to "Project Overview") in the top left.
+- Under the **"General"** tab, scroll down to the **"Your apps"** section.
+- Click the **Web icon (`</>`)** to register a new web app.
+- Give it a nickname (e.g., "Skyrim Wellbeing") and click **"Register app"**.
+- You will be presented with a `firebaseConfig` object. Copy these values into your `.env` file as described below.
+
+---
+
 ## 🚀 Getting Started
 
 ### Prerequisites
