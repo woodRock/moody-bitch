@@ -20,6 +20,10 @@ The fastest way to begin your journey is to use the official hosted version:
 ### 🛡️ Self-Hosted (Private Version)
 If you prefer to own your data or want to customize the experience, you can set up your own Firebase backend by following the guide below.
 
+### 🖥️ Platform Compatibility
+**Desktop & Laptop Only:** This application is currently optimized for larger screens to preserve the immersive UI experience. 
+*Note: Mobile support is currently in development.*
+
 ---
 
 ## 📖 Featured on HackerNoon
