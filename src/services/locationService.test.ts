@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { captureLocation } from './locationService';
-import { addDoc, collection, Timestamp } from 'firebase/firestore';
+import { captureLocation, fetchLocationHistory } from './locationService';
+import { addDoc, collection, Timestamp, getDocs } from 'firebase/firestore';
 
 vi.mock('firebase/firestore', () => ({
   collection: vi.fn(),
@@ -56,5 +56,22 @@ describe('locationService', () => {
     await captureLocation('user-123');
     
     expect(consoleSpy).toHaveBeenCalledWith("Geolocation is not supported by this browser.");
+  });
+
+  it('fetches location history for a user', async () => {
+    const userId = 'user-123';
+    const mockDocs = [
+      { id: '1', data: () => ({ userId, lat: 10, lng: 20, label: 'L1' }) },
+      { id: '2', data: () => ({ userId, lat: 30, lng: 40, label: 'L2' }) }
+    ];
+    (vi.mocked(getDocs) as any).mockResolvedValue({
+      docs: mockDocs
+    });
+
+    const history = await fetchLocationHistory(userId);
+    
+    expect(history).toHaveLength(2);
+    expect(history[0]).toEqual({ id: '1', userId, lat: 10, lng: 20, label: 'L1' });
+    expect(getDocs).toHaveBeenCalled();
   });
 });
