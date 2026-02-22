@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, act } from '@testing-library/react';
 import { AuthProvider, useAuth } from './AuthContext';
 import { onAuthStateChanged } from 'firebase/auth';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
@@ -30,7 +30,9 @@ describe('AuthContext', () => {
     expect(screen.getByText('Loading...')).toBeInTheDocument();
 
     // Simulate auth state change
-    authCallback({ email: 'test@example.com' });
+    act(() => {
+      authCallback({ email: 'test@example.com' });
+    });
 
     await waitFor(() => {
       expect(screen.getByText('User: test@example.com')).toBeInTheDocument();
