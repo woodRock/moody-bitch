@@ -9,6 +9,19 @@
 
 ---
 
+## 🎮 How to Play
+
+### 🌟 Quick Start (Hosted Version)
+The fastest way to begin your journey is to use the official hosted version:
+👉 **[Play Skyrim Wellbeing Manager](https://woodrock.github.io/moody-bitch/)**
+
+*Note: This version uses a shared Firebase instance. Your data is isolated to your account (email/password), but for absolute privacy and data ownership, we recommend hosting your own instance.*
+
+### 🛡️ Self-Hosted (Private Version)
+If you prefer to own your data or want to customize the experience, you can set up your own Firebase backend by following the guide below.
+
+---
+
 ## 📖 Featured on HackerNoon
 
 This project was featured as a **Top Story** on the front page of HackerNoon!
