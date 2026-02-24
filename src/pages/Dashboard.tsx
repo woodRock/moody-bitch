@@ -10,7 +10,7 @@ import L from 'leaflet';
 
 import icon from 'leaflet/dist/images/marker-icon.png';
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
-let DefaultIcon = L.icon({ iconUrl: icon, shadowUrl: iconShadow, iconSize: [25, 41], iconAnchor: [12, 41] });
+const DefaultIcon = L.icon({ iconUrl: icon, shadowUrl: iconShadow, iconSize: [25, 41], iconAnchor: [12, 41] });
 L.Marker.prototype.options.icon = DefaultIcon;
 
 const MapController = ({ onMove }: { onMove: (center: L.LatLng) => void }) => {
@@ -28,15 +28,7 @@ const Dashboard: React.FC = () => {
   const [mapCenter, setMapCenter] = useState<[number, number]>([0, 0]);
   const [hasLocation, setHasLocation] = useState(false);
 
-  useEffect(() => {
-    if (currentUser) {
-      loadHistory();
-      // On the map, we want the compass fixed to North (0)
-      setUI({ heading: 0 });
-    }
-  }, [currentUser, setUI]);
-
-  const loadHistory = async () => {
+  const loadHistory = useCallback(async () => {
     if (!currentUser) return;
     const history = await fetchLocationHistory(currentUser.uid);
     setLocations(history);
@@ -50,15 +42,23 @@ const Dashboard: React.FC = () => {
         setHasLocation(true);
       });
     }
-  };
+  }, [currentUser]);
+
+  useEffect(() => {
+    if (currentUser) {
+      loadHistory();
+      // On the map, we want the compass fixed to North (0)
+      setUI({ heading: 0 });
+    }
+  }, [currentUser, setUI, loadHistory]);
 
   const updateCompassMarkers = useCallback((center: L.LatLng) => {
     const newMarkers = locations.map(loc => {
       const y = Math.sin(loc.lng - center.lng) * Math.cos(loc.lat);
       const x = Math.cos(center.lat) * Math.sin(loc.lat) -
                 Math.sin(center.lat) * Math.cos(loc.lat) * Math.cos(loc.lng - center.lng);
-      let bearing = (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
-      let relativeBearing = (bearing - ui.heading + 540) % 360 - 180;
+      const bearing = (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
+      const relativeBearing = (bearing - ui.heading + 540) % 360 - 180;
       
       return {
         id: loc.id || Math.random().toString(),

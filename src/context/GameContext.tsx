@@ -79,7 +79,7 @@ interface GameContextType {
   spendSkillPoint: (perkId: string) => void;
   castSpell: (cost: number, spellName: string) => boolean;
   completeQuest: (skillName: string) => void;
-  useItem: (item: InventoryItem) => void;
+  consumeItem: (item: InventoryItem) => void;
   toggleEquip: (uid: string) => void;
   advanceLevel: (attribute: 'health' | 'magicka' | 'stamina') => void;
   updateDisplayName: (newName: string) => void;
@@ -321,14 +321,14 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     }
     const finalAmount = Math.floor(amount * multiplier);
-    let updates: any = {};
+    const updates: Record<string, any> = {};
     
     let charXP = stats.xp;
     let charXPNext = stats.xpToNextLevel;
     let charPending = stats.pendingLevelUps;
 
     if (skillName && stats.skills[skillName]) {
-      let s = { ...stats.skills[skillName] };
+      const s = { ...stats.skills[skillName] };
       s.xp += finalAmount;
       if (s.xp >= s.xpToNextLevel) {
         s.xp -= s.xpToNextLevel;
@@ -361,7 +361,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!currentUser || stats.pendingLevelUps <= 0) return;
     const uid = currentUser.uid;
     const docRef = doc(db, 'userStats', uid);
-    let updates: any = {
+    const updates: Record<string, any> = {
       level: stats.level + 1,
       pendingLevelUps: stats.pendingLevelUps - 1,
       skillPoints: stats.skillPoints + 1
@@ -378,7 +378,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!currentUser) return;
     const uid = currentUser.uid;
     const newCount = stats.completedQuestCount + 1;
-    let updates: any = { completedQuestCount: newCount };
+    const updates: Record<string, any> = { completedQuestCount: newCount };
     playSound('QUEST_COMPLETE');
     if (newCount % 5 === 0) {
       const template = LOOT_TABLE[Math.floor(Math.random() * LOOT_TABLE.length)];
@@ -390,11 +390,11 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     addXP(40, skillName);
   };
 
-  const useItem = async (item: InventoryItem) => {
+  const consumeItem = async (item: InventoryItem) => {
     if (!currentUser) return;
     const uid = currentUser.uid;
     const docRef = doc(db, 'userStats', uid);
-    let updates: any = { inventory: stats.inventory.filter(i => i.uid !== item.uid) };
+    const updates: any = { inventory: stats.inventory.filter(i => i.uid !== item.uid) };
     playSound('ITEM_USE');
     if (item.effectType === 'RESTORE_HEALTH') updates.health = Math.min(stats.health + (item.effectValue || 0), stats.healthMax);
     if (item.effectType === 'RESTORE_MAGICKA') updates.magicka = Math.min(stats.magicka + (item.effectValue || 0), stats.magickaMax);
@@ -455,7 +455,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <GameContext.Provider value={{ stats, notification, worldMessages, activeEffects, ui, setUI, addXP, updateAttributes, notify, spendSkillPoint, castSpell, completeQuest, useItem, toggleEquip, advanceLevel, updateDisplayName, updateRace, startSurge, startSlowTime, toggleZenMode, addWorldMessage }}>
+    <GameContext.Provider value={{ stats, notification, worldMessages, activeEffects, ui, setUI, addXP, updateAttributes, notify, spendSkillPoint, castSpell, completeQuest, consumeItem, toggleEquip, advanceLevel, updateDisplayName, updateRace, startSurge, startSlowTime, toggleZenMode, addWorldMessage }}>
       {children}
     </GameContext.Provider>
   );
