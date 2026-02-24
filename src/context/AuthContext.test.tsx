@@ -16,7 +16,7 @@ describe('AuthContext', () => {
 
   it('shows loading initially and then the user', async () => {
     let authCallback: any;
-    (onAuthStateChanged as any).mockImplementation((auth: any, callback: any) => {
+    (onAuthStateChanged as any).mockImplementation((_auth: any, callback: any) => {
       authCallback = callback;
       return () => {};
     });

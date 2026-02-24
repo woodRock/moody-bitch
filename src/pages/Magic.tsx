@@ -56,7 +56,7 @@ const SHOUTS: Spell[] = [
 const SCHOOLS = ['ALL', 'SHOUTS', 'ALTERATION', 'CONJURATION', 'ILLUSION', 'RESTORATION', 'ACTIVE EFFECTS'];
 
 const Magic: React.FC = () => {
-  const { stats, activeEffects, castSpell, notify, setUI, addXP, startSurge, startSlowTime, toggleZenMode, ui } = useGame();
+  const { stats, activeEffects, castSpell, notify, setUI, addXP, startSurge, startSlowTime, toggleZenMode } = useGame();
   const { playSound } = useSound();
   const [selectedSchool, setSelectedSchool] = useState('ALL');
   const [selectedSpell, setSelectedSpell] = useState<Spell | null>(null);

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { captureLocation, fetchLocationHistory } from './locationService';
-import { addDoc, collection, Timestamp, getDocs } from 'firebase/firestore';
+import { addDoc, getDocs } from 'firebase/firestore';
 
 vi.mock('firebase/firestore', () => ({
   collection: vi.fn(),
