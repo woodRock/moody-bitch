@@ -27,7 +27,7 @@ import {
 } from 'recharts';
 import { generateQuestLore } from '../../services/loreService';
 import { captureLocation } from '../../services/locationService';
-import { useTrackpadSwipe } from '../../hooks/useTrackpadSwipe';
+import { useTrackpadSwipe as _useTrackpadSwipe } from '../../hooks/useTrackpadSwipe';
 import AddLogModal from './AddLogModal';
 import '../../styles/Skyrim.css';
 
@@ -56,13 +56,13 @@ interface PauseMenuProps {
 }
 
 type Tab = 'QUESTS' | 'STATS' | 'JOURNAL';
+const TABS: Tab[] = ['QUESTS', 'STATS', 'JOURNAL'];
 
 const PauseMenu: React.FC<PauseMenuProps> = ({ isOpen, onClose }) => {
   const { stats, completeQuest } = useGame();
   const { playSound } = useSound();
   const { currentUser } = useAuth();
   const [activeTab, setActiveTab] = useState<Tab>('QUESTS');
-  const TABS: Tab[] = ['QUESTS', 'STATS', 'JOURNAL'];
   
   const [quests, setQuests] = useState<Quest[]>([]);
   const [selectedQuest, setSelectedQuest] = useState<Quest | null>(null);
@@ -77,41 +77,7 @@ const PauseMenu: React.FC<PauseMenuProps> = ({ isOpen, onClose }) => {
   const [isAddQuestModalOpen, setIsAddQuestModalOpen] = useState(false);
   const [isAddLogModalOpen, setIsAddLogModalOpen] = useState(false);
 
-  useEffect(() => {
-    if (isOpen && currentUser) {
-      fetchData();
-    }
-  }, [isOpen, currentUser]);
-
-  const sortQuests = (list: Quest[]) => {
-    return [...list].sort((a, b) => (a.completed === b.completed ? 0 : a.completed ? 1 : -1));
-  };
-
-  const handleSwipe = useCallback((direction: 'UP' | 'DOWN' | 'LEFT' | 'RIGHT') => {
-    if (isAddQuestModalOpen || isAddLogModalOpen) return;
-    const currentIndex = TABS.indexOf(activeTab);
-    if (direction === 'RIGHT') {
-      const nextIndex = Math.min(currentIndex + 1, TABS.length - 1);
-      if (nextIndex !== currentIndex) {
-        setActiveTab(TABS[nextIndex]);
-        playSound('UI_CLICK');
-      }
-    } else if (direction === 'LEFT') {
-      const prevIndex = Math.max(currentIndex - 1, 0);
-      if (prevIndex !== currentIndex) {
-        setActiveTab(TABS[prevIndex]);
-        playSound('UI_CLICK');
-      }
-    }
-  }, [activeTab, isAddQuestModalOpen, isAddLogModalOpen, playSound]);
-
-  useTrackpadSwipe({ 
-    onSwipe: handleSwipe,
-    threshold: 100,
-    cooldown: 400 
-  });
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     if (!currentUser) return;
     try {
       const qQuests = query(collection(db, 'quests'), where('userId', '==', currentUser.uid));
@@ -143,7 +109,41 @@ const PauseMenu: React.FC<PauseMenuProps> = ({ isOpen, onClose }) => {
     } catch (error) {
       console.error("Error fetching data:", error);
     }
+  }, [currentUser, selectedQuest, selectedEntry]);
+
+  useEffect(() => {
+    if (isOpen && currentUser) {
+      fetchData();
+    }
+  }, [isOpen, currentUser, fetchData]);
+
+  const sortQuests = (list: Quest[]) => {
+    return [...list].sort((a, b) => (a.completed === b.completed ? 0 : a.completed ? 1 : -1));
   };
+
+  const _handleSwipe = useCallback((direction: 'UP' | 'DOWN' | 'LEFT' | 'RIGHT') => {
+    if (isAddQuestModalOpen || isAddLogModalOpen) return;
+    const currentIndex = TABS.indexOf(activeTab);
+    if (direction === 'RIGHT') {
+      const nextIndex = Math.min(currentIndex + 1, TABS.length - 1);
+      if (nextIndex !== currentIndex) {
+        setActiveTab(TABS[nextIndex]);
+        playSound('UI_CLICK');
+      }
+    } else if (direction === 'LEFT') {
+      const prevIndex = Math.max(currentIndex - 1, 0);
+      if (prevIndex !== currentIndex) {
+        setActiveTab(TABS[prevIndex]);
+        playSound('UI_CLICK');
+      }
+    }
+  }, [activeTab, isAddQuestModalOpen, isAddLogModalOpen, playSound]);
+
+  _useTrackpadSwipe({ 
+    onSwipe: _handleSwipe,
+    threshold: 100,
+    cooldown: 400 
+  });
 
   const addQuest = async (e: React.FormEvent) => {
     e.preventDefault();

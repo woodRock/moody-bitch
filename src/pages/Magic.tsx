@@ -139,7 +139,7 @@ const Magic: React.FC = () => {
       const prompt = `Reframe this negative thought into a constructive, positive lesson in the style of a wise Skyrim mage: "${negativeThought}"`;
       const result = await generateQuestLore(prompt, 'one-off'); 
       setTransmutedThought(result);
-    } catch (e) {
+    } catch (_e) {
       setTransmutedThought("The stars are cloudy. Try again later.");
     } finally {
       setIsTransmuting(false);

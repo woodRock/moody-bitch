@@ -73,7 +73,7 @@ export const SoundProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       gain.connect(ctx.destination);
       osc.start();
       osc.stop(ctx.currentTime + 0.2);
-    } catch (e) {
+    } catch (_e) {
       // Ignore fallback errors
     }
   };
@@ -97,7 +97,7 @@ export const SoundProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         console.warn("Audio play blocked or failed:", err);
         playFallback();
       });
-    } catch (e) {
+    } catch (_e) {
       playFallback();
     }
   };

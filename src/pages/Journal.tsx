@@ -154,7 +154,7 @@ const Journal: React.FC = () => {
       </div>
 
       <div className="book-wrapper">
-        {/* @ts-ignore: HTMLFlipBook types can be tricky */}
+        {/* @ts-expect-error: HTMLFlipBook types can be tricky */}
         <HTMLFlipBook
           width={400}
           height={600}

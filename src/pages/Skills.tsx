@@ -48,7 +48,7 @@ const Skills: React.FC = () => {
       const container = scrollRef.current;
       container.scrollTo({ left: currentIndex * window.innerWidth, behavior: 'instant' });
     }
-  }, [selectedSkill]);
+  }, [selectedSkill, currentIndex]);
 
   const handleScroll = () => {
     if (scrollRef.current && !selectedSkill) {
@@ -105,11 +105,12 @@ const Skills: React.FC = () => {
   };
 
   // Play level up sound when modal appears
+  const shouldPlayLevelUp = stats.pendingLevelUps > 0 && !selectedSkill && !ui.isPauseMenuOpen && !ui.isMenuOpen;
   useEffect(() => {
-    if (stats.pendingLevelUps > 0 && !selectedSkill && !ui.isPauseMenuOpen && !ui.isMenuOpen) {
+    if (shouldPlayLevelUp) {
       playSound('LEVEL_UP');
     }
-  }, [stats.pendingLevelUps, !!selectedSkill, ui.isPauseMenuOpen, ui.isMenuOpen]);
+  }, [shouldPlayLevelUp, playSound]);
 
   return (
     <div className="skills-container" style={{ background: 'radial-gradient(circle at center, #0a0e14 0%, #000 100%)', width: '100vw', height: '100vh', overflow: 'hidden', position: 'relative' }}>
