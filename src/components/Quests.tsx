@@ -30,11 +30,7 @@ const Quests: React.FC = () => {
   const [newQuestType, setNewQuestType] = useState<'daily' | 'one-off'>('one-off');
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchQuests();
-  }, [currentUser]);
-
-  const fetchQuests = async () => {
+  const fetchQuests = useCallback(async () => {
     if (!currentUser) return;
     try {
       const q = query(collection(db, 'quests'), where('userId', '==', currentUser.uid));
@@ -68,7 +64,11 @@ const Quests: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentUser]);
+
+  useEffect(() => {
+    fetchQuests();
+  }, [fetchQuests]);
 
   const addQuest = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -137,7 +137,7 @@ const Quests: React.FC = () => {
         />
         <select 
           value={newQuestType} 
-          onChange={(e) => setNewQuestType(e.target.value as any)}
+          onChange={(e) => setNewQuestType(e.target.value as 'daily' | 'one-off')}
           className="form-input parchment-input"
           style={{ width: 'auto', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--skyrim-gold-dim)', color: '#fff' }}
         >

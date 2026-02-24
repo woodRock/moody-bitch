@@ -8,7 +8,7 @@ import '../styles/Skyrim.css';
 const CATEGORIES = ['ALL', 'APPAREL', 'POTIONS', 'BOOKS', 'MISC'];
 
 const Inventory: React.FC = () => {
-  const { stats, useItem, setUI, toggleEquip } = useGame();
+  const { stats, consumeItem, setUI, toggleEquip } = useGame();
   const { playSound } = useSound();
   const [selectedCategory, setSelectedCategory] = useState('ALL');
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
@@ -43,7 +43,7 @@ const Inventory: React.FC = () => {
       if (selectedItem.category === 'APPAREL') {
         toggleEquip(selectedItem.uid);
       } else {
-        useItem(selectedItem);
+        consumeItem(selectedItem);
         setSelectedItem(null);
       }
     }

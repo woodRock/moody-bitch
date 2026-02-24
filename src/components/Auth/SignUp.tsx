@@ -22,7 +22,7 @@ const SignUp: React.FC = () => {
       setLoading(true);
       await signUp(email, password);
       navigate('/dashboard');
-    } catch (err) {
+    } catch (_err) {
       setError('Failed to create an account.');
     }
     setLoading(false);
@@ -34,7 +34,7 @@ const SignUp: React.FC = () => {
       setLoading(true);
       await signInWithGoogle();
       navigate('/dashboard');
-    } catch (err) {
+    } catch (_err) {
       setError('Failed to sign up with Google.');
     }
     setLoading(false);

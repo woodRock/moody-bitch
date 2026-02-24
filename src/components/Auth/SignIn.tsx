@@ -18,7 +18,7 @@ const SignIn: React.FC = () => {
       setLoading(true);
       await signIn(email, password);
       navigate('/dashboard');
-    } catch (err) {
+    } catch (_err) {
       setError('Failed to log in. Check your credentials.');
     }
     setLoading(false);
@@ -30,7 +30,7 @@ const SignIn: React.FC = () => {
       setLoading(true);
       await signInWithGoogle();
       navigate('/dashboard');
-    } catch (err) {
+    } catch (_err) {
       setError('Failed to sign in with Google.');
     }
     setLoading(false);
