@@ -35,7 +35,6 @@ Check out the full article here: [**Skyrim Wellbeing Manager: Turning Life into 
 
 ## ✨ Features
 
-- **🐧 Reactive 3D Penguin Companion:** A Three.js penguin model that lives on your dashboard. Its mood, energy levels, and even eye color change based on your recorded wellbeing metrics.
 - **⚔️ Quest-Based Habit Tracking:** Turn your daily goals (exercise, meditation, reading) into quests. Completing them grants XP, skill increases, and "loot" items.
 - **📜 AI-Powered Lore Generation:** Integration with **Google Gemini API** to transform your mundane tasks into atmospheric Skyrim-style chronicles.
 - **🌌 Literal Skill Tree:** Level up your real-life skills through a constellation-based perk system. Unlock new perks as you grow.
