@@ -1,7 +1,7 @@
 // src/services/loreService.ts
 
 const getApiKey = () => import.meta.env.VITE_GOOGLE_API_KEY;
-const MODEL = "gemini-3-flash-preview"; 
+const MODEL = "gemini-3.1-pro-preview"; 
 
 export const generateQuestLore = async (title: string, type: 'daily' | 'one-off'): Promise<string> => {
   const apiKey = getApiKey();
