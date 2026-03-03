@@ -54,9 +54,14 @@ const Dashboard: React.FC = () => {
 
   const updateCompassMarkers = useCallback((center: L.LatLng) => {
     const newMarkers = locations.map(loc => {
-      const y = Math.sin(loc.lng - center.lng) * Math.cos(loc.lat);
-      const x = Math.cos(center.lat) * Math.sin(loc.lat) -
-                Math.sin(center.lat) * Math.cos(loc.lat) * Math.cos(loc.lng - center.lng);
+      const toRad = (deg: number) => deg * Math.PI / 180;
+      const lat1 = toRad(center.lat);
+      const lat2 = toRad(loc.lat);
+      const dLng = toRad(loc.lng - center.lng);
+
+      const y = Math.sin(dLng) * Math.cos(lat2);
+      const x = Math.cos(lat1) * Math.sin(lat2) -
+                Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLng);
       const bearing = (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
       const relativeBearing = (bearing - ui.heading + 540) % 360 - 180;
       

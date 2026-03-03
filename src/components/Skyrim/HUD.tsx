@@ -19,7 +19,7 @@ const HUD: React.FC<HUDProps> = ({
   if (isZenMode) return null;
 
   const degreeToPixels = 400 / 360;
-  const offset = 200 - (ui.heading * degreeToPixels);
+  const offset = -(ui.heading * degreeToPixels);
 
   return (
     <>
