@@ -67,9 +67,16 @@ export interface UserStats {
   trackLocation: boolean;
   /** Longest run of consecutive days with a log entry. */
   bestStreak: number;
+  /** Completed quests per skill: the evidence perks are unlocked with. */
+  questCompletions: Record<string, number>;
+  /** When health/magicka/stamina were last materialised; they decay slowly over time. */
+  vitalsUpdatedAt: number;
+  /** Standing Stone blessing (see game/stones.ts) and when it was last changed. */
+  standingStone: string | null;
+  stoneChangedAt: number;
 }
 
-export type QuestType = 'daily' | 'one-off';
+export type QuestType = 'daily' | 'weekly' | 'one-off';
 
 export interface Quest {
   id: string;

@@ -11,6 +11,10 @@ import {
   signInWithPopup,
   signInWithRedirect,
   getRedirectResult,
+  deleteUser,
+  reauthenticateWithCredential,
+  reauthenticateWithPopup,
+  EmailAuthProvider,
 } from 'firebase/auth';
 import type { User, UserCredential } from 'firebase/auth';
 import { auth } from '../firebaseConfig';
@@ -23,6 +27,8 @@ interface AuthContextType {
   signInWithGoogle: () => Promise<UserCredential | void>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
+  /** Permanently delete the Firebase account. May need the password to re-authenticate. */
+  deleteAccount: (password?: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -47,6 +53,9 @@ export function describeAuthError(err: unknown): string {
     case 'auth/popup-closed-by-user':
     case 'auth/cancelled-popup-request': return 'Sign-in was cancelled.';
     case 'auth/operation-not-allowed': return 'That way into the realm is not open on this server.';
+    case 'auth/wrong-password':
+    case 'auth/invalid-credential': return 'That pass-phrase is not yours.';
+    case 'auth/requires-recent-login': return 'The gate needs your pass-phrase again before it will do that.';
     default: return 'The gate did not open. Check your details and try again.';
   }
 }
@@ -88,6 +97,23 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     },
     signOut: () => firebaseSignOut(auth),
     resetPassword: email => sendPasswordResetEmail(auth, email),
+    deleteAccount: async password => {
+      const user = auth.currentUser;
+      if (!user) throw new Error('not signed in');
+      try {
+        await deleteUser(user);
+      } catch (err) {
+        if ((err as { code?: string }).code !== 'auth/requires-recent-login') throw err;
+        if (user.providerData.some(p => p.providerId === 'google.com')) {
+          await reauthenticateWithPopup(user, new GoogleAuthProvider());
+        } else if (password && user.email) {
+          await reauthenticateWithCredential(user, EmailAuthProvider.credential(user.email, password));
+        } else {
+          throw err;
+        }
+        await deleteUser(user);
+      }
+    },
   }), [currentUser, loading]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

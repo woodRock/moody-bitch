@@ -3,7 +3,8 @@ import { useGame } from '../context/GameContext';
 import { useSound } from '../context/SoundContext';
 import { CONSTELLATIONS } from '../data/constellations';
 import type { Constellation } from '../data/constellations';
-import { canUnlock } from '../game/perks';
+import { perkStatus } from '../game/perks';
+import StandingStones from '../components/Skyrim/StandingStones';
 import { RACES } from '../game/spells';
 import { LIMITS } from '../game/rules';
 import Modal from '../components/Skyrim/Modal';
@@ -18,9 +19,13 @@ const MobileSkills: React.FC = () => {
   const [race, setRace] = useState(stats.race);
 
   const unlock = async (con: Constellation, perkId: string) => {
-    if (stats.perks.includes(perkId)) return;
+    const perk = con.perks.find(p => p.id === perkId);
+    if (!perk) return;
+    const st = perkStatus(con, perk, stats);
+    if (st.owned) return;
+    if (!st.linked) { notify('CANNOT UNLOCK', 'Prerequisite perk required.'); return; }
+    if (st.have < st.need) { notify('NOT YET EARNED', `${st.need - st.have} MORE ${con.skillKey} QUESTS`); return; }
     if (stats.skillPoints <= 0) { notify('NO PERK POINTS', 'Level up to earn more.'); return; }
-    if (!canUnlock(con, perkId, stats.perks)) { notify('CANNOT UNLOCK', 'Prerequisite perk required.'); return; }
     await spendSkillPoint(perkId);
   };
 
@@ -44,6 +49,7 @@ const MobileSkills: React.FC = () => {
         <span className="skyrim-font">PERKS TO SPEND</span>
         <span className="skyrim-font gold big">{stats.skillPoints}</span>
       </div>
+      <div className="m-card"><StandingStones /></div>
 
       {CONSTELLATIONS.map(con => {
         const skill = stats.skills[con.skillKey] ?? { level: 0, xp: 0, xpToNextLevel: 100 };
@@ -69,15 +75,15 @@ const MobileSkills: React.FC = () => {
             <p className="skyrim-serif muted">{open.description}</p>
             <div className="skyrim-font" style={{ marginBottom: '1rem' }}>AVAILABLE POINTS: <span className="gold">{stats.skillPoints}</span></div>
             {open.perks.map(p => {
-              const owned = stats.perks.includes(p.id);
-              const available = !owned && canUnlock(open, p.id, stats.perks);
+              const st = perkStatus(open, p, stats);
               return (
-                <div key={p.id} className={`m-perk ${owned ? 'owned' : available ? 'available' : 'locked'}`}>
+                <div key={p.id} className={`m-perk ${st.owned ? 'owned' : st.available ? 'available' : 'locked'}`}>
                   <div>
-                    <div className="skyrim-font">{owned ? '★ ' : available ? '☆ ' : '· '}{p.name}</div>
+                    <div className="skyrim-font">{st.owned ? '★ ' : st.available ? '☆ ' : '· '}{p.name}</div>
                     <div className="skyrim-serif muted small">{p.description}</div>
+                    {!st.owned && <div className="skyrim-font evidence">{!st.linked ? 'NEEDS THE LINKED STAR' : `${Math.min(st.have, st.need)}/${st.need} ${open.skillKey} QUESTS`}</div>}
                   </div>
-                  {!owned && <button className="btn-ghost small skyrim-font" disabled={!available || stats.skillPoints <= 0} onClick={() => void unlock(open, p.id)}>UNLOCK</button>}
+                  {!st.owned && <button className="btn-ghost small skyrim-font" disabled={!st.available || stats.skillPoints <= 0} onClick={() => void unlock(open, p.id)}>UNLOCK</button>}
                 </div>
               );
             })}

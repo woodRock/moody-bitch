@@ -2,7 +2,7 @@
   "name": "Skyrim Wellbeing Manager",
   "short_name": "Dragonborn",
   "description": "A Skyrim-themed habit and mood tracker. Turn your day into quests, level up your real skills.",
-  "start_url": "./dashboard",
+  "start_url": "./today",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",

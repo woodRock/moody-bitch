@@ -13,6 +13,10 @@ vi.mock('firebase/auth', () => ({
   signInWithPopup: vi.fn(),
   signInWithRedirect: vi.fn(),
   getRedirectResult: vi.fn(() => Promise.resolve(null)),
+  deleteUser: vi.fn(),
+  reauthenticateWithCredential: vi.fn(),
+  reauthenticateWithPopup: vi.fn(),
+  EmailAuthProvider: { credential: vi.fn() },
   connectAuthEmulator: vi.fn(),
 }));
 

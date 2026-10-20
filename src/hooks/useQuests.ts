@@ -16,7 +16,7 @@ function toQuest(id: string, d: Partial<Quest>): Quest {
     id,
     title: typeof d.title === 'string' ? d.title : '(untitled)',
     description: typeof d.description === 'string' ? d.description : '',
-    type: d.type === 'daily' ? 'daily' : 'one-off',
+    type: d.type === 'daily' || d.type === 'weekly' ? d.type : 'one-off',
     skill: typeof d.skill === 'string' ? d.skill : 'RESTORATION',
     completed: d.completed === true,
     lastCompleted: d.lastCompleted,
@@ -84,7 +84,7 @@ export function useQuests() {
         lastCompleted: done ? Timestamp.now() : (quest.lastCompleted ?? null),
       });
       if (done) {
-        await completeQuest(quest.skill);
+        await completeQuest(quest.skill, quest.type);
         if (stats.trackLocation) void captureLocation(currentUser.uid, `Completed: ${quest.title}`);
       }
     } catch (error) {

@@ -5,7 +5,8 @@
 .mobile-system { width: 44px; height: 44px; background: rgba(0, 0, 0, 0.5); border: 1px solid var(--skyrim-gold-dim); color: #ccc; font-size: 1.1rem; cursor: pointer; flex-shrink: 0; }
 .mobile-level { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; font-size: 0.65rem; color: #ccc; min-width: 64px; cursor: pointer; }
 .mobile-level .xp-bar-bg { width: 64px; height: 5px; flex: none; }
-.mobile-world-messages { position: fixed; top: calc(4rem + var(--safe-top)); left: 0.75rem; z-index: 50; pointer-events: none; display: flex; flex-direction: column; gap: 0.3rem; }
+.mobile-world-messages { position: fixed; bottom: calc(132px + var(--safe-bottom)); left: 0.75rem; right: 0.75rem; z-index: 50; pointer-events: none; display: flex; flex-direction: column; gap: 0.3rem; text-align: center; }
+.mobile-world-messages .world-message { font-size: 0.68rem; background: rgba(0, 0, 0, 0.6); padding: 0.3rem 0.6rem; }
 .mobile-content { flex: 1; min-height: 0; padding-bottom: calc(118px + var(--safe-bottom)); }
 .mobile-content.flush { padding-bottom: 0; }
 .mobile-bottom { position: fixed; bottom: 0; left: 0; right: 0; z-index: 900; background: linear-gradient(to top, #000 60%, rgba(0, 0, 0, 0.9)); padding-bottom: var(--safe-bottom); }
@@ -77,3 +78,6 @@
 .is-mobile .skyrim-banner { top: 30%; }
 .is-mobile .entry-vitals { gap: 1rem; font-size: 0.75rem; }
 .is-mobile .setting-row { gap: 1rem; }
+.is-mobile .vital-row { grid-template-columns: 76px 1fr 62px; }
+.is-mobile .today-card { padding: 1rem; }
+.is-mobile .stones-grid { grid-template-columns: 1fr 1fr; }

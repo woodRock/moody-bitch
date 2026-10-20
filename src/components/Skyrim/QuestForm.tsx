@@ -40,6 +40,7 @@ const QuestForm: React.FC<QuestFormProps> = ({ onSubmit, onDone, onCancel, addin
         <select id="quest-type" className="parchment-input dark" value={type} onChange={e => setType(e.target.value as QuestType)}>
           <option value="one-off">Side Quest (once)</option>
           <option value="daily">Daily Misc (resets at midnight)</option>
+          <option value="weekly">Bounty (once a week, triple XP, guaranteed loot)</option>
         </select>
       </div>
       <div className="form-actions">

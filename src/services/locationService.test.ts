@@ -12,7 +12,8 @@ vi.mock('firebase/firestore', () => ({
   limit: vi.fn(),
   writeBatch: vi.fn(),
   Timestamp: {
-    now: vi.fn(() => ({ seconds: 1234567890, nanoseconds: 0 }))
+    now: vi.fn(() => ({ seconds: 1234567890, nanoseconds: 0 })),
+    fromDate: vi.fn((d: Date) => ({ seconds: Math.floor(d.getTime() / 1000), nanoseconds: 0 })),
   }
 }));
 
@@ -35,6 +36,7 @@ describe('locationService', () => {
       ),
     };
     vi.stubGlobal('navigator', { geolocation: mockGeolocation });
+    (vi.mocked(getDocs) as any).mockResolvedValue({ docs: [], empty: true, size: 0 });
   });
 
   it('captures location and saves to firestore', async () => {
@@ -49,6 +51,12 @@ describe('locationService', () => {
       lng: -0.1278,
       label
     }));
+  });
+
+  it('skips a point when the player was already recorded nearby today', async () => {
+    (vi.mocked(getDocs) as any).mockResolvedValue({ docs: [{ data: () => ({ lat: 51.5075, lng: -0.1279 }) }], empty: false, size: 1 });
+    await captureLocation('user-123', 'Again');
+    expect(addDoc).not.toHaveBeenCalled();
   });
 
   it('warns if geolocation is not supported', async () => {

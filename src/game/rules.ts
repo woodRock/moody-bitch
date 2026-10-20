@@ -3,11 +3,13 @@
  * function is unit-testable and can be applied inside a Firestore
  * transaction against the freshest copy of the player's stats.
  */
-import type { InventoryItem, MoodEntry, Quest, SkillData, UserStats } from './types';
+import type { InventoryItem, MoodEntry, Quest, QuestType, SkillData, UserStats } from './types';
 import { SKILL_KEYS } from './types';
+import { stoneById } from './stones';
 
 export const XP = {
   QUEST: 40,
+  BOUNTY: 120,
   DAILY_LOG: 50,
   LOG_SKILL: 20,
   HIGH_ENERGY_BONUS: 30,
@@ -28,6 +30,10 @@ export const LIMITS = {
 } as const;
 
 export const LOOT_EVERY_N_QUESTS = 5;
+
+/** Vitals drift down between logs: points per hour, never below the floor. */
+export const DECAY_PER_HOUR = 2;
+export const DECAY_FLOOR = 5;
 export const MAX_INVENTORY = 60;
 
 export const DEFAULT_SKILL: SkillData = { level: 15, xp: 0, xpToNextLevel: 100 };
@@ -71,7 +77,20 @@ export function initialStats(name: string): UserStats {
     zenMode: false,
     trackLocation: true,
     bestStreak: 0,
+    questCompletions: {},
+    vitalsUpdatedAt: Date.now(),
+    standingStone: null,
+    stoneChangedAt: 0,
   };
+}
+
+function normalizeCounts(v: unknown): Record<string, number> {
+  if (!v || typeof v !== 'object') return {};
+  const out: Record<string, number> = {};
+  for (const [k, n] of Object.entries(v as Record<string, unknown>)) {
+    if (typeof k === 'string' && k.length <= 32 && typeof n === 'number' && Number.isFinite(n) && n >= 0) out[k] = Math.round(n);
+  }
+  return out;
 }
 
 /** Coerce whatever is in Firestore into a well-formed UserStats. Never trusts shape. */
@@ -113,6 +132,10 @@ export function normalizeStats(data: Record<string, unknown> | undefined, fallba
     zenMode: d.zenMode === true,
     trackLocation: d.trackLocation !== false,
     bestStreak: Math.max(0, Math.round(num(d.bestStreak, 0))),
+    questCompletions: normalizeCounts(d.questCompletions),
+    vitalsUpdatedAt: num(d.vitalsUpdatedAt, 0),
+    standingStone: typeof d.standingStone === 'string' && stoneById(d.standingStone) ? d.standingStone : null,
+    stoneChangedAt: num(d.stoneChangedAt, 0),
   };
 }
 
@@ -137,6 +160,8 @@ export function xpMultiplier(stats: UserStats, skill: string | undefined, now: n
       m *= eq.effectValue ?? 1;
     }
   }
+  const stone = stoneById(stats.standingStone);
+  if (stone && skill && (stone.skills.length === 0 || (stone.skills as string[]).includes(skill))) m *= stone.multiplier;
   return m;
 }
 
@@ -246,16 +271,42 @@ function addDays(date: Date, n: number): Date {
   return d;
 }
 
+/** Monday-based week key, e.g. 2026-W43. */
+export function weekKey(date: Date): string {
+  const d = new Date(date);
+  d.setHours(0, 0, 0, 0);
+  const day = (d.getDay() + 6) % 7; // Monday = 0
+  d.setDate(d.getDate() - day);
+  return `W${dayKey(d)}`;
+}
+
 /**
- * Whether a quest currently counts as done. Dailies reset at local midnight
- * without needing a write: a daily completed yesterday is simply not done today.
+ * Whether a quest currently counts as done. Dailies reset at local midnight and
+ * bounties on Monday, without needing a write: a daily completed yesterday is
+ * simply not done today.
  */
 export function isQuestDone(quest: Pick<Quest, 'type' | 'completed' | 'lastCompleted'>, now = new Date()): boolean {
   if (!quest.completed) return false;
-  if (quest.type !== 'daily') return true;
+  if (quest.type === 'one-off') return true;
   if (!quest.lastCompleted) return false;
-  return dayKey(quest.lastCompleted.toDate()) === dayKey(now);
+  const then = quest.lastCompleted.toDate();
+  return quest.type === 'daily' ? dayKey(then) === dayKey(now) : weekKey(then) === weekKey(now);
 }
+
+/**
+ * Vitals drift down since they were last set. A document that has never been
+ * stamped (legacy players) does not decay until its next write.
+ */
+export function applyDecay(stats: UserStats, now = Date.now()): UserStats {
+  if (!stats.vitalsUpdatedAt || now <= stats.vitalsUpdatedAt) return stats;
+  const hours = (now - stats.vitalsUpdatedAt) / 3_600_000;
+  const drop = hours * DECAY_PER_HOUR;
+  if (drop < 0.5) return stats;
+  const dec = (v: number) => Math.max(Math.min(v, DECAY_FLOOR), Math.round(v - drop));
+  return { ...stats, health: dec(stats.health), magicka: dec(stats.magicka), stamina: dec(stats.stamina), vitalsUpdatedAt: now };
+}
+
+const TYPE_ORDER: Record<QuestType, number> = { daily: 0, weekly: 1, 'one-off': 2 };
 
 /**
  * Consecutive days (ending today or yesterday) with at least one log entry.
@@ -287,7 +338,7 @@ export function sortQuests(list: Quest[], now = new Date()): Quest[] {
     const da = isQuestDone(a, now) ? 1 : 0;
     const db = isQuestDone(b, now) ? 1 : 0;
     if (da !== db) return da - db;
-    if (a.type !== b.type) return a.type === 'daily' ? -1 : 1;
+    if (a.type !== b.type) return TYPE_ORDER[a.type] - TYPE_ORDER[b.type];
     return a.title.localeCompare(b.title);
   });
 }

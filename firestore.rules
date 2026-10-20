@@ -37,7 +37,7 @@ service cloud.firestore {
       return onlyKeys(['userId', 'title', 'description', 'type', 'skill', 'completed', 'lastCompleted', 'createdAt'])
         && isStr(d.title, 80) && d.title.size() > 0
         && isStr(d.description, 2000)
-        && d.type in ['daily', 'one-off']
+        && d.type in ['daily', 'weekly', 'one-off']
         && isStr(d.skill, 32)
         && d.completed is bool
         && (!('lastCompleted' in d) || d.lastCompleted == null || isTs(d.lastCompleted))
@@ -49,7 +49,7 @@ service cloud.firestore {
       return c.hasOnly(['title', 'description', 'type', 'skill', 'completed', 'lastCompleted'])
         && (!('title' in c) || (isStr(d.title, 80) && d.title.size() > 0))
         && (!('description' in c) || isStr(d.description, 2000))
-        && (!('type' in c) || d.type in ['daily', 'one-off'])
+        && (!('type' in c) || d.type in ['daily', 'weekly', 'one-off'])
         && (!('skill' in c) || isStr(d.skill, 32))
         && (!('completed' in c) || d.completed is bool)
         && (!('lastCompleted' in c) || d.lastCompleted == null || isTs(d.lastCompleted));
@@ -65,7 +65,8 @@ service cloud.firestore {
       let d = request.resource.data;
       return onlyKeys(['name', 'level', 'xp', 'xpToNextLevel', 'health', 'magicka', 'stamina', 'healthMax', 'magickaMax',
                        'staminaMax', 'skillPoints', 'pendingLevelUps', 'race', 'perks', 'skills', 'inventory', 'equippedItemId',
-                       'completedQuestCount', 'surgeEndTime', 'slowTimeEndTime', 'zenMode', 'trackLocation', 'bestStreak'])
+                       'completedQuestCount', 'surgeEndTime', 'slowTimeEndTime', 'zenMode', 'trackLocation', 'bestStreak',
+                       'questCompletions', 'vitalsUpdatedAt', 'standingStone', 'stoneChangedAt'])
         && isStr(d.name, 24)
         && isNum(d.level, 1, 1000)
         && isNum(d.xp, 0, 10000000) && isNum(d.xpToNextLevel, 1, 100000000)
@@ -80,7 +81,11 @@ service cloud.firestore {
         && isNum(d.completedQuestCount, 0, 1000000)
         && isNum(d.surgeEndTime, 0, 10000000000000) && isNum(d.slowTimeEndTime, 0, 10000000000000)
         && d.zenMode is bool && d.trackLocation is bool
-        && isNum(d.bestStreak, 0, 100000);
+        && isNum(d.bestStreak, 0, 100000)
+        && d.questCompletions is map && d.questCompletions.size() <= 32
+        && isNum(d.vitalsUpdatedAt, 0, 10000000000000)
+        && (d.standingStone == null || isStr(d.standingStone, 24))
+        && isNum(d.stoneChangedAt, 0, 10000000000000);
     }
     match /userStats/{userId} {
       allow read, delete: if isOwner(userId);

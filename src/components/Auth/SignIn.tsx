@@ -14,7 +14,7 @@ const SignIn: React.FC = () => {
   const run = async (fn: () => Promise<unknown>) => {
     setError('');
     setLoading(true);
-    try { await fn(); navigate('/dashboard'); }
+    try { await fn(); navigate('/today'); }
     catch (err) { setError(describeAuthError(err)); }
     finally { setLoading(false); }
   };

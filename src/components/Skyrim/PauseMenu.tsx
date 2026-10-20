@@ -5,8 +5,10 @@ import { useSound } from '../../context/SoundContext';
 import { useAuth } from '../../context/AuthContext';
 import { useQuests } from '../../hooks/useQuests';
 import { useMoodEntries } from '../../hooks/useMoodEntries';
-import { useTrackpadSwipe } from '../../hooks/useTrackpadSwipe';
 import { clearLocationHistory } from '../../services/locationService';
+import { purgeUserData } from '../../services/accountService';
+import StandingStones from './StandingStones';
+import { describeAuthError } from '../../context/AuthContext';
 import Modal from './Modal';
 import LogForm from './LogForm';
 import QuestForm from './QuestForm';
@@ -26,10 +28,31 @@ interface PauseMenuProps {
 export const SystemSettings: React.FC = () => {
   const { stats, setTrackLocation, notify } = useGame();
   const { volume, muted, setVolume, setMuted, playSound } = useSound();
-  const { currentUser, signOut } = useAuth();
+  const { currentUser, signOut, deleteAccount } = useAuth();
   const navigate = useNavigate();
   const [clearing, setClearing] = useState(false);
   const [confirmClear, setConfirmClear] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deletePassword, setDeletePassword] = useState('');
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
+  const usesPassword = !!currentUser?.providerData.some(p => p.providerId === 'password');
+
+  const deleteCharacter = async () => {
+    if (!currentUser || deleting) return;
+    setDeleting(true);
+    setDeleteError('');
+    try {
+      await purgeUserData(currentUser.uid);
+      await deleteAccount(usesPassword ? deletePassword : undefined);
+      navigate('/signin');
+    } catch (err) {
+      console.error('Delete failed', err);
+      setDeleteError(describeAuthError(err));
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   const clearJourney = async () => {
     if (!currentUser) return;
@@ -84,7 +107,26 @@ export const SystemSettings: React.FC = () => {
           <span className="skyrim-serif muted account-email">{currentUser?.email}</span>
           <button className="btn-ghost small danger skyrim-font" onClick={() => void logout()}>QUIT REALM</button>
         </div>
+        <div className="setting-row">
+          <span className="skyrim-font">DELETE CHARACTER<small className="skyrim-serif muted">Erases your account, quests, chronicles and journey. There is no resurrection.</small></span>
+          <button className="btn-ghost small danger skyrim-font" onClick={() => { setDeleteOpen(true); setDeleteError(''); setDeletePassword(''); }}>DELETE</button>
+        </div>
       </section>
+
+      <Modal open={deleteOpen} onClose={() => !deleting && setDeleteOpen(false)} title="DELETE CHARACTER" width={520} className="sheet">
+        <p className="skyrim-serif modal-lead">This removes <b>{stats.name}</b> and everything they ever did: every quest, chronicle and marker on the map, and the account itself. It cannot be undone.</p>
+        {usesPassword && (
+          <div className="input-group">
+            <label className="skyrim-font field-label" htmlFor="del-pass"><span>CONFIRM YOUR PASSWORD</span></label>
+            <input id="del-pass" type="password" autoComplete="current-password" className="parchment-input dark" value={deletePassword} onChange={e => setDeletePassword(e.target.value)} />
+          </div>
+        )}
+        {deleteError && <p className="form-error skyrim-serif" role="alert">{deleteError}</p>}
+        <div className="form-actions">
+          <button className="btn-primary danger skyrim-font" disabled={deleting || (usesPassword && !deletePassword)} onClick={() => void deleteCharacter()}>{deleting ? 'ERASING...' : 'ERASE EVERYTHING'}</button>
+          <button className="btn-ghost skyrim-font" disabled={deleting} onClick={() => setDeleteOpen(false)}>KEEP MY CHARACTER</button>
+        </div>
+      </Modal>
     </div>
   );
 };
@@ -107,15 +149,6 @@ const PauseMenu: React.FC<PauseMenuProps> = ({ isOpen, onClose }) => {
   const selectedEntry: MoodEntry | null = entries.find(e => e.id === selectedEntryId) ?? entries[0] ?? null;
 
   useEffect(() => { setConfirmAbandon(false); }, [selectedQuestId]);
-
-  const handleSwipe = useCallback((direction: 'UP' | 'DOWN' | 'LEFT' | 'RIGHT') => {
-    if (ui.modalDepth > 0) return;
-    const i = TABS.indexOf(activeTab);
-    if (direction === 'RIGHT' && i < TABS.length - 1) { setActiveTab(TABS[i + 1]); playSound('UI_CLICK'); }
-    else if (direction === 'LEFT' && i > 0) { setActiveTab(TABS[i - 1]); playSound('UI_CLICK'); }
-  }, [activeTab, ui.modalDepth, playSound, setActiveTab]);
-
-  useTrackpadSwipe({ onSwipe: handleSwipe, threshold: 100, cooldown: 400, disabled: !isOpen });
 
   if (!isOpen) return null;
 
@@ -208,6 +241,9 @@ const PauseMenu: React.FC<PauseMenuProps> = ({ isOpen, onClose }) => {
                   </div>
                 </div>
                 <div className="skyrim-card">
+                  <StandingStones />
+                </div>
+                <div className="skyrim-card">
                   <h3 className="skyrim-font card-title">SKILLS</h3>
                   <div className="stats-grid">
                     {Object.entries(stats.skills).map(([name, data]) => (
@@ -263,7 +299,7 @@ const PauseMenu: React.FC<PauseMenuProps> = ({ isOpen, onClose }) => {
             {activeTab === 'SYSTEM' && <SystemSettings />}
           </div>
 
-          <div className="pause-footer skyrim-font">[ SCROLL OR CLICK TO CYCLE TABS · ESC TO RESUME ]</div>
+          <div className="pause-footer skyrim-font">[ ESC TO RESUME ]</div>
         </div>
       </div>
 

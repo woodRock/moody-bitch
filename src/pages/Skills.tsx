@@ -7,7 +7,7 @@ import type { Constellation, Perk } from '../data/constellations';
 import { RACES } from '../game/spells';
 import { LIMITS } from '../game/rules';
 import LevelUpOverlay from '../components/Skyrim/LevelUpOverlay';
-import { canUnlock } from '../game/perks';
+import { perkStatus } from '../game/perks';
 
 const NebulaFilters = () => (
   <svg className="nebula-defs" aria-hidden="true">
@@ -71,9 +71,12 @@ const Skills: React.FC = () => {
   });
 
   const tryUnlock = (perk: Perk) => {
-    if (!selectedSkill || stats.perks.includes(perk.id)) return;
+    if (!selectedSkill) return;
+    const st = perkStatus(selectedSkill, perk, stats);
+    if (st.owned) return;
+    if (!st.linked) { notify('CANNOT UNLOCK', 'Prerequisite perk required.'); return; }
+    if (st.have < st.need) { notify('NOT YET EARNED', `${st.need - st.have} MORE ${selectedSkill.skillKey} QUEST${st.need - st.have === 1 ? '' : 'S'}`); return; }
     if (stats.skillPoints <= 0) { notify('NO PERK POINTS', 'Level up to earn more.'); return; }
-    if (!canUnlock(selectedSkill, perk.id, stats.perks)) { notify('CANNOT UNLOCK', 'Prerequisite perk required.'); return; }
     void spendSkillPoint(perk.id);
   };
 
@@ -174,7 +177,7 @@ const Skills: React.FC = () => {
                 })}
                 {selectedSkill.perks.map(p => {
                   const unlocked = stats.perks.includes(p.id); const focused = focusedPerk?.id === p.id;
-                  const available = !unlocked && canUnlock(selectedSkill, p.id, stats.perks);
+                  const available = perkStatus(selectedSkill, p, stats).available;
                   return (
                     <g key={p.id} className={`constellation-star ${unlocked ? 'unlocked' : ''} ${focused ? 'focused' : ''} ${available ? 'available' : ''}`} onClick={() => handleStarClick(p)} role="button" aria-label={p.name}>
                       <circle cx={p.x} cy={p.y} r={unlocked ? 12 : 8} />
@@ -193,11 +196,12 @@ const Skills: React.FC = () => {
                 </div>
                 <div className="perk-info-block">
                   <p className="skyrim-serif">{focusedPerk.description}</p>
-                  {!stats.perks.includes(focusedPerk.id) ? (
-                    <button className="btn-unlock skyrim-font" disabled={stats.skillPoints <= 0} onClick={() => tryUnlock(focusedPerk)}>
-                      {stats.skillPoints > 0 ? 'UNLOCK PERK (1 POINT)' : 'NEED SKILL POINTS'}
-                    </button>
-                  ) : <div className="skyrim-font unlocked-label">[ PERK UNLOCKED ]</div>}
+                  {(() => {
+                    const st = perkStatus(selectedSkill, focusedPerk, stats);
+                    if (st.owned) return <div className="skyrim-font unlocked-label">[ PERK UNLOCKED ]</div>;
+                    const label = !st.linked ? 'PREREQUISITE PERK REQUIRED' : st.have < st.need ? `EARN IT: ${st.have}/${st.need} ${selectedSkill.skillKey} QUESTS` : stats.skillPoints > 0 ? 'UNLOCK PERK (1 POINT)' : 'NEED SKILL POINTS';
+                    return <button className="btn-unlock skyrim-font" disabled={!st.available || stats.skillPoints <= 0} onClick={() => tryUnlock(focusedPerk)}>{label}</button>;
+                  })()}
                 </div>
               </>
             )}

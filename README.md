@@ -15,19 +15,21 @@ Turn your day into quests. Scribe a daily log to keep Health (mood), Stamina (en
 
 👉 **[Hosted version](https://woodrock.github.io/moody-bitch/)** — uses a shared Firebase project. Your data is only readable by your account, but for full ownership host your own (below).
 
-**Desktop** is the full Skyrim experience: trackpad gestures, the four-way character menu (`Tab`), the system menu (`Esc`), the horizon compass and the constellation skill tree.
+**Desktop** is the full Skyrim experience: the four-way character menu (`Tab`), the system menu (`Esc`), the horizon compass and the constellation skill tree.
 
-**Phone** gets the simplified satellite: a thumb-friendly tab bar (Quests · Log · Skills · Magic · Items), bottom sheets instead of overlays, and a compass that turns with your phone's real heading on the map. Add it to your home screen for a standalone app.
+**Phone** gets the simplified satellite: a thumb-friendly tab bar (Today · Quests · Log · Skills · Magic · Items), bottom sheets instead of overlays, and a compass that turns with your phone's real heading on the map. Add it to your home screen for a standalone app.
 
 ---
 
 ## ✨ Features
 
-- **⚔️ Quests** — daily and one-off tasks that grant skill XP. Dailies reset at midnight. Every 5th completed quest drops loot.
+- **⚔️ Quests** — daily tasks, one-off side quests and weekly bounties (triple XP, guaranteed loot). Dailies reset at midnight, bounties on Monday. Every 5th completed quest drops loot.
 - **📜 The Chronicle** — a daily mood/energy/rest log with three triumphs. Streaks grant bonus XP.
-- **🌌 Skill constellations** — eight real-life skills, each a star chart of perks you unlock with points earned from levelling.
+- **🌌 Skill constellations** — eight real-life skills, each a star chart of perks. A perk needs a point, a path through the constellation, and completed quests in that skill as evidence.
+- **🪨 Standing Stones** — choose a sign each week: Warrior, Mage, Thief or Lover, each blessing a different set of skills.
+- **📅 Today** — the home screen: scribe the log, tick the dailies, see your bars. Health, Magicka and Stamina drift down between logs, so potions and spells matter.
 - **🔮 Magic** — *Heal Self* (gratitude), *Calm* (4-7-8 breathing), *Transmute Thought* (AI reframing), *Summon Familiar* (reach out to someone), plus three Shouts: double XP, silence notifications, Zen mode.
-- **🗺️ Journey Map** — a sepia Leaflet map of where quests and logs happened, with markers on the HUD compass. Opt-out and clear it any time from System.
+- **🗺️ Journey Map** — a sepia Leaflet map of where quests and logs happened (one point per place per day, clustered), with markers on the HUD compass. Opt-out, clear it, or delete your whole character from System.
 - **🎭 The HUD** — Skyrim's bars, compass, banners, the level-up screen, the loading screen tips, and the sounds.
 
 ---

@@ -4,9 +4,11 @@ import { useAuth } from './AuthContext';
 import { useLatestRef } from '../hooks/useLatestRef';
 import { useSound } from './SoundContext';
 import { db } from '../firebaseConfig';
-import type { ActiveEffect, Attribute, InventoryItem, Notification, UserStats } from '../game/types';
+import type { ActiveEffect, Attribute, InventoryItem, Notification, QuestType, UserStats } from '../game/types';
+import { STONE_COOLDOWN_MS, stoneById } from '../game/stones';
+import { WISDOM_QUOTES } from '../game/spells';
 import {
-  applyXP, attributesFromLog, computeActiveEffects, initialStats, LIMITS, logGrants,
+  applyDecay, applyXP, attributesFromLog, computeActiveEffects, initialStats, LIMITS, logGrants,
   LOOT_EVERY_N_QUESTS, MAX_INVENTORY, normalizeStats, rollLoot, streakBonus, XP,
 } from '../game/rules';
 import type { XPEvent, XPGrant } from '../game/rules';
@@ -18,7 +20,6 @@ interface WorldMessage { id: string; text: string }
 export interface UIState {
   isPauseMenuOpen: boolean;
   isMenuOpen: boolean;
-  disabledGestures: boolean;
   /** Number of modal layers currently open; keyboard shortcuts pause while > 0. */
   modalDepth: number;
   pauseTab: 'QUESTS' | 'STATS' | 'JOURNAL' | 'SYSTEM';
@@ -37,7 +38,11 @@ interface GameContextType {
   notify: (title: string, subtitle?: string) => void;
   addWorldMessage: (text: string) => void;
   grantXP: (grants: XPGrant[]) => Promise<void>;
-  completeQuest: (skillName: string) => Promise<void>;
+  completeQuest: (skillName: string, type?: QuestType) => Promise<void>;
+  /** Restore vitals by an amount (clamped to the maxima). */
+  restore: (delta: Partial<Record<Attribute, number>>) => Promise<void>;
+  /** Choose a Standing Stone; false if the weekly cooldown has not passed. */
+  setStandingStone: (id: string | null) => Promise<boolean>;
   submitLog: (mood: number, energy: number, sleep: number, streak: number) => Promise<void>;
   spendSkillPoint: (perkId: string) => Promise<boolean>;
   castSpell: (cost: number, spellName: string) => Promise<boolean>;
@@ -70,14 +75,17 @@ const fallbackName = (email?: string | null) => email?.split('@')[0].toUpperCase
 export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { currentUser } = useAuth();
   const { playSound } = useSound();
-  const [stats, setStats] = useState<UserStats>(() => initialStats('DRAGONBORN'));
+  const [storedStats, setStats] = useState<UserStats>(() => initialStats('DRAGONBORN'));
+  // Vitals drift down between logs; re-evaluate once a minute so the bars move on their own.
+  const [clock, setClock] = useState(() => Date.now());
+  useEffect(() => { const t = setInterval(() => setClock(Date.now()), 60_000); return () => clearInterval(t); }, []);
+  const stats = useMemo(() => applyDecay(storedStats, clock), [storedStats, clock]);
   const [statsLoaded, setStatsLoaded] = useState(false);
   const [queue, setQueue] = useState<Notification[]>([]);
   const [worldMessages, setWorldMessages] = useState<WorldMessage[]>([]);
   const [ui, setUIState] = useState<UIState>({
     isPauseMenuOpen: false,
     isMenuOpen: false,
-    disabledGestures: false,
     modalDepth: 0,
     pauseTab: 'QUESTS',
   });
@@ -149,11 +157,12 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (e.kind === 'SKILL_UP') {
         notify('SKILL INCREASED', `${e.skill} TO ${e.level}`);
         playSound('SKILL_UP');
+        addWorldMessage(WISDOM_QUOTES[Math.floor(Math.random() * WISDOM_QUOTES.length)]);
       } else if (e.kind === 'LEVEL_UP_AVAILABLE') {
         notify('LEVEL UP AVAILABLE', 'Open Skills to Advance');
       }
     }
-  }, [notify, playSound]);
+  }, [notify, playSound, addWorldMessage]);
 
   /**
    * Run a change against the freshest copy of the stats document. The
@@ -168,7 +177,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const events = await runTransaction(db, async tx => {
         const snap = await tx.get(docRef);
-        const current = normalizeStats(snap.exists() ? snap.data() : undefined, name);
+        const current = applyDecay(normalizeStats(snap.exists() ? snap.data() : undefined, name), Date.now());
         const result = fn(current);
         if (!result) return null;
         tx.set(docRef, result.next);
@@ -188,22 +197,59 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     await mutate(cur => fromXP(applyXP(cur, grants)));
   }, [mutate]);
 
-  const completeQuest = useCallback(async (skillName: string) => {
+  const completeQuest = useCallback(async (skillName: string, type: QuestType = 'one-off') => {
     playSound('QUEST_COMPLETE');
     let loot: InventoryItem | null = null;
+    const bounty = type === 'weekly';
     await mutate(cur => {
       const count = cur.completedQuestCount + 1;
       let inventory = cur.inventory;
       loot = null;
-      if (count % LOOT_EVERY_N_QUESTS === 0 && inventory.length < MAX_INVENTORY) {
+      if ((bounty || count % LOOT_EVERY_N_QUESTS === 0) && inventory.length < MAX_INVENTORY) {
         loot = rollLoot();
         inventory = [...inventory, loot];
       }
-      const { stats: next, events } = applyXP({ ...cur, completedQuestCount: count, inventory }, [{ amount: XP.QUEST, skill: skillName }]);
+      const questCompletions = { ...cur.questCompletions, [skillName]: (cur.questCompletions[skillName] ?? 0) + 1 };
+      const { stats: next, events } = applyXP(
+        { ...cur, completedQuestCount: count, inventory, questCompletions },
+        [{ amount: bounty ? XP.BOUNTY : XP.QUEST, skill: skillName }],
+      );
       return { next, events };
     });
+    if (bounty) notify('BOUNTY COLLECTED', `+${XP.BOUNTY} ${skillName} XP`);
     if (loot) notify('NEW ITEM ACQUIRED', (loot as InventoryItem).name.toUpperCase());
   }, [mutate, notify, playSound]);
+
+  const restore = useCallback(async (delta: Partial<Record<Attribute, number>>) => {
+    await mutate(cur => ({ next: {
+      ...cur,
+      health: Math.min(cur.healthMax, cur.health + (delta.health ?? 0)),
+      magicka: Math.min(cur.magickaMax, cur.magicka + (delta.magicka ?? 0)),
+      stamina: Math.min(cur.staminaMax, cur.stamina + (delta.stamina ?? 0)),
+      vitalsUpdatedAt: Date.now(),
+    } }));
+  }, [mutate]);
+
+  const setStandingStone = useCallback(async (id: string | null) => {
+    const now = Date.now();
+    let blocked = false;
+    const ok = await mutate(cur => {
+      if (cur.standingStone === id) return null;
+      if (cur.standingStone && now - cur.stoneChangedAt < STONE_COOLDOWN_MS) { blocked = true; return null; }
+      return { next: { ...cur, standingStone: id, stoneChangedAt: now } };
+    });
+    if (blocked) {
+      const days = Math.ceil((STONE_COOLDOWN_MS - (now - statsRef.current.stoneChangedAt)) / 86_400_000);
+      notify('THE STONE RESISTS', `${days} MORE DAY${days === 1 ? '' : 'S'} UNDER THIS SIGN`);
+      return false;
+    }
+    if (ok) {
+      const stone = stoneById(id);
+      notify(stone ? stone.name.toUpperCase() : 'SIGN RELEASED', stone ? 'ITS BLESSING IS YOURS' : '');
+      playSound('SPELL_CAST');
+    }
+    return ok;
+  }, [mutate, notify, playSound, statsRef]);
 
   const submitLog = useCallback(async (mood: number, energy: number, sleep: number, streak: number) => {
     const bonus = streakBonus(streak);
@@ -211,13 +257,14 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const grants = logGrants(energy);
       if (bonus > 0) grants.push({ amount: bonus });
       const { stats: next, events } = applyXP(
-        { ...cur, ...attributesFromLog(cur, mood, energy, sleep), bestStreak: Math.max(cur.bestStreak, streak) },
+        { ...cur, ...attributesFromLog(cur, mood, energy, sleep), vitalsUpdatedAt: Date.now(), bestStreak: Math.max(cur.bestStreak, streak) },
         grants,
       );
       return { next, events };
     });
     notify('CHRONICLE SCRIBED', bonus > 0 ? `+${XP.DAILY_LOG + bonus} XP · ${streak} DAY STREAK` : `+${XP.DAILY_LOG} XP`);
-  }, [mutate, notify]);
+    addWorldMessage(WISDOM_QUOTES[Math.floor(Math.random() * WISDOM_QUOTES.length)]);
+  }, [mutate, notify, addWorldMessage]);
 
   const advanceLevel = useCallback(async (attribute: Attribute) => {
     let newLevel = 0;
@@ -258,7 +305,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
       notify('INSUFFICIENT MAGICKA', 'Rest to recover your spirit.');
       return false;
     }
-    const ok = await mutate(cur => cur.magicka < cost ? null : { next: { ...cur, magicka: cur.magicka - cost } });
+    const ok = await mutate(cur => cur.magicka < cost ? null : { next: { ...cur, magicka: cur.magicka - cost, vitalsUpdatedAt: Date.now() } });
     if (ok) {
       notify('SPELL CAST', spellName.toUpperCase());
       playSound('SPELL_CAST');
@@ -274,6 +321,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const next: UserStats = { ...cur, inventory: cur.inventory.filter(i => i.uid !== item.uid) };
       if (next.equippedItemId === item.uid) next.equippedItemId = null;
       const v = item.effectValue ?? 0;
+      if (item.effectType === 'RESTORE_HEALTH' || item.effectType === 'RESTORE_MAGICKA' || item.effectType === 'RESTORE_STAMINA') next.vitalsUpdatedAt = Date.now();
       if (item.effectType === 'RESTORE_HEALTH') next.health = Math.min(cur.health + v, cur.healthMax);
       if (item.effectType === 'RESTORE_MAGICKA') next.magicka = Math.min(cur.magicka + v, cur.magickaMax);
       if (item.effectType === 'RESTORE_STAMINA') next.stamina = Math.min(cur.stamina + v, cur.staminaMax);
@@ -344,11 +392,11 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const value = useMemo<GameContextType>(() => ({
     stats, statsLoaded, notification, worldMessages, activeEffects, ui, setUI, bumpModal, notify, addWorldMessage,
-    grantXP, completeQuest, submitLog, spendSkillPoint, castSpell, consumeItem, toggleEquip, advanceLevel,
+    grantXP, completeQuest, restore, setStandingStone, submitLog, spendSkillPoint, castSpell, consumeItem, toggleEquip, advanceLevel,
     updateDisplayName, updateRace, startSurge, startSlowTime, toggleZenMode, setTrackLocation,
   }), [
     stats, statsLoaded, notification, worldMessages, activeEffects, ui, setUI, bumpModal, notify, addWorldMessage,
-    grantXP, completeQuest, submitLog, spendSkillPoint, castSpell, consumeItem, toggleEquip, advanceLevel,
+    grantXP, completeQuest, restore, setStandingStone, submitLog, spendSkillPoint, castSpell, consumeItem, toggleEquip, advanceLevel,
     updateDisplayName, updateRace, startSurge, startSlowTime, toggleZenMode, setTrackLocation,
   ]);
 

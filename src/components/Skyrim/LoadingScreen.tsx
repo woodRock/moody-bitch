@@ -1,11 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import { LORE_TIPS } from '../../game/spells';
 
+interface Props {
+  isLoading: boolean;
+  /** The data is in; the player may press any key or tap to skip the rest of the wait. */
+  canSkip?: boolean;
+  onSkip?: () => void;
+}
+
 /**
  * The Skyrim loading screen. Pure CSS animation so it needs no animation
  * library on the first paint; it fades out once the realm is ready.
  */
-const LoadingScreen: React.FC<{ isLoading: boolean }> = ({ isLoading }) => {
+const LoadingScreen: React.FC<Props> = ({ isLoading, canSkip = false, onSkip }) => {
   const [tip, setTip] = useState(LORE_TIPS[0]);
   const [mounted, setMounted] = useState(isLoading);
 
@@ -18,6 +25,14 @@ const LoadingScreen: React.FC<{ isLoading: boolean }> = ({ isLoading }) => {
     const t = setTimeout(() => setMounted(false), 900);
     return () => clearTimeout(t);
   }, [isLoading]);
+
+  useEffect(() => {
+    if (!isLoading || !canSkip || !onSkip) return;
+    const skip = () => onSkip();
+    window.addEventListener('keydown', skip);
+    window.addEventListener('pointerdown', skip);
+    return () => { window.removeEventListener('keydown', skip); window.removeEventListener('pointerdown', skip); };
+  }, [isLoading, canSkip, onSkip]);
 
   if (!mounted) return null;
 
@@ -40,7 +55,7 @@ const LoadingScreen: React.FC<{ isLoading: boolean }> = ({ isLoading }) => {
       </div>
 
       <div className="loading-bar">
-        <div className="skyrim-font loading-bar-label">LOADING REALM...</div>
+        <div className="skyrim-font loading-bar-label">{canSkip ? 'PRESS ANY KEY OR TAP TO CONTINUE' : 'LOADING REALM...'}</div>
         <div className="loading-bar-track"><div className="loading-bar-fill grow" /></div>
       </div>
     </div>

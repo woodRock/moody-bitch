@@ -1,27 +1,17 @@
-import React, { useCallback, useState } from 'react';
+import React, { useState } from 'react';
 import { useGame } from '../context/GameContext';
 import { useSound } from '../context/SoundContext';
-import { useTrackpadSwipe } from '../hooks/useTrackpadSwipe';
 import { SCHOOLS, SHOUTS, SPELLS } from '../game/spells';
 import type { Spell } from '../game/spells';
 import SpellCasting from '../components/Skyrim/SpellCasting';
 import { useSpellbook } from '../hooks/useSpellbook';
 
 const Magic: React.FC = () => {
-  const { stats, activeEffects, setUI, ui } = useGame();
+  const { stats, activeEffects, setUI } = useGame();
   const { playSound } = useSound();
   const [selectedSchool, setSelectedSchool] = useState<typeof SCHOOLS[number]>('ALL');
   const [selectedSpell, setSelectedSpell] = useState<Spell | null>(null);
   const { casting, setCasting, cast } = useSpellbook();
-
-  const handleSwipe = useCallback((direction: 'UP' | 'DOWN' | 'LEFT' | 'RIGHT') => {
-    if (casting || ui.modalDepth > 0) return;
-    const i = SCHOOLS.indexOf(selectedSchool);
-    if (direction === 'DOWN') { setSelectedSchool(SCHOOLS[Math.min(i + 1, SCHOOLS.length - 1)]); setSelectedSpell(null); }
-    else if (direction === 'UP') { setSelectedSchool(SCHOOLS[Math.max(i - 1, 0)]); setSelectedSpell(null); }
-  }, [selectedSchool, casting, ui.modalDepth]);
-
-  useTrackpadSwipe({ onSwipe: handleSwipe, threshold: 80, disabled: ui.isMenuOpen || ui.isPauseMenuOpen });
 
   const list = [...SPELLS, ...SHOUTS].filter(s => selectedSchool === 'ALL' || s.school === selectedSchool);
 

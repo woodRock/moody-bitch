@@ -1,28 +1,18 @@
-import React, { useCallback, useState } from 'react';
+import React, { useState } from 'react';
 import { useGame } from '../context/GameContext';
 import { useSound } from '../context/SoundContext';
-import { useTrackpadSwipe } from '../hooks/useTrackpadSwipe';
 import type { InventoryItem } from '../game/types';
 
 export const CATEGORIES = ['ALL', 'APPAREL', 'POTIONS', 'BOOKS', 'MISC'] as const;
 
 const Inventory: React.FC = () => {
-  const { stats, consumeItem, setUI, toggleEquip, ui } = useGame();
+  const { stats, consumeItem, setUI, toggleEquip } = useGame();
   const { playSound } = useSound();
   const [selectedCategory, setSelectedCategory] = useState<typeof CATEGORIES[number]>('ALL');
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
 
   const filteredItems = selectedCategory === 'ALL' ? stats.inventory : stats.inventory.filter(i => i.category === selectedCategory);
   const totalWeight = stats.inventory.reduce((w, i) => w + i.weight, 0);
-
-  const handleSwipe = useCallback((direction: 'UP' | 'DOWN' | 'LEFT' | 'RIGHT') => {
-    if (ui.modalDepth > 0) return;
-    const i = CATEGORIES.indexOf(selectedCategory);
-    if (direction === 'DOWN' && i < CATEGORIES.length - 1) { setSelectedCategory(CATEGORIES[i + 1]); setSelectedItem(null); playSound('UI_CLICK'); }
-    else if (direction === 'UP' && i > 0) { setSelectedCategory(CATEGORIES[i - 1]); setSelectedItem(null); playSound('UI_CLICK'); }
-  }, [selectedCategory, playSound, ui.modalDepth]);
-
-  useTrackpadSwipe({ onSwipe: handleSwipe, threshold: 80, disabled: ui.isMenuOpen || ui.isPauseMenuOpen });
 
   const handleUseItem = async () => {
     if (!selectedItem) return;

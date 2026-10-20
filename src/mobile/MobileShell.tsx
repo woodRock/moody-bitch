@@ -11,6 +11,7 @@ import { SystemSettings } from '../components/Skyrim/PauseMenu';
 import '../styles/Mobile.css';
 
 const TABS = [
+  { to: '/today', label: 'TODAY', icon: '☀' },
   { to: '/quests', label: 'QUESTS', icon: '◆' },
   { to: '/journal', label: 'LOG', icon: '✎' },
   { to: '/skills', label: 'SKILLS', icon: '✦' },

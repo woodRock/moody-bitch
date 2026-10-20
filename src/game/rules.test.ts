@@ -1,9 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import { Timestamp } from 'firebase/firestore';
 import {
-  applyXP, attributesFromLog, computeStreak, hasLoggedToday, initialStats,
-  isQuestDone, normalizeStats, rollLoot, sortQuests, streakBonus, xpMultiplier,
+  applyDecay, applyXP, attributesFromLog, computeStreak, hasLoggedToday, initialStats,
+  isQuestDone, normalizeStats, rollLoot, sortQuests, streakBonus, weekKey, xpMultiplier,
 } from './rules';
+import { perkStatus } from './perks';
+import { CONSTELLATIONS } from '../data/constellations';
 import type { Quest } from './types';
 
 const ts = (d: Date) => Timestamp.fromDate(d);
@@ -148,5 +150,46 @@ describe('normalizeStats on legacy documents', () => {
     expect(Number.isInteger(s.level)).toBe(true);
     expect(s.completedQuestCount).toBe(5);
     expect(s.race.length).toBeLessThanOrEqual(24);
+  });
+});
+
+describe('bounties, decay, stones, evidence', () => {
+  it('a weekly bounty completed earlier this week stays done, last week resets', () => {
+    const q = { type: 'weekly' as const, completed: true };
+    const monday = new Date(); monday.setDate(monday.getDate() - ((monday.getDay() + 6) % 7)); monday.setHours(9);
+    expect(isQuestDone({ ...q, lastCompleted: ts(monday) }, new Date())).toBe(true);
+    const lastWeek = new Date(monday); lastWeek.setDate(lastWeek.getDate() - 2);
+    expect(isQuestDone({ ...q, lastCompleted: ts(lastWeek) }, new Date())).toBe(false);
+    expect(weekKey(monday)).toBe(weekKey(new Date()));
+  });
+
+  it('vitals drift down 2 points per hour and never below the floor', () => {
+    const s = { ...initialStats('X'), health: 80, magicka: 10, stamina: 3, vitalsUpdatedAt: 1 };
+    const d = applyDecay(s, 10 * 3_600_000);
+    expect(d.health).toBe(60);
+    expect(d.magicka).toBe(5);
+    expect(d.stamina).toBe(3);
+    expect(d.vitalsUpdatedAt).toBe(10 * 3_600_000);
+    expect(applyDecay(s, 10 * 60_000)).toBe(s); // too soon to matter
+    expect(applyDecay({ ...s, vitalsUpdatedAt: 0 }, 10 * 3_600_000).health).toBe(80); // legacy doc: no surprise drop
+  });
+
+  it('standing stones boost their trees only', () => {
+    const s = { ...initialStats('X'), standingStone: 'warrior' };
+    expect(xpMultiplier(s, 'TWO-HANDED', 0)).toBeCloseTo(1.2);
+    expect(xpMultiplier(s, 'SPEECH', 0)).toBe(1);
+    expect(xpMultiplier({ ...s, standingStone: 'lover' }, 'SPEECH', 0)).toBeCloseTo(1.1);
+    expect(normalizeStats({ standingStone: 'bogus' }, 'H').standingStone).toBeNull();
+  });
+
+  it('perks need completed quests in that skill as evidence', () => {
+    const con = CONSTELLATIONS[0];
+    const s = initialStats('X');
+    expect(perkStatus(con, con.perks[0], s)).toMatchObject({ linked: true, have: 0, need: 1, available: false });
+    s.questCompletions = { [con.skillKey]: 4 };
+    expect(perkStatus(con, con.perks[0], s).available).toBe(true);
+    s.perks = [con.perks[0].id];
+    expect(perkStatus(con, con.perks[1], s)).toMatchObject({ linked: true, need: 4, available: true });
+    expect(perkStatus(con, con.perks[2], s)).toMatchObject({ linked: false, need: 7, available: false });
   });
 });

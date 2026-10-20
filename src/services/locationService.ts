@@ -3,6 +3,10 @@ import { db } from '../firebaseConfig';
 import {
   collection, addDoc, Timestamp, query, where, getDocs, orderBy, writeBatch, limit,
 } from 'firebase/firestore';
+import { distanceMeters } from '../game/geo';
+
+/** Two moments closer than this on the same day count as the same place. */
+const SAME_PLACE_METERS = 150;
 
 export interface UserLocation {
   id?: string;
@@ -28,13 +32,24 @@ export const getCurrentPosition = (): Promise<GeolocationPosition | null> => {
 };
 
 /**
- * Record where the player was when something notable happened. Never throws:
- * the map is decoration, it must not block gameplay.
+ * Record where the player was when something notable happened, at most once
+ * per place per day so the map shows a journey rather than a blob around home.
+ * Never throws: the map is decoration, it must not block gameplay.
  */
 export const captureLocation = async (userId: string, label?: string): Promise<void> => {
   const position = await getCurrentPosition();
   if (!position) return;
   try {
+    const here = { lat: position.coords.latitude, lng: position.coords.longitude };
+    const dayStart = new Date(); dayStart.setHours(0, 0, 0, 0);
+    const today = await getDocs(query(
+      collection(db, 'locationHistory'),
+      where('userId', '==', userId),
+      where('timestamp', '>=', Timestamp.fromDate(dayStart)),
+      orderBy('timestamp', 'asc'),
+      limit(50),
+    ));
+    if (today.docs.some(d => { const x = d.data() as UserLocation; return distanceMeters(here, { lat: x.lat, lng: x.lng }) < SAME_PLACE_METERS; })) return;
     await addDoc(collection(db, 'locationHistory'), {
       userId,
       lat: position.coords.latitude,

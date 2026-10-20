@@ -18,7 +18,7 @@ const ROUNDS = 3;
 
 /** The interactive part of each spell, shared by desktop and mobile. */
 const SpellCasting: React.FC<Props> = ({ spell, onDone }) => {
-  const { grantXP, notify } = useGame();
+  const { grantXP, notify, restore } = useGame();
   const [gratitudes, setGratitudes] = useState(['', '', '']);
   const [breath, setBreath] = useState<{ idx: number; round: number }>({ idx: 0, round: 1 });
   const [thought, setThought] = useState('');
@@ -52,7 +52,8 @@ const SpellCasting: React.FC<Props> = ({ spell, onDone }) => {
 
   const finishHeal = () => {
     if (!gratitudes.every(g => g.trim().length > 2)) return;
-    notify('SPIRIT MENDED', 'Health restored.');
+    notify('SPIRIT MENDED', '+25 HEALTH');
+    void restore({ health: 25 });
     void grantXP([{ amount: XP.SPELL_HEAL, skill: 'RESTORATION' }]);
     setGratitudes(['', '', '']);
     onDone();
