@@ -49,9 +49,6 @@ service cloud.firestore {
     }
 
     // ---- userStats: one document per player, keyed by uid ---------------
-    function validSkill(s) {
-      return s is map && isInt(s.level, 0, 1000) && isNum(s.xp, 0, 1000000) && isNum(s.xpToNextLevel, 1, 10000000);
-    }
     function validStats() {
       let d = request.resource.data;
       return onlyKeys(['name', 'level', 'xp', 'xpToNextLevel', 'health', 'magicka', 'stamina', 'healthMax', 'magickaMax',
