@@ -57,8 +57,9 @@ async function askScribe(kind: LoreKind, prompt: string): Promise<string | null>
       return null;
     }
     const data = await res.json();
-    const text: unknown = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-    return typeof text === 'string' && text.trim() ? text.trim() : null;
+    const parts: { text?: unknown; thought?: boolean }[] = data?.candidates?.[0]?.content?.parts ?? [];
+    const text = parts.filter(p => !p.thought && typeof p.text === 'string').map(p => p.text as string).join('').trim();
+    return text || null;
   } catch (error) {
     console.error('Failed to reach the scribe:', error);
     return null;

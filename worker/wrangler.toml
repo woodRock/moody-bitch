@@ -3,9 +3,11 @@ main = "src/index.ts"
 compatibility_date = "2026-01-01"
 
 [vars]
-FIREBASE_PROJECT_ID = "your-project-id"
+FIREBASE_PROJECT_ID = "moody-bitch"
 ALLOWED_ORIGINS = "https://woodrock.github.io,http://localhost:5173"
 GEMINI_MODEL = "gemini-3.1-pro-preview"
+# If the Gemini key is restricted to HTTP referrers, send the site as the referrer.
+GEMINI_REFERER = "https://woodrock.github.io/moody-bitch/"
 
 # Set the secret with: bunx wrangler secret put GEMINI_API_KEY
 

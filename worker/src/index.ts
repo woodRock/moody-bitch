@@ -13,6 +13,8 @@ export interface Env {
   /** Comma-separated list of allowed origins, e.g. "https://woodrock.github.io,http://localhost:5173". */
   ALLOWED_ORIGINS: string;
   GEMINI_MODEL?: string;
+  /** Sent as the Referer to Gemini, so a key restricted to the site's referrer still works server-side. */
+  GEMINI_REFERER?: string;
   /** Optional KV namespace for rate limiting. Without it the limit is per-isolate only. */
   RATE_LIMIT?: KVNamespace;
 }
@@ -177,15 +179,20 @@ export default {
     const model = env.GEMINI_MODEL || 'gemini-3.1-pro-preview';
     const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
       method: 'POST',
-      headers: { 'content-type': 'application/json', 'x-goog-api-key': env.GEMINI_API_KEY },
+      headers: {
+        'content-type': 'application/json',
+        'x-goog-api-key': env.GEMINI_API_KEY,
+        ...(env.GEMINI_REFERER ? { Referer: env.GEMINI_REFERER } : {}),
+      },
       body: JSON.stringify({
         contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { maxOutputTokens: 300, temperature: 0.9 },
+        generationConfig: { maxOutputTokens: 1024, temperature: 0.9 },
       }),
     });
     if (!res.ok) return json({ error: 'upstream', status: res.status }, 502, cors);
-    const data = (await res.json()) as { candidates?: { content?: { parts?: { text?: string }[] } }[] };
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ?? '';
+    const data = (await res.json()) as { candidates?: { content?: { parts?: { text?: string; thought?: boolean }[] } }[] };
+    // Reasoning models may return several parts; keep the visible text and drop any thought parts.
+    const text = (data.candidates?.[0]?.content?.parts ?? []).filter(p => !p.thought && typeof p.text === 'string').map(p => p.text).join('').trim();
     return json({ text }, 200, { ...cors, 'cache-control': 'no-store' });
   },
 };

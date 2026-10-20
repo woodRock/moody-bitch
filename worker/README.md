@@ -14,6 +14,10 @@ bunx wrangler secret put GEMINI_API_KEY
 bun run deploy
 ```
 
+If your Gemini key is restricted to HTTP referrers (recommended for a key that
+was ever shipped to browsers), keep `GEMINI_REFERER` in `wrangler.toml` set to
+your site. A dedicated server-side key with no application restriction is cleaner.
+
 Then set `VITE_LORE_PROXY_URL` to the worker URL (in `.env` locally and as a
 GitHub Actions secret for the Pages build) and remove `VITE_GOOGLE_API_KEY`.
 
