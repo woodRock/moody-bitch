@@ -140,3 +140,13 @@ describe('loot', () => {
     expect(a.name).toBeTruthy();
   });
 });
+
+describe('normalizeStats on legacy documents', () => {
+  it('clamps a long name and non-integer counters so the rules accept the rewrite', () => {
+    const s = normalizeStats({ name: 'A-VERY-LONG-EMAIL-PREFIX-BEYOND-LIMITS', level: 3.0000001, completedQuestCount: 4.9, race: 'X'.repeat(60) }, 'H');
+    expect(s.name.length).toBeLessThanOrEqual(24);
+    expect(Number.isInteger(s.level)).toBe(true);
+    expect(s.completedQuestCount).toBe(5);
+    expect(s.race.length).toBeLessThanOrEqual(24);
+  });
+});

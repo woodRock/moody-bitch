@@ -70,14 +70,10 @@
 .map-caption.mobile { bottom: calc(126px + var(--safe-bottom)); font-size: 0.65rem; }
 
 /* Modals become bottom sheets on phones. */
-.is-mobile .tome-toolbar { flex-direction: row; justify-content: center; }
-.is-mobile .tome-toolbar .btn-ghost { min-height: 38px; padding: 0.4rem 0.9rem; font-size: 0.72rem; }
-.is-mobile .journal-container { min-height: 0; padding-top: 0.5rem; }
 .is-mobile .skyrim-modal-overlay { align-items: flex-end; padding: 0; }
 .is-mobile .skyrim-modal-content.sheet { width: 100% !important; max-width: 100% !important; border-left: none; border-right: none; border-bottom: none; padding: 1.2rem 1rem calc(1.2rem + var(--safe-bottom)); max-height: 88vh; max-height: 88dvh; }
 .is-mobile .skyrim-modal-content.sheet .skyrim-title { font-size: 1.1rem; }
 .is-mobile .form-actions > * { flex-basis: 100%; }
 .is-mobile .skyrim-banner { top: 30%; }
 .is-mobile .entry-vitals { gap: 1rem; font-size: 0.75rem; }
-.is-mobile .journal-container { padding-bottom: 2rem; }
 .is-mobile .setting-row { gap: 1rem; }

@@ -19,7 +19,6 @@ const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Skills = lazy(() => import('./pages/Skills'));
 const Magic = lazy(() => import('./pages/Magic'));
 const Inventory = lazy(() => import('./pages/Inventory'));
-const Tome = lazy(() => import('./pages/Tome'));
 const MobileShell = lazy(() => import('./mobile/MobileShell'));
 const MobileQuests = lazy(() => import('./mobile/MobileQuests'));
 const MobileLog = lazy(() => import('./mobile/MobileLog'));
@@ -84,7 +83,7 @@ function App() {
   const isAuthPage = AUTH_PATHS.includes(location.pathname);
   const inGame = !!currentUser && !isAuthPage && !isFirstLoad;
   const hideHUDForMenus = ui.isPauseMenuOpen || ui.isMenuOpen;
-  const showMenuButton = !['/magic', '/inventory', '/tome'].includes(location.pathname);
+  const showMenuButton = !['/magic', '/inventory'].includes(location.pathname);
   const isSkillsPage = location.pathname === '/skills';
 
   // Desktop keyboard shortcuts: Tab for the character menu, Esc for the system menu.
@@ -104,6 +103,20 @@ function App() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [ui.isPauseMenuOpen, ui.isMenuOpen, ui.modalDepth, setUI, inGame, isMobile]);
 
+  // Warm the lazy screens once the realm is open so navigation never shows a loading flash.
+  useEffect(() => {
+    if (!inGame) return;
+    const warm = () => {
+      const loads = isMobile
+        ? [() => import('./mobile/MobileQuests'), () => import('./mobile/MobileLog'), () => import('./mobile/MobileSkills'), () => import('./mobile/MobileMagic'), () => import('./mobile/MobileItems')]
+        : [() => import('./components/Skyrim/Menu'), () => import('./components/Skyrim/PauseMenu'), () => import('./pages/Skills'), () => import('./pages/Magic'), () => import('./pages/Inventory')];
+      loads.forEach(l => { void l().catch(() => {}); });
+    };
+    const w = window as Window & { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => number };
+    if (w.requestIdleCallback) w.requestIdleCallback(warm, { timeout: 4000 });
+    else setTimeout(warm, 1500);
+  }, [inGame, isMobile]);
+
   // Close overlays when the route changes.
   useEffect(() => { setUI({ isMenuOpen: false }); }, [location.pathname, setUI]);
 
@@ -120,7 +133,6 @@ function App() {
       <Route path="/skills" element={<Protected>{isMobile ? <MobileSkills /> : <Skills />}</Protected>} />
       <Route path="/magic" element={<Protected>{isMobile ? <MobileMagic /> : <Magic />}</Protected>} />
       <Route path="/inventory" element={<Protected>{isMobile ? <MobileItems /> : <Inventory />}</Protected>} />
-      <Route path="/tome" element={<Protected><Tome /></Protected>} />
 
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
       <Route path="*" element={<NotFound />} />
@@ -132,29 +144,38 @@ function App() {
       <LoadingScreen isLoading={isFirstLoad} />
       {currentUser && <WisdomTicker />}
 
-      <Suspense fallback={<Fallback />}>
-        {inGame && isMobile ? (
-          <MobileShell>{routes}</MobileShell>
-        ) : (
-          <>
-            {inGame && (
-              <>
-                {!hideHUDForMenus && (
-                  <>
-                    <HUD showCompass={location.pathname === '/dashboard'} showLevel={false} />
-                    <button onClick={() => setUI({ isPauseMenuOpen: true, isMenuOpen: false })} className={`hud-button left skyrim-font ${isSkillsPage ? 'lowered' : ''}`}>
-                      SYSTEM [ESC]
-                    </button>
-                  </>
-                )}
+      {inGame && isMobile ? (
+        <Suspense fallback={<Fallback />}>
+          <MobileShell>
+            <Suspense fallback={<Fallback />}>{routes}</Suspense>
+          </MobileShell>
+        </Suspense>
+      ) : (
+        <>
+          {inGame && (
+            <>
+              {!hideHUDForMenus && (
+                <>
+                  <HUD showCompass={location.pathname === '/dashboard'} showLevel={false} />
+                  <button onClick={() => setUI({ isPauseMenuOpen: true, isMenuOpen: false })} className={`hud-button left skyrim-font ${isSkillsPage ? 'lowered' : ''}`}>
+                    SYSTEM [ESC]
+                  </button>
+                </>
+              )}
+              {/* Overlays get their own boundaries: loading a menu must never suspend (and remount) the page beneath it. */}
+              <Suspense fallback={null}>
                 <SkyrimMenu disabledGestures={ui.disabledGestures} hideButton={!showMenuButton || hideHUDForMenus} />
-                <PauseMenu isOpen={ui.isPauseMenuOpen} onClose={() => setUI({ isPauseMenuOpen: false })} />
-              </>
-            )}
-            {routes}
-          </>
-        )}
-      </Suspense>
+              </Suspense>
+              {ui.isPauseMenuOpen && (
+                <Suspense fallback={null}>
+                  <PauseMenu isOpen onClose={() => setUI({ isPauseMenuOpen: false })} />
+                </Suspense>
+              )}
+            </>
+          )}
+          <Suspense fallback={<Fallback />}>{routes}</Suspense>
+        </>
+      )}
     </div>
   );
 }

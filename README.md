@@ -24,7 +24,7 @@ Turn your day into quests. Scribe a daily log to keep Health (mood), Stamina (en
 ## ✨ Features
 
 - **⚔️ Quests** — daily and one-off tasks that grant skill XP. Dailies reset at midnight. Every 5th completed quest drops loot.
-- **📜 The Chronicle** — a daily mood/energy/rest log with three triumphs. Streaks grant bonus XP. Read it back as a leather-bound flip-book (the Tome).
+- **📜 The Chronicle** — a daily mood/energy/rest log with three triumphs. Streaks grant bonus XP.
 - **🌌 Skill constellations** — eight real-life skills, each a star chart of perks you unlock with points earned from levelling.
 - **🔮 Magic** — *Heal Self* (gratitude), *Calm* (4-7-8 breathing), *Transmute Thought* (AI reframing), *Summon Familiar* (reach out to someone), plus three Shouts: double XP, silence notifications, Zen mode.
 - **🗺️ Journey Map** — a sepia Leaflet map of where quests and logs happened, with markers on the HUD compass. Opt-out and clear it any time from System.
@@ -34,7 +34,7 @@ Turn your day into quests. Scribe a daily log to keep Health (mood), Stamina (en
 
 ## 🛠️ Tech
 
-React 19 · TypeScript · Vite 7 · Bun · Firebase Auth + Firestore · Framer Motion · Leaflet · react-pageflip · Vitest.
+React 19 · TypeScript · Vite 7 · Bun · Firebase Auth + Firestore · Framer Motion · Leaflet · Vitest.
 
 The game rules (XP, levelling, loot, streaks, compass maths) are pure functions in `src/game/` with unit tests, and every change to your character runs in a Firestore transaction so nothing is lost to races.
 

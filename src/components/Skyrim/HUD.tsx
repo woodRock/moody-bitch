@@ -1,6 +1,7 @@
 import React from 'react';
 import { useGame } from '../../context/GameContext';
 import Compass from './Compass';
+import { useCompass } from '../../context/compassStore';
 
 interface HUDProps {
   showCompass?: boolean;
@@ -36,7 +37,8 @@ export const Banner: React.FC = () => {
 };
 
 const HUD: React.FC<HUDProps> = ({ showCompass = true, showLevel = false, compassWidth = 400, onCompassClick, showBars = true }) => {
-  const { stats, ui, worldMessages } = useGame();
+  const { stats, worldMessages } = useGame();
+  const compass = useCompass();
   const isSlowTime = stats.slowTimeEndTime > Date.now();
 
   if (stats.zenMode) return <Banner />;
@@ -53,7 +55,7 @@ const HUD: React.FC<HUDProps> = ({ showCompass = true, showLevel = false, compas
 
       {showCompass && (
         <div className="compass-anchor">
-          <Compass heading={ui.heading} markers={ui.compassMarkers} width={compassWidth} onClick={onCompassClick} title={onCompassClick ? 'Open the map' : undefined} />
+          <Compass heading={compass.heading} markers={compass.markers} width={compassWidth} onClick={onCompassClick} title={onCompassClick ? 'Open the map' : undefined} />
         </div>
       )}
 

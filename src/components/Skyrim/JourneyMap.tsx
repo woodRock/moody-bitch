@@ -25,8 +25,8 @@ interface Props {
 const JourneyMap: React.FC<Props> = ({ locations, center, onMove, onMarkerClick, zoom = 13 }) => {
   const path = useMemo(() => locations.map(l => [l.lat, l.lng] as [number, number]), [locations]);
   return (
-    <MapContainer center={[center.lat, center.lng]} zoom={zoom} className="journey-map" zoomControl={false} attributionControl={true}>
-      <TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' url="https://tile.openstreetmap.org/{z}/{x}/{y}.png" />
+    <MapContainer center={[center.lat, center.lng]} zoom={zoom} className="journey-map" zoomControl={false} attributionControl={true} preferCanvas={true}>
+      <TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' url="https://tile.openstreetmap.org/{z}/{x}/{y}.png" updateWhenZooming={false} updateWhenIdle={true} keepBuffer={4} />
       <MapEvents onMove={onMove} />
       {path.length > 1 && <Polyline positions={path} color="#a92929" weight={3} opacity={0.7} dashArray="10, 10" />}
       {locations.map((loc, i) => (

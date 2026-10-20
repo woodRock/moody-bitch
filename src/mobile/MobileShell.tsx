@@ -5,6 +5,7 @@ import { useSound } from '../context/SoundContext';
 import { useDeviceHeading } from '../hooks/useDeviceHeading';
 import { Banner, StatBars } from '../components/Skyrim/HUD';
 import Compass from '../components/Skyrim/Compass';
+import { compassStore, useCompass } from '../context/compassStore';
 import Modal from '../components/Skyrim/Modal';
 import { SystemSettings } from '../components/Skyrim/PauseMenu';
 import '../styles/Mobile.css';
@@ -22,7 +23,8 @@ const TABS = [
  * thumb-friendly tab bar instead of trackpad gestures and the diamond menu.
  */
 const MobileShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { stats, ui, setUI, worldMessages } = useGame();
+  const { stats, worldMessages } = useGame();
+  const compass = useCompass();
   const { playSound } = useSound();
   const navigate = useNavigate();
   const location = useLocation();
@@ -31,7 +33,8 @@ const MobileShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { heading, permission, requestPermission } = useDeviceHeading(compassLive);
 
   const onMap = location.pathname === '/dashboard';
-  const liveHeading = compassLive && heading !== null ? heading : ui.heading;
+  React.useEffect(() => { setSystemOpen(false); }, [location.pathname]);
+  const liveHeading = compassLive && heading !== null ? heading : compass.heading;
   const compassWidth = Math.min(300, (typeof window !== 'undefined' ? window.innerWidth : 360) - 150);
 
   const handleCompass = async () => {
@@ -43,21 +46,21 @@ const MobileShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       setCompassLive(true);
     } else {
       setCompassLive(false);
-      setUI({ heading: 0 });
+      compassStore.set({ heading: 0 });
     }
   };
 
   // Feed the real heading into the shared UI state so compass markers rotate with it.
   React.useEffect(() => {
-    if (compassLive && heading !== null) setUI({ heading });
-  }, [compassLive, heading, setUI]);
+    if (compassLive && heading !== null) compassStore.set({ heading });
+  }, [compassLive, heading]);
 
   return (
     <div className={`mobile-shell ${stats.zenMode ? 'zen' : ''}`}>
       <header className="mobile-top">
         <button className="mobile-system skyrim-font" onClick={() => { setSystemOpen(true); playSound('UI_CLICK'); }} aria-label="System menu">☰</button>
         {!stats.zenMode && (
-          <Compass heading={liveHeading} markers={ui.compassMarkers} width={compassWidth} onClick={() => void handleCompass()} title={onMap ? (compassLive ? 'Stop following the horizon' : 'Follow the real horizon') : 'Open the map'} />
+          <Compass heading={liveHeading} markers={compass.markers} width={compassWidth} onClick={() => void handleCompass()} title={onMap ? (compassLive ? 'Stop following the horizon' : 'Follow the real horizon') : 'Open the map'} />
         )}
         <div className="mobile-level skyrim-font" onClick={() => navigate('/skills')} role="button" aria-label={`Level ${stats.level}`}>
           <span className={stats.pendingLevelUps > 0 ? 'gold' : ''}>{stats.pendingLevelUps > 0 ? 'LVL UP' : `LVL ${stats.level}`}</span>

@@ -79,14 +79,6 @@ export const SystemSettings: React.FC = () => {
       </section>
 
       <section>
-        <div className="quest-category-title">Chronicles</div>
-        <div className="setting-row">
-          <span className="skyrim-font">THE TOME<small className="skyrim-serif muted">Read your logs as a leather-bound book.</small></span>
-          <button className="btn-ghost small skyrim-font" onClick={() => navigate('/tome')}>OPEN</button>
-        </div>
-      </section>
-
-      <section>
         <div className="quest-category-title">Account</div>
         <div className="setting-row">
           <span className="skyrim-serif muted account-email">{currentUser?.email}</span>

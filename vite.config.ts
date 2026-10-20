@@ -59,7 +59,6 @@ export default defineConfig(({ command, isPreview }) => ({
           if (id.includes('@firebase') || id.includes('/firebase/') || id.includes('re2js') || id.includes('/idb/')) return 'firebase';
           if (id.includes('leaflet')) return 'leaflet';
           if (id.includes('framer-motion') || id.includes('motion-')) return 'motion';
-          if (id.includes('react-pageflip') || id.includes('page-flip')) return 'pageflip';
           if (id.includes('react-router') || id.includes('/react/') || id.includes('react-dom') || id.includes('scheduler')) return 'react';
           return undefined;
         },

@@ -13,6 +13,7 @@ service cloud.firestore {
     function isInt(v, lo, hi) { return v is int && v >= lo && v <= hi; }
     function isTs(v) { return v is timestamp; }
     function onlyKeys(allowed) { return request.resource.data.keys().hasOnly(allowed); }
+    function changed() { return request.resource.data.diff(resource.data).affectedKeys(); }
 
     // ---- moodEntries: one document per daily log ----------------------
     function validEntry() {
@@ -42,10 +43,21 @@ service cloud.firestore {
         && (!('lastCompleted' in d) || d.lastCompleted == null || isTs(d.lastCompleted))
         && (!('createdAt' in d) || isTs(d.createdAt));
     }
+    function validQuestUpdate() {
+      let d = request.resource.data;
+      let c = changed();
+      return c.hasOnly(['title', 'description', 'type', 'skill', 'completed', 'lastCompleted'])
+        && (!('title' in c) || (isStr(d.title, 80) && d.title.size() > 0))
+        && (!('description' in c) || isStr(d.description, 2000))
+        && (!('type' in c) || d.type in ['daily', 'one-off'])
+        && (!('skill' in c) || isStr(d.skill, 32))
+        && (!('completed' in c) || d.completed is bool)
+        && (!('lastCompleted' in c) || d.lastCompleted == null || isTs(d.lastCompleted));
+    }
     match /quests/{questId} {
       allow read, delete: if ownsExisting();
       allow create: if ownsNew() && validQuest();
-      allow update: if ownsExisting() && keepsOwner() && validQuest();
+      allow update: if ownsExisting() && keepsOwner() && validQuestUpdate();
     }
 
     // ---- userStats: one document per player, keyed by uid ---------------
@@ -55,20 +67,20 @@ service cloud.firestore {
                        'staminaMax', 'skillPoints', 'pendingLevelUps', 'race', 'perks', 'skills', 'inventory', 'equippedItemId',
                        'completedQuestCount', 'surgeEndTime', 'slowTimeEndTime', 'zenMode', 'trackLocation', 'bestStreak'])
         && isStr(d.name, 24)
-        && isInt(d.level, 1, 1000)
+        && isNum(d.level, 1, 1000)
         && isNum(d.xp, 0, 10000000) && isNum(d.xpToNextLevel, 1, 100000000)
         && isNum(d.health, 0, 10000) && isNum(d.magicka, 0, 10000) && isNum(d.stamina, 0, 10000)
         && isNum(d.healthMax, 1, 10000) && isNum(d.magickaMax, 1, 10000) && isNum(d.staminaMax, 1, 10000)
-        && isInt(d.skillPoints, 0, 1000) && isInt(d.pendingLevelUps, 0, 1000)
+        && isNum(d.skillPoints, 0, 1000) && isNum(d.pendingLevelUps, 0, 1000)
         && isStr(d.race, 24)
         && d.perks is list && d.perks.size() <= 200
         && d.skills is map && d.skills.size() <= 16
         && d.inventory is list && d.inventory.size() <= 60
         && (d.equippedItemId == null || isStr(d.equippedItemId, 40))
-        && isInt(d.completedQuestCount, 0, 1000000)
+        && isNum(d.completedQuestCount, 0, 1000000)
         && isNum(d.surgeEndTime, 0, 10000000000000) && isNum(d.slowTimeEndTime, 0, 10000000000000)
         && d.zenMode is bool && d.trackLocation is bool
-        && isInt(d.bestStreak, 0, 100000);
+        && isNum(d.bestStreak, 0, 100000);
     }
     match /userStats/{userId} {
       allow read, delete: if isOwner(userId);

@@ -1,5 +1,4 @@
 import React, { lazy, Suspense, useState } from 'react';
-import { Link } from 'react-router-dom';
 import { useMoodEntries } from '../hooks/useMoodEntries';
 import { useSound } from '../context/SoundContext';
 import LogForm, { energyEmoji, moodEmoji } from '../components/Skyrim/LogForm';
@@ -51,7 +50,6 @@ const MobileLog: React.FC = () => {
           <span className="m-entry-scores skyrim-serif">{moodEmoji(e.mood)} {e.mood} · {energyEmoji(e.energy)} {e.energy} · 🌙 {e.sleep}h</span>
         </button>
       ))}
-      {entries.length > 0 && <Link to="/tome" className="btn-ghost small skyrim-font" style={{ marginTop: '1rem', alignSelf: 'center' }}>OPEN THE TOME</Link>}
 
       <Modal open={!!open} onClose={() => setOpen(null)} title={open?.timestamp.toDate().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' }).toUpperCase()} className="sheet">
         {open && (

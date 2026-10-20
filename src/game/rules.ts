@@ -20,6 +20,13 @@ export const XP = {
   SPELL_FAMILIAR: 30,
 } as const;
 
+export const LIMITS = {
+  QUEST_TITLE: 80,
+  HIGHLIGHT: 200,
+  NAME: 24,
+  THOUGHT: 500,
+} as const;
+
 export const LOOT_EVERY_N_QUESTS = 5;
 export const MAX_INVENTORY = 60;
 
@@ -85,27 +92,27 @@ export function normalizeStats(data: Record<string, unknown> | undefined, fallba
   const magickaMax = Math.max(1, num(d.magickaMax, base.magickaMax));
   const staminaMax = Math.max(1, num(d.staminaMax, base.staminaMax));
   return {
-    name: typeof d.name === 'string' && d.name.trim() ? d.name : base.name,
-    level: Math.max(1, num(d.level, base.level)),
+    name: typeof d.name === 'string' && d.name.trim() ? d.name.trim().slice(0, LIMITS.NAME) : base.name,
+    level: Math.max(1, Math.round(num(d.level, base.level))),
     xp: Math.max(0, num(d.xp, 0)),
     xpToNextLevel: Math.max(1, num(d.xpToNextLevel, base.xpToNextLevel)),
     health: clamp(num(d.health, base.health), 0, healthMax),
     magicka: clamp(num(d.magicka, base.magicka), 0, magickaMax),
     stamina: clamp(num(d.stamina, base.stamina), 0, staminaMax),
     healthMax, magickaMax, staminaMax,
-    skillPoints: Math.max(0, num(d.skillPoints, 0)),
-    pendingLevelUps: Math.max(0, num(d.pendingLevelUps, 0)),
-    race: typeof d.race === 'string' ? d.race : base.race,
-    perks: Array.isArray(d.perks) ? d.perks.filter((p): p is string => typeof p === 'string') : [],
+    skillPoints: Math.max(0, Math.round(num(d.skillPoints, 0))),
+    pendingLevelUps: Math.max(0, Math.round(num(d.pendingLevelUps, 0))),
+    race: typeof d.race === 'string' ? d.race.slice(0, 24) : base.race,
+    perks: Array.isArray(d.perks) ? d.perks.filter((p): p is string => typeof p === 'string').slice(0, 200) : [],
     skills,
-    inventory: Array.isArray(d.inventory) ? (d.inventory as InventoryItem[]).filter(i => i && typeof i.uid === 'string') : [],
+    inventory: Array.isArray(d.inventory) ? (d.inventory as InventoryItem[]).filter(i => i && typeof i.uid === 'string').slice(0, MAX_INVENTORY) : [],
     equippedItemId: typeof d.equippedItemId === 'string' ? d.equippedItemId : null,
-    completedQuestCount: Math.max(0, num(d.completedQuestCount, 0)),
+    completedQuestCount: Math.max(0, Math.round(num(d.completedQuestCount, 0))),
     surgeEndTime: num(d.surgeEndTime, 0),
     slowTimeEndTime: num(d.slowTimeEndTime, 0),
     zenMode: d.zenMode === true,
     trackLocation: d.trackLocation !== false,
-    bestStreak: Math.max(0, num(d.bestStreak, 0)),
+    bestStreak: Math.max(0, Math.round(num(d.bestStreak, 0))),
   };
 }
 
@@ -284,10 +291,3 @@ export function sortQuests(list: Quest[], now = new Date()): Quest[] {
     return a.title.localeCompare(b.title);
   });
 }
-
-export const LIMITS = {
-  QUEST_TITLE: 80,
-  HIGHLIGHT: 200,
-  NAME: 24,
-  THOUGHT: 500,
-} as const;

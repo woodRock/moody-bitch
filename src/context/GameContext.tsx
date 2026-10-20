@@ -16,8 +16,6 @@ export type { ActiveEffect, InventoryItem } from '../game/types';
 interface WorldMessage { id: string; text: string }
 
 export interface UIState {
-  heading: number;
-  compassMarkers: { id: string; offset: number; icon: string }[];
   isPauseMenuOpen: boolean;
   isMenuOpen: boolean;
   disabledGestures: boolean;
@@ -77,8 +75,6 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [queue, setQueue] = useState<Notification[]>([]);
   const [worldMessages, setWorldMessages] = useState<WorldMessage[]>([]);
   const [ui, setUIState] = useState<UIState>({
-    heading: 0,
-    compassMarkers: [],
     isPauseMenuOpen: false,
     isMenuOpen: false,
     disabledGestures: false,

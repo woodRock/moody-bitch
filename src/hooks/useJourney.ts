@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLatestRef } from './useLatestRef';
 import { useAuth } from '../context/AuthContext';
-import { useGame } from '../context/GameContext';
+import { compassStore } from '../context/compassStore';
 import { fetchLocationHistory, getCurrentPosition } from '../services/locationService';
 import type { UserLocation } from '../services/locationService';
 import { bearing, compassOffset, relativeBearing } from '../game/geo';
@@ -12,13 +12,11 @@ export type JourneyStatus = 'loading' | 'ready' | 'empty';
 /** Loads the Journey Map data and feeds compass markers to the HUD as the map pans. */
 export function useJourney(compassWidth: number) {
   const { currentUser } = useAuth();
-  const { setUI, ui } = useGame();
   const [locations, setLocations] = useState<UserLocation[]>([]);
   const [center, setCenter] = useState<LatLng | null>(null);
   const [status, setStatus] = useState<JourneyStatus>('loading');
   const [error, setError] = useState<string | null>(null);
   const raf = useRef<number | null>(null);
-  const headingRef = useLatestRef(ui.heading);
   const locationsRef = useLatestRef(locations);
   const lastKey = useRef('');
 
@@ -54,7 +52,7 @@ export function useJourney(compassWidth: number) {
   useEffect(() => { void reload(); }, [reload]);
 
   // Clear markers when leaving the map.
-  useEffect(() => () => { setUI({ compassMarkers: [] }); }, [setUI]);
+  useEffect(() => () => { compassStore.set({ markers: [] }); }, []);
 
   /** Call on every map move; throttled to one update per animation frame. */
   const onMapMove = useCallback((c: LatLng) => {
@@ -64,17 +62,17 @@ export function useJourney(compassWidth: number) {
       const half = compassWidth / 2;
       const markers = locationsRef.current
         .map(loc => {
-          const rel = relativeBearing(bearing(c, loc), headingRef.current);
+          const rel = relativeBearing(bearing(c, loc), compassStore.get().heading);
           return { id: loc.id ?? `${loc.lat},${loc.lng}`, offset: Math.round(compassOffset(rel, compassWidth)), icon: loc.label?.includes('Completed') ? '◆' : '✦' };
         })
         .filter(m => Math.abs(m.offset) <= half);
       const key = markers.map(m => `${m.id}:${m.offset}`).join('|');
       if (key !== lastKey.current) {
         lastKey.current = key;
-        setUI({ compassMarkers: markers });
+        compassStore.set({ markers });
       }
     });
-  }, [compassWidth, setUI, headingRef, locationsRef]);
+  }, [compassWidth, locationsRef]);
 
   return { locations, center, status, error, reload, onMapMove };
 }
