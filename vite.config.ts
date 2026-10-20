@@ -41,9 +41,9 @@ function csp(): Plugin {
   };
 }
 
-export default defineConfig(({ command }) => ({
+export default defineConfig(({ command, isPreview }) => ({
   plugins: [react(), csp()],
-  base: command === 'build' ? base : '/',
+  base: command === 'build' || isPreview ? base : '/',
   build: {
     target: 'es2022',
     sourcemap: false,
@@ -54,13 +54,14 @@ export default defineConfig(({ command }) => ({
         // Stable vendor chunks cache well across deploys.
         manualChunks(id) {
           if (!id.includes('node_modules')) return undefined;
-          if (id.includes('@firebase/firestore') || id.includes('re2js')) return 'firestore';
-          if (id.includes('@firebase') || id.includes('/firebase/')) return 'firebase';
+          // Keep every Firebase package together: they import each other and splitting
+          // them produces circular chunks that throw "cannot access before initialization".
+          if (id.includes('@firebase') || id.includes('/firebase/') || id.includes('re2js') || id.includes('/idb/')) return 'firebase';
           if (id.includes('leaflet')) return 'leaflet';
           if (id.includes('framer-motion') || id.includes('motion-')) return 'motion';
           if (id.includes('react-pageflip') || id.includes('page-flip')) return 'pageflip';
           if (id.includes('react-router') || id.includes('/react/') || id.includes('react-dom') || id.includes('scheduler')) return 'react';
-          return 'vendor';
+          return undefined;
         },
       },
     },
