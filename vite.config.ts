@@ -23,12 +23,13 @@ function csp(): Plugin {
       const proxy = process.env.VITE_LORE_PROXY_URL ? new URL(process.env.VITE_LORE_PROXY_URL).origin : '';
       const policy = [
         "default-src 'self'",
-        `script-src 'self' ${hashes.join(' ')}`,
+        // apis.google.com and gstatic host the helper Firebase Auth loads for Google sign-in popups.
+        `script-src 'self' https://apis.google.com https://www.gstatic.com ${hashes.join(' ')}`,
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
         "font-src 'self' https://fonts.gstatic.com",
         "img-src 'self' data: blob: https://tile.openstreetmap.org https://*.tile.openstreetmap.org",
         `connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://*.firebaseapp.com https://*.google.com ${proxy}`.trim(),
-        "frame-src https://*.firebaseapp.com https://accounts.google.com",
+        "frame-src https://*.firebaseapp.com https://accounts.google.com https://apis.google.com",
         "media-src 'self'",
         "worker-src 'self' blob:",
         "object-src 'none'",
