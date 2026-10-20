@@ -1,61 +1,39 @@
 import React, { useState } from 'react';
-import { useAuth } from '../../context/AuthContext';
 import { Link } from 'react-router-dom';
-import '../../styles/Auth.css';
+import { useAuth } from '../../context/AuthContext';
+import AuthLayout from './AuthLayout';
 
 const ForgotPassword: React.FC = () => {
   const [email, setEmail] = useState('');
-  const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const { resetPassword } = useAuth();
 
-  async function handleSubmit(e: React.FormEvent) {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoading(true);
     try {
-      setMessage('');
-      setError('');
-      setLoading(true);
-      await resetPassword(email);
-      setMessage('Check your inbox for further instructions.');
-    } catch (_err) {
-      setError('Failed to reset password.');
+      await resetPassword(email.trim());
+    } catch (err) {
+      // Deliberately the same message whether or not the account exists.
+      console.warn('Password reset request failed', (err as { code?: string })?.code);
+    } finally {
+      setMessage('If a character answers to that address, a courier has been dispatched with instructions.');
+      setLoading(false);
     }
-    setLoading(false);
-  }
+  };
 
   return (
-    <div className="auth-container">
-      <div className="auth-box">
-        <h2 className="auth-title">RESTORE MEMORY</h2>
-        {error && <div className="error-message">{error}</div>}
-        {message && <div style={{ color: '#10b981', textAlign: 'center', marginBottom: '1rem', fontFamily: 'Crimson Text' }}>{message}</div>}
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-          <div className="input-group">
-            <label className="skyrim-font" style={{ fontSize: '0.8rem', color: '#888' }}>EMAIL</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="parchment-input"
-              required
-              style={{ background: 'rgba(255,255,255,0.05)', color: '#fff', border: '1px solid #444' }}
-            />
-          </div>
-          <button 
-            type="submit" 
-            className="btn" 
-            disabled={loading}
-            style={{ width: '100%', padding: '1rem', background: 'rgba(255,255,255,0.1)', color: '#fff', border: '1px solid var(--skyrim-gold-dim)' }}
-          >
-            {loading ? 'SENDING MESSENGER...' : 'RESET PASSWORD'}
-          </button>
-        </form>
-        <div className="auth-footer">
-          <Link to="/signin">Back to Login</Link>
+    <AuthLayout title="Restore Memory" message={message}>
+      <form onSubmit={submit}>
+        <div className="input-group">
+          <label className="skyrim-font field-label" htmlFor="fp-email"><span>EMAIL</span></label>
+          <input id="fp-email" type="email" autoComplete="email" value={email} onChange={e => setEmail(e.target.value)} className="parchment-input dark" required />
         </div>
-      </div>
-    </div>
+        <button type="submit" className="btn-primary wide skyrim-font" disabled={loading}>{loading ? 'SENDING COURIER...' : 'RESET PASSWORD'}</button>
+      </form>
+      <div className="auth-footer skyrim-serif"><Link to="/signin">Back to the gate</Link></div>
+    </AuthLayout>
   );
 };
 

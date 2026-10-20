@@ -1,141 +1,88 @@
-import React, { useState, useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import { useGame } from '../context/GameContext';
 import { useSound } from '../context/SoundContext';
 import { useTrackpadSwipe } from '../hooks/useTrackpadSwipe';
-import type { InventoryItem } from '../context/GameContext';
-import '../styles/Skyrim.css';
+import type { InventoryItem } from '../game/types';
 
-const CATEGORIES = ['ALL', 'APPAREL', 'POTIONS', 'BOOKS', 'MISC'];
+export const CATEGORIES = ['ALL', 'APPAREL', 'POTIONS', 'BOOKS', 'MISC'] as const;
 
 const Inventory: React.FC = () => {
-  const { stats, consumeItem, setUI, toggleEquip } = useGame();
+  const { stats, consumeItem, setUI, toggleEquip, ui } = useGame();
   const { playSound } = useSound();
-  const [selectedCategory, setSelectedCategory] = useState('ALL');
+  const [selectedCategory, setSelectedCategory] = useState<typeof CATEGORIES[number]>('ALL');
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
 
-  const filteredItems = selectedCategory === 'ALL' 
-    ? stats.inventory 
-    : stats.inventory.filter(item => item.category === selectedCategory);
+  const filteredItems = selectedCategory === 'ALL' ? stats.inventory : stats.inventory.filter(i => i.category === selectedCategory);
+  const totalWeight = stats.inventory.reduce((w, i) => w + i.weight, 0);
 
   const handleSwipe = useCallback((direction: 'UP' | 'DOWN' | 'LEFT' | 'RIGHT') => {
-    const currentIndex = CATEGORIES.indexOf(selectedCategory);
-    if (direction === 'DOWN') {
-      const nextIndex = Math.min(currentIndex + 1, CATEGORIES.length - 1);
-      if (nextIndex !== currentIndex) {
-        setSelectedCategory(CATEGORIES[nextIndex]);
-        setSelectedItem(null);
-        playSound('UI_CLICK');
-      }
-    } else if (direction === 'UP') {
-      const prevIndex = Math.max(currentIndex - 1, 0);
-      if (prevIndex !== currentIndex) {
-        setSelectedCategory(CATEGORIES[prevIndex]);
-        setSelectedItem(null);
-        playSound('UI_CLICK');
-      }
-    }
-  }, [selectedCategory, playSound]);
+    if (ui.modalDepth > 0) return;
+    const i = CATEGORIES.indexOf(selectedCategory);
+    if (direction === 'DOWN' && i < CATEGORIES.length - 1) { setSelectedCategory(CATEGORIES[i + 1]); setSelectedItem(null); playSound('UI_CLICK'); }
+    else if (direction === 'UP' && i > 0) { setSelectedCategory(CATEGORIES[i - 1]); setSelectedItem(null); playSound('UI_CLICK'); }
+  }, [selectedCategory, playSound, ui.modalDepth]);
 
-  useTrackpadSwipe({ onSwipe: handleSwipe, threshold: 80 });
+  useTrackpadSwipe({ onSwipe: handleSwipe, threshold: 80, disabled: ui.isMenuOpen || ui.isPauseMenuOpen });
 
-  const handleUseItem = () => {
-    if (selectedItem) {
-      if (selectedItem.category === 'APPAREL') {
-        toggleEquip(selectedItem.uid);
-      } else {
-        consumeItem(selectedItem);
-        setSelectedItem(null);
-      }
-    }
+  const handleUseItem = async () => {
+    if (!selectedItem) return;
+    if (selectedItem.category === 'APPAREL') await toggleEquip(selectedItem.uid);
+    else { await consumeItem(selectedItem); setSelectedItem(null); }
   };
 
-  const isEquipped = selectedItem && stats.equippedItemId === selectedItem.uid;
+  const isEquipped = !!selectedItem && stats.equippedItemId === selectedItem.uid;
 
   return (
-    <div className="skills-container" style={{ background: 'radial-gradient(circle at center, #140a05 0%, #000 100%)' }}>
-      <div className="star-field"></div>
+    <div className="skills-container inventory-screen">
+      <div className="star-field" />
+      <button onClick={() => { setUI({ isMenuOpen: true }); playSound('UI_CLICK'); }} className="nav-arrow left-top" aria-label="Open character menu">&larr;</button>
 
-      <button 
-        onClick={() => { setUI({ isMenuOpen: true }); playSound('UI_CLICK'); }}
-        className="skyrim-font"
-        style={{ position: 'fixed', top: '2rem', left: '4rem', background: 'none', border: 'none', color: 'var(--skyrim-gold-bright)', fontSize: '3rem', cursor: 'pointer', zIndex: 100, opacity: 0.6 }}
-      >
-        &larr;
-      </button>
-      
-      <div style={{ marginTop: '100px', height: 'calc(100vh - 250px)', width: '90vw', margin: '100px auto' }}>
+      <div className="three-column-frame">
         <div className="inventory-menu-layout">
-          <div className="magic-school-column" style={{ borderLeft: 'none', borderRight: '1px solid rgba(255,255,255,0.1)', textAlign: 'left' }}>
+          <div className="magic-school-column ltr">
             {CATEGORIES.map(cat => (
-              <div 
-                key={cat} 
-                className={`magic-list-item ${selectedCategory === cat ? 'active' : ''}`} 
-                onClick={() => { 
-                  setSelectedCategory(cat); 
-                  setSelectedItem(null); 
-                  playSound('UI_CLICK'); 
-                }}
-              >
+              <div key={cat} className={`magic-list-item ltr ${selectedCategory === cat ? 'active' : ''}`} onClick={() => { setSelectedCategory(cat); setSelectedItem(null); playSound('UI_CLICK'); }}>
                 {cat}
               </div>
             ))}
+            <div className="skyrim-font carry-weight">CARRY WEIGHT <span>{totalWeight.toFixed(1)}</span></div>
           </div>
 
-          <div className="magic-spell-column" style={{ borderLeft: 'none', borderRight: '1px solid rgba(255,255,255,0.1)', textAlign: 'left' }}>
-            <div>
-              <div className="quest-category-title" style={{ padding: '1rem', textAlign: 'left' }}>Inventory</div>
-              <div style={{ overflowY: 'auto', maxHeight: '60vh' }}>
-                {filteredItems.map((item, idx) => {
-                  const equipped = stats.equippedItemId === item.uid;
-                  return (
-                    <div 
-                      key={item.uid || idx} 
-                      className={`magic-list-item ${selectedItem?.uid === item.uid ? 'active' : ''}`} 
-                      onClick={() => { 
-                        setSelectedItem(item); 
-                        playSound('UI_CLICK'); 
-                      }} 
-                      style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
-                    >
-                      <span style={{ color: equipped ? 'var(--skyrim-gold-bright)' : 'inherit' }}>
-                        {item.icon} {item.name} {equipped && '(EQUIPPED)'}
-                      </span>
-                      <span style={{ fontSize: '0.7rem', color: '#555' }}>{item.weight}</span>
-                    </div>
-                  );
-                })}
-              </div>
+          <div className="magic-spell-column ltr">
+            <div className="quest-category-title" style={{ padding: '1rem' }}>Inventory</div>
+            <div className="scroll-list">
+              {filteredItems.length === 0 && <p className="skyrim-serif muted" style={{ padding: '0 1rem' }}>Nothing here. Every 5th quest completed drops loot.</p>}
+              {filteredItems.map(item => {
+                const equipped = stats.equippedItemId === item.uid;
+                return (
+                  <div key={item.uid} className={`magic-list-item ltr row ${selectedItem?.uid === item.uid ? 'active' : ''}`} onClick={() => { setSelectedItem(item); playSound('UI_CLICK'); }}>
+                    <span style={{ color: equipped ? 'var(--skyrim-gold-bright)' : 'inherit' }}>{item.icon} {item.name} {equipped && '(EQUIPPED)'}</span>
+                    <span className="item-weight">{item.weight}</span>
+                  </div>
+                );
+              })}
             </div>
           </div>
 
           <div className="magic-details-column" style={{ paddingLeft: '2rem' }}>
-            {selectedItem && (
+            {selectedItem ? (
               <div>
-                <div style={{ fontSize: '5rem', marginBottom: '1rem', filter: 'drop-shadow(0 0 20px rgba(255,255,255,0.2))' }}>{selectedItem.icon}</div>
-                <h1 className="skyrim-font" style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>{selectedItem.name}</h1>
+                <div className="item-hero">{selectedItem.icon}</div>
+                <h1 className="skyrim-font detail-title">{selectedItem.name}</h1>
                 <div className="skyrim-font" style={{ color: 'var(--skyrim-gold-dim)', marginBottom: '1.5rem' }}>{selectedItem.category}</div>
-                <div className="menu-separator" style={{ width: '100%', marginBottom: '2rem', opacity: 0.3 }}></div>
+                <div className="menu-separator wide" />
                 <p className="quest-description" style={{ color: '#fff' }}>{selectedItem.description}</p>
-                <div style={{ display: 'flex', gap: '3rem', marginTop: '2rem' }} className="skyrim-font">
-                  <div>VALUE <span style={{ color: '#fff' }}>{selectedItem.value}</span></div>
-                  <div>WEIGHT <span style={{ color: '#fff' }}>{selectedItem.weight}</span></div>
+                <div className="item-stats skyrim-font">
+                  <div>VALUE <span>{selectedItem.value}</span></div>
+                  <div>WEIGHT <span>{selectedItem.weight}</span></div>
                 </div>
-                <div style={{ marginTop: '4rem' }}>
-                  <button 
-                    className="btn" 
-                    onClick={handleUseItem} 
-                    style={{ 
-                      background: isEquipped ? 'rgba(169, 41, 41, 0.3)' : 'var(--skyrim-blue)', 
-                      border: '1px solid #4a90e2', 
-                      color: '#fff', 
-                      padding: '0.8rem 2rem' 
-                    }}
-                  >
-                    {selectedItem.category === 'APPAREL' ? (isEquipped ? 'UNEQUIP' : 'EQUIP ITEM') : 'USE ITEM'}
+                <div style={{ marginTop: '3rem' }}>
+                  <button className={`btn-primary skyrim-font ${isEquipped ? 'danger' : 'blue'}`} onClick={() => void handleUseItem()}>
+                    {selectedItem.category === 'APPAREL' ? (isEquipped ? 'UNEQUIP' : 'EQUIP ITEM') : selectedItem.category === 'BOOKS' ? 'READ' : 'USE ITEM'}
                   </button>
                 </div>
               </div>
-            )}
+            ) : <p className="skyrim-serif muted" style={{ marginTop: '4rem', textAlign: 'center' }}>Select an item.</p>}
           </div>
         </div>
       </div>

@@ -1,164 +1,36 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useCallback, useState } from 'react';
 import { useGame } from '../context/GameContext';
 import { useSound } from '../context/SoundContext';
 import { useTrackpadSwipe } from '../hooks/useTrackpadSwipe';
-import { motion, AnimatePresence } from 'framer-motion';
-import { generateQuestLore } from '../services/loreService'; 
-import '../styles/Skyrim.css';
-
-interface Spell {
-  id: string;
-  name: string;
-  school: string;
-  cost: number;
-  description: string;
-  effect: string;
-  words?: string[]; 
-}
-
-const SPELLS: Spell[] = [
-  { id: 'heal', name: 'Heal Self', school: 'RESTORATION', cost: 30, description: 'A basic mending of the spirit.', effect: 'Prompts you to list 3 things you like about yourself.' },
-  { id: 'calm', name: 'Calm', school: 'ILLUSION', cost: 40, description: 'Soothe the racing mind.', effect: 'Initiates a 60-second deep breathing exercise.' },
-  { id: 'transmute', name: 'Transmute Thought', school: 'ALTERATION', cost: 50, description: 'Turn iron worries into golden lessons.', effect: 'AI-powered reframing of a negative thought.' },
-  { id: 'familiar', name: 'Summon Familiar', school: 'CONJURATION', cost: 30, description: 'Call upon a trusted ally.', effect: 'Displays a reminder to contact a specific loved one.' },
-];
-
-const SHOUTS: Spell[] = [
-  { 
-    id: 'fus', 
-    name: 'Unrelenting Focus', 
-    school: 'SHOUTS', 
-    cost: 0, 
-    words: ['FUS', 'RO', 'DAH'], 
-    description: 'Force your will upon the world and crush procrastination. A powerful shout that focuses your spirit for a brief period of intense productivity.', 
-    effect: 'Quests completed within the next 5 minutes grant double XP.' 
-  },
-  { 
-    id: 'tiid', 
-    name: 'Slow Time', 
-    school: 'SHOUTS', 
-    cost: 0, 
-    words: ['TIID', 'KLO', 'UL'], 
-    description: 'Bending time to your will, you silence the noise of the world. All notifications and world messages are suppressed, allowing for total concentration.', 
-    effect: 'Pauses all notifications for 10 minutes.' 
-  },
-  { 
-    id: 'feim', 
-    name: 'Ethereal Peace', 
-    school: 'SHOUTS', 
-    cost: 0, 
-    words: ['FEIM', 'ZII', 'GRON'], 
-    description: 'The Voice is that of the spirit, not the body. You become as a ghost, untethered from the distractions of the physical world. The HUD vanishes, leaving only your focus.', 
-    effect: 'Toggles Zen Mode (hides the HUD).' 
-  }
-];
-
-const SCHOOLS = ['ALL', 'SHOUTS', 'ALTERATION', 'CONJURATION', 'ILLUSION', 'RESTORATION', 'ACTIVE EFFECTS'];
+import { SCHOOLS, SHOUTS, SPELLS } from '../game/spells';
+import type { Spell } from '../game/spells';
+import SpellCasting from '../components/Skyrim/SpellCasting';
+import { useSpellbook } from '../hooks/useSpellbook';
 
 const Magic: React.FC = () => {
-  const { stats, activeEffects, castSpell, notify, setUI, addXP, startSurge, startSlowTime, toggleZenMode } = useGame();
+  const { stats, activeEffects, setUI, ui } = useGame();
   const { playSound } = useSound();
-  const [selectedSchool, setSelectedSchool] = useState('ALL');
+  const [selectedSchool, setSelectedSchool] = useState<typeof SCHOOLS[number]>('ALL');
   const [selectedSpell, setSelectedSpell] = useState<Spell | null>(null);
-
-  const [isCasting, setIsCasting] = useState<string | null>(null);
-  const [gratitudes, setGratitudes] = useState(['', '', '']);
-  const [breathingStep, setBreathingStep] = useState<'In' | 'Hold' | 'Out'>('In');
-  const [negativeThought, setNegativeThought] = useState('');
-  const [transmutedThought, setTransmutedThought] = useState('');
-  const [isTransmuting, setIsTransmuting] = useState(false);
+  const { casting, setCasting, cast } = useSpellbook();
 
   const handleSwipe = useCallback((direction: 'UP' | 'DOWN' | 'LEFT' | 'RIGHT') => {
-    if (isCasting) return;
-    const currentIndex = SCHOOLS.indexOf(selectedSchool);
-    if (direction === 'DOWN') {
-      const nextIndex = Math.min(currentIndex + 1, SCHOOLS.length - 1);
-      setSelectedSchool(SCHOOLS[nextIndex]);
-      setSelectedSpell(null);
-    } else if (direction === 'UP') {
-      const prevIndex = Math.max(currentIndex - 1, 0);
-      setSelectedSchool(SCHOOLS[prevIndex]);
-      setSelectedSpell(null);
-    }
-  }, [selectedSchool, isCasting]);
+    if (casting || ui.modalDepth > 0) return;
+    const i = SCHOOLS.indexOf(selectedSchool);
+    if (direction === 'DOWN') { setSelectedSchool(SCHOOLS[Math.min(i + 1, SCHOOLS.length - 1)]); setSelectedSpell(null); }
+    else if (direction === 'UP') { setSelectedSchool(SCHOOLS[Math.max(i - 1, 0)]); setSelectedSpell(null); }
+  }, [selectedSchool, casting, ui.modalDepth]);
 
-  useTrackpadSwipe({ onSwipe: handleSwipe, threshold: 80 });
+  useTrackpadSwipe({ onSwipe: handleSwipe, threshold: 80, disabled: ui.isMenuOpen || ui.isPauseMenuOpen });
 
-  const handleCast = (spell: Spell) => {
-    if (spell.school === 'SHOUTS') {
-      notify("SHOUT UNLEASHED", spell.words?.join(' ') || '');
-      playSound('SPELL_CAST');
-      if (spell.id === 'fus') {
-        startSurge(5);
-      } else if (spell.id === 'tiid') {
-        startSlowTime(10);
-      } else if (spell.id === 'feim') {
-        toggleZenMode();
-      }
-      return;
-    }
-    if (castSpell(spell.cost, spell.name)) {
-      setIsCasting(spell.id);
-    }
-  };
-
-  useEffect(() => {
-    if (isCasting !== 'calm') return;
-    let timer: any;
-    const runBreath = () => {
-      setBreathingStep('In');
-      timer = setTimeout(() => {
-        setBreathingStep('Hold');
-        timer = setTimeout(() => {
-          setBreathingStep('Out');
-          timer = setTimeout(() => {
-            setIsCasting(null);
-            notify("SOOTHED", "Your mind is clear.");
-            addXP(50, 'ALTERATION');
-          }, 8000);
-        }, 7000);
-      }, 4000);
-    };
-    runBreath();
-    return () => clearTimeout(timer);
-  }, [isCasting, notify, addXP]);
-
-  const finalizeHeal = () => {
-    if (gratitudes.every(g => g.trim().length > 2)) {
-      setIsCasting(null);
-      notify("SPIRIT MENDED", "Health restored.");
-      addXP(50, 'RESTORATION');
-      setGratitudes(['', '', '']);
-    }
-  };
-
-  const handleTransmute = async () => {
-    if (!negativeThought.trim()) return;
-    setIsTransmuting(true);
-    try {
-      const prompt = `Reframe this negative thought into a constructive, positive lesson in the style of a wise Skyrim mage: "${negativeThought}"`;
-      const result = await generateQuestLore(prompt, 'one-off'); 
-      setTransmutedThought(result);
-    } catch (_e) {
-      setTransmutedThought("The stars are cloudy. Try again later.");
-    } finally {
-      setIsTransmuting(false);
-    }
-  };
+  const list = [...SPELLS, ...SHOUTS].filter(s => selectedSchool === 'ALL' || s.school === selectedSchool);
 
   return (
-    <div className="skills-container" style={{ background: 'radial-gradient(circle at center, #050a14 0%, #000 100%)' }}>
-      <div className="star-field"></div>
+    <div className="skills-container magic-screen">
+      <div className="star-field" />
+      <button onClick={() => { setUI({ isMenuOpen: true }); playSound('UI_CLICK'); }} className="nav-arrow right-top" aria-label="Open character menu">&rarr;</button>
 
-      <button 
-        onClick={() => { setUI({ isMenuOpen: true }); playSound('UI_CLICK'); }}
-        className="skyrim-font"
-        style={{ position: 'fixed', top: '2rem', right: '4rem', background: 'none', border: 'none', color: 'var(--skyrim-gold-bright)', fontSize: '3rem', cursor: 'pointer', zIndex: 100, opacity: 0.6 }}
-      >
-        &rarr;
-      </button>
-      
-      <div style={{ marginTop: '100px', height: 'calc(100vh - 250px)', width: '90vw', margin: '100px auto' }}>
+      <div className="three-column-frame">
         <div className="magic-menu-layout">
           <div className="magic-school-column">
             {SCHOOLS.map(school => (
@@ -169,118 +41,57 @@ const Magic: React.FC = () => {
           </div>
 
           <div className="magic-spell-column">
-            <div>
-              {selectedSchool === 'ACTIVE EFFECTS' ? (
-                <div style={{ padding: '1rem' }}>
-                  <div className="quest-category-title" style={{ textAlign: 'right' }}>Active Effects</div>
-                  {activeEffects.map(effect => (
-                    <div key={effect.id} className="active-effect-card" style={{ flexDirection: 'row-reverse', textAlign: 'right' }}>
-                      <div className="active-effect-icon">{effect.icon}</div>
-                      <div style={{ marginRight: '1rem' }}>
-                        <div className="skyrim-font" style={{ color: '#fff' }}>{effect.name}</div>
-                        <div className="skyrim-serif" style={{ color: '#888', fontSize: '0.9rem' }}>{effect.description}</div>
-                      </div>
+            {selectedSchool === 'ACTIVE EFFECTS' ? (
+              <div style={{ padding: '1rem' }}>
+                <div className="quest-category-title" style={{ textAlign: 'right' }}>Active Effects</div>
+                {activeEffects.length === 0 && <p className="skyrim-serif muted" style={{ textAlign: 'right' }}>No effects. Rest well and keep your bars high.</p>}
+                {activeEffects.map(effect => (
+                  <div key={effect.id} className="active-effect-card reverse">
+                    <div className="active-effect-icon">{effect.icon}</div>
+                    <div>
+                      <div className="skyrim-font" style={{ color: '#fff' }}>{effect.name}</div>
+                      <div className="skyrim-serif muted">{effect.description}</div>
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <div>
-                  <div className="quest-category-title" style={{ padding: '1rem', textAlign: 'right' }}>{selectedSchool === 'SHOUTS' ? 'Dragon Shouts' : 'Available Spells'}</div>
-                  {([...SPELLS, ...SHOUTS]).filter(s => selectedSchool === 'ALL' || s.school === selectedSchool).map(spell => (
-                    <div key={spell.id} className={`magic-list-item ${selectedSpell?.id === spell.id ? 'active' : ''}`} onClick={() => { setSelectedSpell(spell); playSound('UI_CLICK'); }}>
-                      <div>{spell.name}</div>
-                      {spell.school !== 'SHOUTS' && <div className="spell-cost-indicator">COST {spell.cost}</div>}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div>
+                <div className="quest-category-title" style={{ padding: '1rem', textAlign: 'right' }}>{selectedSchool === 'SHOUTS' ? 'Dragon Shouts' : 'Available Spells'}</div>
+                {list.map(spell => (
+                  <div key={spell.id} className={`magic-list-item ${selectedSpell?.id === spell.id ? 'active' : ''}`} onClick={() => { setSelectedSpell(spell); playSound('UI_CLICK'); }}>
+                    <div>{spell.name}</div>
+                    {spell.school !== 'SHOUTS' && <div className="spell-cost-indicator">COST {spell.cost}</div>}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="magic-details-column">
-            {selectedSpell && (
+            {selectedSpell ? (
               <div>
-                <h1 className="skyrim-font" style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>{selectedSpell.name}</h1>
-                {selectedSpell.school === 'SHOUTS' ? (
-                  <div style={{ marginBottom: '1.5rem' }}>{selectedSpell.words?.map(word => <span key={word} className="shout-word">{word}</span>)}</div>
-                ) : <div className="skyrim-font" style={{ color: 'var(--skyrim-blue)', marginBottom: '1.5rem' }}>{selectedSpell.school}</div>}
-                <div className="menu-separator" style={{ width: '100%', marginBottom: '2rem', opacity: 0.3 }}></div>
+                <h1 className="skyrim-font detail-title">{selectedSpell.name}</h1>
+                {selectedSpell.school === 'SHOUTS'
+                  ? <div style={{ marginBottom: '1.5rem' }}>{selectedSpell.words?.map(w => <span key={w} className="shout-word">{w}</span>)}</div>
+                  : <div className="skyrim-font" style={{ color: 'var(--skyrim-blue-bright)', marginBottom: '1.5rem' }}>{selectedSpell.school}</div>}
+                <div className="menu-separator wide" />
                 <p className="quest-description" style={{ color: '#fff' }}>{selectedSpell.description}</p>
                 <div className="quest-category-title" style={{ marginTop: '2rem' }}>Effect</div>
-                <p className="skyrim-serif" style={{ fontSize: '1.2rem', color: '#bbb', fontStyle: 'italic' }}>{selectedSpell.effect}</p>
-                <div style={{ marginTop: '4rem' }}>
-                  <button className="btn" onClick={() => handleCast(selectedSpell)} disabled={selectedSpell.school !== 'SHOUTS' && stats.magicka < selectedSpell.cost} style={{ background: selectedSpell.school === 'SHOUTS' ? 'rgba(255,255,255,0.1)' : 'var(--skyrim-blue)', border: '1px solid #4a90e2', color: '#fff', padding: '1rem 3rem' }}>
+                <p className="skyrim-serif effect-text">{selectedSpell.effect}</p>
+                <div style={{ marginTop: '3rem' }}>
+                  <button className={`btn-primary skyrim-font ${selectedSpell.school === 'SHOUTS' ? '' : 'blue'}`} onClick={() => void cast(selectedSpell)} disabled={selectedSpell.school !== 'SHOUTS' && stats.magicka < selectedSpell.cost}>
                     {selectedSpell.school === 'SHOUTS' ? 'UNLEASH SHOUT' : 'CAST SPELL'}
                   </button>
+                  {selectedSpell.school !== 'SHOUTS' && stats.magicka < selectedSpell.cost && <p className="skyrim-serif muted" style={{ marginTop: '0.8rem' }}>Not enough Magicka. Rest, or drink a potion.</p>}
                 </div>
               </div>
-            )}
+            ) : <p className="skyrim-serif muted" style={{ marginTop: '4rem', textAlign: 'center' }}>Select a spell or shout.</p>}
           </div>
         </div>
       </div>
 
-      <AnimatePresence>
-        {isCasting === 'heal' && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="skyrim-modal-overlay">
-            <div className="skyrim-modal-content" style={{ width: '600px', textAlign: 'center' }}>
-              <h2 className="skyrim-title">MEND SPIRIT</h2>
-              <p className="skyrim-serif" style={{ fontSize: '1.2rem', marginBottom: '2rem' }}>List three things you value about your journey today.</p>
-              {gratitudes.map((g, i) => (
-                <input key={i} className="parchment-input" style={{ marginBottom: '1rem', width: '100%' }} placeholder={`Blessing ${i+1}...`} value={g} onChange={e => {
-                  const n = [...gratitudes]; n[i] = e.target.value; setGratitudes(n);
-                }} />
-              ))}
-              <button className="btn" style={{ marginTop: '1rem', width: '100%' }} onClick={finalizeHeal}>RESTORE HEALTH</button>
-            </div>
-          </motion.div>
-        )}
-
-        {isCasting === 'calm' && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="skyrim-modal-overlay" style={{ background: 'rgba(0,0,0,0.95)' }}>
-            <div style={{ textAlign: 'center' }}>
-              <motion.div 
-                animate={{ scale: breathingStep === 'In' ? 1.5 : (breathingStep === 'Hold' ? 1.5 : 1) }}
-                transition={{ duration: breathingStep === 'In' ? 4 : (breathingStep === 'Out' ? 8 : 0) }}
-                style={{ width: '200px', height: '200px', borderRadius: '50%', background: 'radial-gradient(circle, var(--skyrim-blue), transparent)', border: '2px solid #fff', margin: '0 auto 2rem' }}
-              />
-              <h1 className="skyrim-font" style={{ fontSize: '4rem', color: '#fff' }}>{breathingStep.toUpperCase()}</h1>
-              <p className="skyrim-serif" style={{ fontSize: '1.5rem', color: 'var(--skyrim-blue)' }}>Release the weight of the realm...</p>
-            </div>
-          </motion.div>
-        )}
-
-        {isCasting === 'transmute' && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="skyrim-modal-overlay">
-            <div className="skyrim-modal-content" style={{ width: '700px' }}>
-              <h2 className="skyrim-title">THOUGHT FORGE</h2>
-              {!transmutedThought ? (
-                <>
-                  <p className="skyrim-serif" style={{ fontSize: '1.2rem', marginBottom: '1.5rem' }}>Place your leaden worry into the fire...</p>
-                  <textarea className="parchment-input" style={{ width: '100%', height: '100px', marginBottom: '1rem' }} placeholder="What weighs on your soul?" value={negativeThought} onChange={e => setNegativeThought(e.target.value)} />
-                  <button className="btn" style={{ width: '100%' }} onClick={handleTransmute} disabled={isTransmuting}>{isTransmuting ? 'TRANSMUTING...' : 'FORGE GOLDEN LESSON'}</button>
-                </>
-              ) : (
-                <div style={{ animation: 'zoom-in 0.5s' }}>
-                  <p className="skyrim-serif" style={{ fontSize: '1.5rem', fontStyle: 'italic', color: 'var(--skyrim-gold-bright)', marginBottom: '2rem' }}>"{transmutedThought}"</p>
-                  <button className="btn" style={{ width: '100%' }} onClick={() => { setIsCasting(null); setTransmutedThought(''); setNegativeThought(''); addXP(100, 'ALTERATION'); }}>COLLECT WISDOM</button>
-                </div>
-              )}
-            </div>
-          </motion.div>
-        )}
-
-        {isCasting === 'familiar' && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="skyrim-modal-overlay">
-            <div className="skyrim-modal-content" style={{ textAlign: 'center' }}>
-              <h2 className="skyrim-title">SUMMON ALLY</h2>
-              <div style={{ fontSize: '5rem', marginBottom: '1rem' }}>🦅</div>
-              <p className="skyrim-serif" style={{ fontSize: '1.4rem' }}>A true Dragonborn never walks alone.</p>
-              <p className="skyrim-serif" style={{ color: '#888', marginBottom: '2rem' }}>Send a message to a trusted friend or ally in the physical realm.</p>
-              <button className="btn" style={{ width: '100%' }} onClick={() => { setIsCasting(null); addXP(30, 'CONJURATION'); }}>I SHALL REACH OUT</button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <SpellCasting spell={casting} onDone={() => setCasting(null)} />
     </div>
   );
 };

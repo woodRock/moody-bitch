@@ -1,100 +1,70 @@
 import React from 'react';
 import { useGame } from '../../context/GameContext';
-import '../../styles/Skyrim.css';
+import Compass from './Compass';
 
 interface HUDProps {
   showCompass?: boolean;
   showLevel?: boolean;
+  compassWidth?: number;
+  onCompassClick?: () => void;
+  /** Mobile shell renders the bars itself. */
+  showBars?: boolean;
 }
 
-const HUD: React.FC<HUDProps> = ({ 
-  showCompass = true, 
-  showLevel = true
-}) => {
-  const { stats, notification, ui, worldMessages } = useGame();
+export const StatBars: React.FC<{ compact?: boolean }> = ({ compact = false }) => {
+  const { stats } = useGame();
+  const pct = (v: number, max: number) => `${Math.max(0, Math.min(100, (v / max) * 100))}%`;
+  return (
+    <div className={`hud-container ${compact ? 'compact' : ''}`} aria-hidden="true">
+      <div className="stat-bar-group"><div className="stat-bar-bg"><div className="stat-bar-fill bar-magicka" style={{ width: pct(stats.magicka, stats.magickaMax) }} /></div></div>
+      <div className="stat-bar-group"><div className="stat-bar-bg"><div className="stat-bar-fill bar-health" style={{ width: pct(stats.health, stats.healthMax) }} /></div></div>
+      <div className="stat-bar-group"><div className="stat-bar-bg"><div className="stat-bar-fill bar-stamina" style={{ width: pct(stats.stamina, stats.staminaMax) }} /></div></div>
+    </div>
+  );
+};
 
-  const isSlowTime = stats.slowTimeEndTime && stats.slowTimeEndTime > Date.now();
-  const isZenMode = stats.zenMode;
+export const Banner: React.FC = () => {
+  const { notification } = useGame();
+  if (!notification) return null;
+  return (
+    <div className="skyrim-banner" key={notification.id} role="status" aria-live="polite">
+      <h1 className="banner-text">{notification.title}</h1>
+      <div className="menu-separator" style={{ margin: '0.5rem auto', width: 'min(300px, 70vw)' }} />
+      {notification.subtitle && <p className="banner-subtext">{notification.subtitle}</p>}
+    </div>
+  );
+};
 
-  if (isZenMode) return null;
+const HUD: React.FC<HUDProps> = ({ showCompass = true, showLevel = false, compassWidth = 400, onCompassClick, showBars = true }) => {
+  const { stats, ui, worldMessages } = useGame();
+  const isSlowTime = stats.slowTimeEndTime > Date.now();
 
-  const degreeToPixels = 400 / 360;
-  const offset = -(ui.heading * degreeToPixels);
+  if (stats.zenMode) return <Banner />;
 
   return (
     <>
-      {isSlowTime && (
-        <div style={{ position: 'fixed', top: '2rem', left: '50%', transform: 'translateX(-50%)', opacity: 0.2, zIndex: 1000 }} className="skyrim-font">
-          SLOW TIME ACTIVE
-        </div>
-      )}
-      <div className="world-messages-container">
-        {worldMessages.map(m => (
-          <div key={m.id} className="world-message skyrim-font">
-            {m.text}
-          </div>
-        ))}
+      {isSlowTime && <div className="slow-time-indicator skyrim-font">SLOW TIME ACTIVE</div>}
+
+      <div className="world-messages-container" aria-live="polite">
+        {worldMessages.map(m => <div key={m.id} className="world-message skyrim-font">{m.text}</div>)}
       </div>
 
-      {notification && (
-        <div className="skyrim-banner">
-          <h1 className="banner-text">{notification.title}</h1>
-          <div className="menu-separator" style={{ margin: '0.5rem auto', width: '300px' }}></div>
-          <p className="banner-subtext">{notification.subtitle}</p>
-        </div>
-      )}
+      <Banner />
 
       {showCompass && (
-        <div className="compass-container">
-          <div className="compass-strip" style={{ transform: `translateX(${offset}px)` }}>
-            <div className="compass-mark"><span className="compass-direction">S</span></div>
-            <div className="compass-mark"><span className="compass-direction">W</span></div>
-            <div className="compass-mark"><span className="compass-direction">N</span></div>
-            <div className="compass-mark"><span className="compass-direction">E</span></div>
-            <div className="compass-mark"><span className="compass-direction">S</span></div>
-            <div className="compass-mark"><span className="compass-direction">W</span></div>
-            <div className="compass-mark"><span className="compass-direction">N</span></div>
-            <div className="compass-mark"><span className="compass-direction">E</span></div>
-            <div className="compass-mark"><span className="compass-direction">S</span></div>
-          </div>
-
-          <div style={{ position: 'absolute', width: '100%', height: '100%', pointerEvents: 'none' }}>
-            {ui.compassMarkers.map(m => (
-              <div 
-                key={m.id}
-                style={{ 
-                  position: 'absolute', 
-                  left: `calc(50% + ${m.offset}px)`, 
-                  top: '50%', 
-                  transform: 'translate(-50%, -50%)',
-                  fontSize: '0.8rem',
-                  filter: 'drop-shadow(0 0 2px #fff)',
-                  transition: 'left 0.2s ease-out'
-                }}
-              >
-                {m.icon}
-              </div>
-            ))}
-          </div>
-
-          <div style={{ position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)', width: '2px', height: '100%', background: '#fff', boxShadow: '0 0 5px #fff', zIndex: 2 }}></div>
+        <div className="compass-anchor">
+          <Compass heading={ui.heading} markers={ui.compassMarkers} width={compassWidth} onClick={onCompassClick} title={onCompassClick ? 'Open the map' : undefined} />
         </div>
       )}
 
       {showLevel && (
         <div className="level-progress-container skyrim-font">
           <div className="level-text">Level {stats.level}</div>
-          <div className="xp-bar-bg">
-            <div className="xp-bar-fill" style={{ width: `${(stats.xp / stats.xpToNextLevel) * 100}%` }}></div>
-          </div>
+          <div className="xp-bar-bg"><div className="xp-bar-fill" style={{ width: `${(stats.xp / stats.xpToNextLevel) * 100}%` }} /></div>
         </div>
       )}
 
-      <div className="hud-container">
-        <div className="stat-bar-group"><div className="stat-bar-bg"><div className="stat-bar-fill bar-magicka" style={{ width: `${stats.magicka}%` }}></div></div></div>
-        <div className="stat-bar-group"><div className="stat-bar-bg"><div className="stat-bar-fill bar-health" style={{ width: `${stats.health}%` }}></div></div></div>
-        <div className="stat-bar-group"><div className="stat-bar-bg"><div className="stat-bar-fill bar-stamina" style={{ width: `${stats.stamina}%` }}></div></div></div>
-      </div>
+      {showBars && <StatBars />}
     </>
   );
 };

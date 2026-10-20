@@ -1,7 +1,7 @@
-import "@testing-library/jest-dom";
+import '@testing-library/jest-dom/vitest';
 import { vi } from 'vitest';
 
-// Mock Firebase
+// Mock Firebase so tests never touch the network.
 vi.mock('firebase/auth', () => ({
   getAuth: vi.fn(),
   onAuthStateChanged: vi.fn(() => vi.fn()),
@@ -11,6 +11,9 @@ vi.mock('firebase/auth', () => ({
   sendPasswordResetEmail: vi.fn(),
   GoogleAuthProvider: vi.fn(),
   signInWithPopup: vi.fn(),
+  signInWithRedirect: vi.fn(),
+  getRedirectResult: vi.fn(() => Promise.resolve(null)),
+  connectAuthEmulator: vi.fn(),
 }));
 
 vi.mock('firebase/app', () => ({
@@ -21,3 +24,17 @@ vi.mock('../firebaseConfig', () => ({
   auth: {},
   db: {},
 }));
+
+// jsdom has no matchMedia.
+if (typeof window !== 'undefined' && !window.matchMedia) {
+  window.matchMedia = (query: string) => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener: () => {},
+    removeListener: () => {},
+    addEventListener: () => {},
+    removeEventListener: () => {},
+    dispatchEvent: () => false,
+  }) as MediaQueryList;
+}

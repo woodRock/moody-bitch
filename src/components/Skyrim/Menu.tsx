@@ -1,21 +1,21 @@
 import React, { useCallback } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { signOut } from 'firebase/auth';
-import { auth } from '../../firebaseConfig';
+import { motion, useMotionValue, useSpring } from 'framer-motion';
 import { useTrackpadSwipe } from '../../hooks/useTrackpadSwipe';
 import { useGame } from '../../context/GameContext';
 import { useSound } from '../../context/SoundContext';
-import { motion, useMotionValue, useSpring } from 'framer-motion';
-import '../../styles/Skyrim.css';
+import { useAuth } from '../../context/AuthContext';
 
 interface SkyrimMenuProps {
   disabledGestures?: boolean;
   hideButton?: boolean;
 }
 
+/** The four-way character menu: Skills up, Map down, Magic left, Items right. */
 const SkyrimMenu: React.FC<SkyrimMenuProps> = ({ disabledGestures = false, hideButton = false }) => {
   const { ui, setUI, stats } = useGame();
   const { playSound } = useSound();
+  const { signOut } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -25,135 +25,78 @@ const SkyrimMenu: React.FC<SkyrimMenuProps> = ({ disabledGestures = false, hideB
   const springY = useSpring(dragY, { stiffness: 300, damping: 30 });
 
   const handleLogout = async () => {
-    try {
-      await signOut(auth);
-      navigate('/signin');
-    } catch (error) {
-      console.error('Failed to log out', error);
-    }
+    try { await signOut(); navigate('/signin'); } catch (error) { console.error('Failed to log out', error); }
   };
+
+  const go = useCallback((path: string) => { navigate(path); setUI({ isMenuOpen: false }); }, [navigate, setUI]);
 
   const handleGesture = useCallback((direction: 'UP' | 'DOWN' | 'LEFT' | 'RIGHT') => {
     if (ui.isMenuOpen) {
-      if (direction === 'UP') { navigate('/skills'); setUI({ isMenuOpen: false }); }
-      else if (direction === 'DOWN') { navigate('/dashboard'); setUI({ isMenuOpen: false }); }
-      else if (direction === 'LEFT') { navigate('/magic'); setUI({ isMenuOpen: false }); }
-      else if (direction === 'RIGHT') { navigate('/inventory'); setUI({ isMenuOpen: false }); }
+      if (direction === 'UP') go('/skills');
+      else if (direction === 'DOWN') go('/dashboard');
+      else if (direction === 'LEFT') go('/magic');
+      else if (direction === 'RIGHT') go('/inventory');
     } else {
       const path = location.pathname;
-      if (path === '/skills' && direction === 'DOWN') setUI({ isMenuOpen: true });
-      else if (path === '/dashboard' && direction === 'UP') setUI({ isMenuOpen: true });
-      else if (path === '/magic' && direction === 'RIGHT') setUI({ isMenuOpen: true });
-      else if (path === '/inventory' && direction === 'LEFT') setUI({ isMenuOpen: true });
+      if ((path === '/skills' && direction === 'DOWN') || (path === '/dashboard' && direction === 'UP') ||
+          (path === '/magic' && direction === 'RIGHT') || (path === '/inventory' && direction === 'LEFT')) {
+        setUI({ isMenuOpen: true });
+      }
     }
     dragX.set(0);
     dragY.set(0);
-  }, [ui.isMenuOpen, navigate, location.pathname, dragX, dragY, setUI]);
+  }, [ui.isMenuOpen, go, location.pathname, dragX, dragY, setUI]);
 
-  const handleProgress = useCallback((offset: { x: number, y: number }) => {
+  const handleProgress = useCallback((offset: { x: number; y: number }) => {
     dragX.set(-offset.x * 0.5);
     dragY.set(-offset.y * 0.5);
   }, [dragX, dragY]);
 
-  useTrackpadSwipe({ 
+  useTrackpadSwipe({
     onSwipe: handleGesture,
     onProgress: handleProgress,
     threshold: 120,
-    disabled: disabledGestures && !ui.isMenuOpen,
-    preventX: true 
+    disabled: (disabledGestures && !ui.isMenuOpen) || ui.isPauseMenuOpen || ui.modalDepth > 0,
+    preventX: true,
   });
+
+  const hasLevelUp = stats.pendingLevelUps > 0;
 
   if (!ui.isMenuOpen) {
     if (hideButton) return null;
-    
-    const isSkillsPage = location.pathname === '/skills';
-
     return (
-      <button 
-        onClick={() => setUI({ isMenuOpen: true, isPauseMenuOpen: false })}
-        className="skyrim-font"
-        style={{
-          position: 'fixed', 
-          top: isSkillsPage ? '5rem' : '1.5rem', // Move down if on skills
-          right: '2rem',
-          background: 'rgba(0,0,0,0.5)', border: '1px solid var(--skyrim-gold-dim)',
-          color: stats.pendingLevelUps > 0 ? 'var(--skyrim-gold-bright)' : '#aaa', 
-          fontSize: '0.8rem', padding: '0.4rem 0.8rem',
-          cursor: 'pointer', zIndex: 200, textShadow: '1px 1px 0 #000',
-          boxShadow: stats.pendingLevelUps > 0 ? '0 0 15px rgba(230, 194, 120, 0.3)' : 'none'
-        }}
-      >
-        {stats.pendingLevelUps > 0 ? 'LEVEL UP!' : 'CHARACTER [TAB]'}
+      <button onClick={() => setUI({ isMenuOpen: true, isPauseMenuOpen: false })} className={`hud-button right skyrim-font ${hasLevelUp ? 'glow' : ''} ${location.pathname === '/skills' ? 'lowered' : ''}`}>
+        {hasLevelUp ? 'LEVEL UP!' : 'CHARACTER [TAB]'}
       </button>
     );
   }
 
   return (
-    <div className="skyrim-menu-overlay" onClick={() => setUI({ isMenuOpen: false })} style={{ background: '#000' }}>
-      <button 
-        onClick={(e) => { 
-          e.stopPropagation(); 
-          setUI({ isMenuOpen: false, isPauseMenuOpen: true });
-        }}
-        className="skyrim-font"
-        style={{
-          position: 'fixed', top: '5rem', left: '2rem',
-          background: 'rgba(255, 255, 255, 0.05)', border: '1px solid var(--skyrim-gold-dim)',
-          color: '#fff', padding: '0.5rem 1.5rem', cursor: 'pointer', zIndex: 1100,
-          fontSize: '0.9rem', letterSpacing: '2px'
-        }}
-      >
-        PAUSE
-      </button>
+    <div className="skyrim-menu-overlay solid" onMouseDown={e => { if (e.target === e.currentTarget) setUI({ isMenuOpen: false }); }} role="dialog" aria-modal="true" aria-label="Character menu">
+      <button onClick={() => setUI({ isMenuOpen: false, isPauseMenuOpen: true })} className="hud-button left lowered skyrim-font">SYSTEM</button>
+      <button onClick={() => void handleLogout()} className="hud-button right lowered danger skyrim-font">QUIT REALM</button>
 
-      <button 
-        onClick={(e) => { e.stopPropagation(); handleLogout(); }}
-        className="skyrim-font"
-        style={{
-          position: 'fixed', top: '5rem', right: '2rem',
-          background: 'rgba(169, 41, 41, 0.2)', border: '1px solid #a92929',
-          color: '#a92929', padding: '0.5rem 1rem', cursor: 'pointer',
-          zIndex: 1100, fontSize: '0.8rem'
-        }}
-      >
-        QUIT REALM [ESC]
-      </button>
-
-      <motion.div 
-        className="character-menu-diamond" 
-        onClick={e => e.stopPropagation()}
-        style={{ x: springX, y: springY }}
-      >
+      <motion.div className="character-menu-diamond" style={{ x: springX, y: springY }}>
         <Link to="/skills" className="diamond-item item-up" onClick={() => { setUI({ isMenuOpen: false }); playSound('UI_CLICK'); }}>
-          <div className="diamond-label skyrim-font" style={{ color: stats.pendingLevelUps > 0 ? 'var(--skyrim-gold-bright)' : 'inherit' }}>
-            {stats.pendingLevelUps > 0 ? 'LEVEL UP' : 'SKILLS'}
-          </div>
-          <div className="diamond-line-up" style={{ background: stats.pendingLevelUps > 0 ? 'var(--skyrim-gold-bright)' : 'inherit' }}></div>
+          <div className={`diamond-label skyrim-font ${hasLevelUp ? 'gold' : ''}`}>{hasLevelUp ? 'LEVEL UP' : 'SKILLS'}</div>
+          <div className={`diamond-line-up ${hasLevelUp ? 'gold' : ''}`} />
         </Link>
-
         <Link to="/dashboard" className="diamond-item item-down" onClick={() => { setUI({ isMenuOpen: false }); playSound('UI_CLICK'); }}>
-          <div className="diamond-line-down"></div>
+          <div className="diamond-line-down" />
           <div className="diamond-label skyrim-font">MAP</div>
         </Link>
-
         <Link to="/magic" className="diamond-item item-left" onClick={() => { setUI({ isMenuOpen: false }); playSound('UI_CLICK'); }}>
           <div className="diamond-label skyrim-font">MAGIC</div>
-          <div className="diamond-line-left"></div>
+          <div className="diamond-line-left" />
         </Link>
-
         <Link to="/inventory" className="diamond-item item-right" onClick={() => { setUI({ isMenuOpen: false }); playSound('UI_CLICK'); }}>
           <div className="diamond-label skyrim-font">ITEMS</div>
-          <div className="diamond-line-right"></div>
+          <div className="diamond-line-right" />
         </Link>
-
-        <div className="diamond-center">
-           <div style={{ width: '4px', height: '4px', background: '#fff', borderRadius: '50%', boxShadow: '0 0 10px #fff' }}></div>
-        </div>
+        <div className="diamond-center"><div className="diamond-dot" /></div>
       </motion.div>
-      
-      <div style={{ position: 'fixed', bottom: '2rem', left: '50%', transform: 'translateX(-50%)', color: '#777' }} className="skyrim-font">
-        [ SCROLL TO NAVIGATE ]
-      </div>
+
+      <div className="menu-hint skyrim-font">[ SCROLL OR CLICK TO NAVIGATE · TAB TO CLOSE ]</div>
     </div>
   );
 };

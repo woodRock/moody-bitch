@@ -1,24 +1,13 @@
-// src/pages/NotFound.tsx
 import React from 'react';
 import { Link } from 'react-router-dom';
-import '../styles/NotFound.css';
 
-const NotFound: React.FC = () => {
-  return (
-    <div className="not-found-container">
-      <div className="text-center">
-        <h1 className="not-found-title">404</h1>
-        <p className="not-found-text">Page Not Found</p>
-        <Link 
-          to="/" 
-          className="btn btn-primary"
-          style={{ textDecoration: 'none' }}
-        >
-          Go to Homepage
-        </Link>
-      </div>
-    </div>
-  );
-};
+const NotFound: React.FC = () => (
+  <div className="fatal-screen">
+    <h1 className="skyrim-font">LOST IN THE FOG</h1>
+    <div className="menu-separator" style={{ margin: '1rem auto', width: '260px' }} />
+    <p className="skyrim-serif">No road leads here. The map does not know this place.</p>
+    <Link to="/" className="btn-ghost skyrim-font">RETURN TO THE REALM</Link>
+  </div>
+);
 
 export default NotFound;

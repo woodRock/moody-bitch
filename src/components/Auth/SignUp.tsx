@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
-import { useAuth } from '../../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
-import '../../styles/Auth.css';
+import { describeAuthError, useAuth } from '../../context/AuthContext';
+import AuthLayout, { Divider, GoogleButton } from './AuthLayout';
+
+const MIN_PASSWORD = 8;
 
 const SignUp: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -12,96 +14,44 @@ const SignUp: React.FC = () => {
   const { signUp, signInWithGoogle } = useAuth();
   const navigate = useNavigate();
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (password !== passwordConfirm) {
-      return setError('Passwords do not match');
-    }
-    try {
-      setError('');
-      setLoading(true);
-      await signUp(email, password);
-      navigate('/dashboard');
-    } catch (_err) {
-      setError('Failed to create an account.');
-    }
-    setLoading(false);
-  }
+  const run = async (fn: () => Promise<unknown>) => {
+    setError('');
+    setLoading(true);
+    try { await fn(); navigate('/dashboard'); }
+    catch (err) { setError(describeAuthError(err)); }
+    finally { setLoading(false); }
+  };
 
-  async function handleGoogleSignUp() {
-    try {
-      setError('');
-      setLoading(true);
-      await signInWithGoogle();
-      navigate('/dashboard');
-    } catch (_err) {
-      setError('Failed to sign up with Google.');
-    }
-    setLoading(false);
-  }
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (password.length < MIN_PASSWORD) return setError(`Your pass-phrase must be at least ${MIN_PASSWORD} characters.`);
+    if (password !== passwordConfirm) return setError('The two pass-phrases do not match.');
+    void run(() => signUp(email.trim(), password));
+  };
 
   return (
-    <div className="auth-container">
-      <div className="auth-card parchment-bg">
-        <h2 className="skyrim-font auth-title">New Character</h2>
-        {error && <div className="error-banner skyrim-serif">{error}</div>}
-        
-        <form onSubmit={handleSubmit}>
-          <div className="input-group">
-            <label className="skyrim-font label-text">Email</label>
-            <input 
-              type="email" 
-              className="parchment-input" 
-              value={email} 
-              onChange={(e) => setEmail(e.target.value)} 
-              required 
-            />
-          </div>
-          <div className="input-group">
-            <label className="skyrim-font label-text">Password</label>
-            <input 
-              type="password" 
-              className="parchment-input" 
-              value={password} 
-              onChange={(e) => setPassword(e.target.value)} 
-              required 
-            />
-          </div>
-          <div className="input-group">
-            <label className="skyrim-font label-text">Confirm Password</label>
-            <input 
-              type="password" 
-              className="parchment-input" 
-              value={passwordConfirm} 
-              onChange={(e) => setPasswordConfirm(e.target.value)} 
-              required 
-            />
-          </div>
-          <button disabled={loading} className="btn-auth skyrim-font" type="submit">
-            Forge Identity
-          </button>
-        </form>
-
-        <div className="divider-container">
-          <div className="menu-separator"></div>
-          <span className="skyrim-serif divider-text">OR</span>
-          <div className="menu-separator"></div>
+    <AuthLayout title="New Character" error={error}>
+      <form onSubmit={submit}>
+        <div className="input-group">
+          <label className="skyrim-font field-label" htmlFor="su-email"><span>EMAIL</span></label>
+          <input id="su-email" type="email" autoComplete="email" className="parchment-input dark" value={email} onChange={e => setEmail(e.target.value)} required />
         </div>
-
-        <button 
-          onClick={handleGoogleSignUp} 
-          disabled={loading} 
-          className="btn-google skyrim-font"
-        >
-          <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" className="google-icon" />
-          Sign up with Google
-        </button>
-
-        <div className="auth-footer skyrim-serif">
-          <p>Already have a character? <Link to="/signin">Return to Realm</Link></p>
+        <div className="input-group">
+          <label className="skyrim-font field-label" htmlFor="su-pass"><span>PASSWORD</span><span className="field-value">{MIN_PASSWORD}+ characters</span></label>
+          <input id="su-pass" type="password" autoComplete="new-password" minLength={MIN_PASSWORD} className="parchment-input dark" value={password} onChange={e => setPassword(e.target.value)} required />
         </div>
+        <div className="input-group">
+          <label className="skyrim-font field-label" htmlFor="su-pass2"><span>CONFIRM PASSWORD</span></label>
+          <input id="su-pass2" type="password" autoComplete="new-password" className="parchment-input dark" value={passwordConfirm} onChange={e => setPasswordConfirm(e.target.value)} required />
+        </div>
+        <button disabled={loading} className="btn-primary wide skyrim-font" type="submit">{loading ? 'FORGING...' : 'FORGE IDENTITY'}</button>
+      </form>
+      <Divider />
+      <GoogleButton onClick={() => void run(signInWithGoogle)} disabled={loading} label="Sign up with Google" />
+      <div className="auth-footer skyrim-serif">
+        <p>Already have a character? <Link to="/signin">Return to Realm</Link></p>
       </div>
-    </div>
+    </AuthLayout>
   );
 };
 

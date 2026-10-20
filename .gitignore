@@ -14,6 +14,7 @@ coverage
 *.local
 .env
 .env.*
+!.env.example
 
 # Editor directories and files
 .vscode/*
@@ -25,3 +26,14 @@ coverage
 *.njsproj
 *.sln
 *.sw?
+
+
+# Firebase emulator state
+.firebase
+firebase-debug.log
+ui-debug.log
+firestore-debug.log
+
+# Worker
+worker/node_modules
+worker/.wrangler

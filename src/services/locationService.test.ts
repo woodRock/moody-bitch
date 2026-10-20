@@ -9,6 +9,8 @@ vi.mock('firebase/firestore', () => ({
   query: vi.fn(),
   where: vi.fn(),
   orderBy: vi.fn(),
+  limit: vi.fn(),
+  writeBatch: vi.fn(),
   Timestamp: {
     now: vi.fn(() => ({ seconds: 1234567890, nanoseconds: 0 }))
   }

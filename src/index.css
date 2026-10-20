@@ -1,177 +1,166 @@
+/* ---------- Tokens ---------- */
 :root {
-  /* Skyrim-Inspired Palette */
+  --skyrim-red: #a92929;
+  --skyrim-red-bright: #e05a4e;
+  --skyrim-blue: #2b4e8f;
+  --skyrim-blue-bright: #3d8de0;
+  --skyrim-green: #3b7c2a;
+  --skyrim-green-bright: #3fae3c;
   --skyrim-gold: #c5a059;
+  --skyrim-gold-dim: #998762;
   --skyrim-gold-bright: #e6c278;
-  --skyrim-parchment: #fdfbf7;
   --skyrim-stone: #2a2a2a;
-  --skyrim-dark-stone: #1a1a1a;
-  --skyrim-border: #4a4a4a;
-  --skyrim-iron: #5d5d5d;
-  --danger-color: #991b1b;
-  
-  /* UI Elements */
-  --card-bg: var(--skyrim-parchment);
-  --shadow-md: 0 4px 10px rgba(0,0,0,0.5);
-  --radius: 0px; /* Skyrim UI is very sharp/rectangular */
+  --skyrim-dark-stone: #141414;
+  --skyrim-parchment: #fdfbf7;
+  --skyrim-border: rgba(255, 255, 255, 0.12);
+  --text: #f2f2f2;
+  --text-muted: #8f8f8f;
+  --surface: rgba(20, 20, 20, 0.92);
+  --font-ui: 'Futura', 'Jost', 'Trebuchet MS', sans-serif;
+  --font-serif: 'Crimson Text', 'Georgia', serif;
+  --font-display: 'Cinzel', 'Georgia', serif;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  color-scheme: dark;
 }
 
+/* ---------- Reset ---------- */
+*, *::before, *::after { box-sizing: border-box; }
+html, body, #root { height: 100%; }
 body {
   margin: 0;
-  font-family: 'Crimson Text', 'Georgia', serif;
+  font-family: var(--font-serif);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background: #121212 url('https://www.transparenttextures.com/patterns/dark-matter.png');
-  color: var(--skyrim-stone);
-  min-height: 100vh;
+  background: #000;
+  color: var(--text);
+  overflow-x: hidden;
+  -webkit-tap-highlight-color: transparent;
+}
+.app-root { min-height: 100%; position: relative; }
+button { font: inherit; color: inherit; }
+a { color: var(--skyrim-gold-dim); text-decoration: none; }
+a:hover { color: var(--skyrim-gold-bright); }
+h1, h2, h3, p { margin: 0; }
+:focus-visible { outline: 1px solid var(--skyrim-gold-bright); outline-offset: 2px; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }
 
-.card {
-  background-color: var(--card-bg);
-  background-image: url('https://www.transparenttextures.com/patterns/parchment.png');
-  border: 2px solid var(--skyrim-border);
-  box-shadow: var(--shadow-md);
-  padding: 2rem;
-  margin-bottom: 1.5rem;
-  position: relative;
-}
-
-.card::before {
-  content: '';
-  position: absolute;
-  top: 5px;
-  left: 5px;
-  right: 5px;
-  bottom: 5px;
-  border: 1px solid rgba(0,0,0,0.1);
-  pointer-events: none;
-}
-
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.6rem 2rem;
-  border: 1px solid var(--skyrim-gold);
-  background: var(--skyrim-stone);
-  color: var(--skyrim-gold);
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
+/* ---------- Type ---------- */
+.skyrim-font { font-family: var(--font-ui); text-transform: uppercase; letter-spacing: 2px; }
+.skyrim-serif { font-family: var(--font-serif); }
+.muted { color: var(--text-muted); }
+.small { font-size: 0.85rem; }
+.gold { color: var(--skyrim-gold-bright) !important; }
+.big { font-size: 1.6rem; }
+.skyrim-title {
+  font-family: var(--font-ui);
+  letter-spacing: 0.2rem;
   text-transform: uppercase;
-  letter-spacing: 2px;
-  font-family: 'Futura', 'Trebuchet MS', sans-serif;
-}
-
-.btn:hover {
-  background: var(--skyrim-gold);
-  color: var(--skyrim-stone);
-}
-
-* {
-  box-sizing: border-box;
-}
-
-a {
-  text-decoration: none;
-  color: var(--primary-color);
-  transition: color 0.2s;
-}
-
-a:hover {
-  color: var(--primary-hover);
-}
-
-.container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 2rem;
-}
-
-.card {
-  background-color: var(--card-bg);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow-md);
-  padding: 2rem;
+  color: var(--skyrim-gold-bright);
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+  border-bottom: 1px solid var(--skyrim-gold-dim);
+  display: block;
+  padding-bottom: 0.4rem;
   margin-bottom: 1.5rem;
-  border: 1px solid rgba(255, 255, 255, 0.5);
-  backdrop-filter: blur(10px); /* Frosted glass effect */
-  transition: transform 0.2s, box-shadow 0.2s;
+  font-size: 1.4rem;
+  font-weight: 500;
 }
+.skyrim-title.centered { text-align: center; border: none; }
+.detail-title { color: #fff; font-size: clamp(1.4rem, 2.5vw, 2.2rem); margin-bottom: 0.5rem; font-weight: 500; }
+.menu-separator { width: min(400px, 100%); height: 2px; background: linear-gradient(90deg, transparent, #aaa, transparent); margin: 1rem 0; }
+.menu-separator.wide { width: 100%; opacity: 0.35; margin: 0 0 1.5rem; }
+.quest-category-title { font-family: var(--font-ui); font-size: 0.8rem; color: var(--text-muted); letter-spacing: 2px; margin-bottom: 0.8rem; text-transform: uppercase; }
 
-.card:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-lg);
+/* ---------- Buttons ---------- */
+.btn-primary, .btn-ghost, .btn-unlock, .btn-google {
+  display: inline-flex; align-items: center; justify-content: center; gap: 0.6rem;
+  cursor: pointer; border-radius: 0; font-size: 0.85rem; letter-spacing: 2px;
+  transition: background 0.2s, border-color 0.2s, color 0.2s, box-shadow 0.2s, transform 0.1s;
+  min-height: 44px; padding: 0.6rem 1.6rem;
 }
+.btn-primary { background: rgba(255, 255, 255, 0.08); color: #fff; border: 1px solid var(--skyrim-gold-dim); }
+.btn-primary:hover:not(:disabled) { background: rgba(230, 194, 120, 0.15); border-color: var(--skyrim-gold-bright); box-shadow: 0 0 18px rgba(230, 194, 120, 0.25); }
+.btn-primary.blue { background: var(--skyrim-blue); border-color: var(--skyrim-blue-bright); }
+.btn-primary.blue:hover:not(:disabled) { background: #335ca8; box-shadow: 0 0 18px rgba(61, 141, 224, 0.35); }
+.btn-primary.danger { background: rgba(169, 41, 41, 0.3); border-color: var(--skyrim-red); }
+.btn-primary.wide { width: 100%; margin-top: 0.5rem; }
+.btn-ghost { background: transparent; color: #bbb; border: 1px solid rgba(255, 255, 255, 0.2); }
+.btn-ghost:hover:not(:disabled) { color: #fff; border-color: var(--skyrim-gold-dim); }
+.btn-ghost.small { min-height: 34px; padding: 0.3rem 0.9rem; font-size: 0.72rem; }
+.btn-ghost.danger { color: #d05050; border-color: rgba(169, 41, 41, 0.6); }
+.btn-ghost.danger:hover:not(:disabled) { background: rgba(169, 41, 41, 0.15); border-color: var(--skyrim-red); color: #ff7b7b; }
+.btn-primary:active, .btn-ghost:active { transform: translateY(1px); }
+.btn-primary:disabled, .btn-ghost:disabled, .btn-unlock:disabled { opacity: 0.45; cursor: not-allowed; }
+.btn-unlock { background: var(--skyrim-gold-bright); color: #000; border: none; margin-top: 1rem; font-size: 0.9rem; }
+.btn-unlock:hover:not(:disabled) { background: #fff; }
+.inline-actions { display: inline-flex; gap: 0.6rem; flex-wrap: wrap; }
+.form-actions { display: flex; gap: 0.8rem; margin-top: 1.5rem; flex-wrap: wrap; }
+.form-actions > * { flex: 1 1 140px; }
 
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.75rem 1.5rem;
-  border-radius: 9999px; /* Pill shape */
-  border: none;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-  color: white;
-  font-size: 1rem;
-  box-shadow: var(--shadow-sm);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  font-size: 0.875rem;
+/* ---------- Forms ---------- */
+.input-group { margin-bottom: 1.2rem; display: flex; flex-direction: column; gap: 0.5rem; }
+.field-label { display: flex; justify-content: space-between; align-items: baseline; font-size: 0.72rem; color: var(--text-muted); }
+.field-value { color: var(--skyrim-gold-bright); letter-spacing: 1px; }
+.parchment-input {
+  width: 100%; padding: 0.7rem 0.9rem; font-family: var(--font-serif); font-size: 1.05rem;
+  background: rgba(253, 251, 247, 0.9); border: 1px solid var(--skyrim-gold); color: var(--skyrim-stone); border-radius: 0;
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
+.parchment-input.dark { background: rgba(255, 255, 255, 0.05); color: #fff; border: 1px solid #444; }
+.parchment-input.dark:focus { outline: none; border-color: var(--skyrim-gold-bright); box-shadow: 0 0 0 1px rgba(230, 194, 120, 0.3); }
+.parchment-input.dark::placeholder { color: #666; }
+.parchment-input.dark option { background: #1a1a1a; }
+.parchment-input.inline { width: 200px; margin-left: 10px; padding: 0.3rem 0.6rem; font-size: 1rem; display: inline-block; }
+.parchment-input[aria-invalid="true"] { border-color: var(--skyrim-red); }
+textarea.parchment-input { resize: vertical; min-height: 90px; }
+.form-error { color: #ff7b7b; margin-top: 0.5rem; }
+.log-form { display: flex; flex-direction: column; }
+.streak-pill { align-self: flex-start; font-size: 0.72rem; color: var(--skyrim-gold-bright); border: 1px solid rgba(230, 194, 120, 0.4); padding: 0.3rem 0.7rem; margin-bottom: 1rem; }
 
-.btn:hover {
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-md);
+.range-input { -webkit-appearance: none; appearance: none; width: 100%; height: 6px; background: #2a2a2a; border: 1px solid #444; outline: none; cursor: pointer; margin: 0.4rem 0; }
+.range-input::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 22px; height: 22px; background: var(--skyrim-gold-bright); border: 2px solid #000; transform: rotate(45deg); cursor: pointer; box-shadow: 0 0 8px rgba(230, 194, 120, 0.5); }
+.range-input::-moz-range-thumb { width: 22px; height: 22px; background: var(--skyrim-gold-bright); border: 2px solid #000; transform: rotate(45deg); cursor: pointer; border-radius: 0; }
+.range-input.range-health::-webkit-slider-thumb { background: var(--skyrim-red-bright); }
+.range-input.range-stamina::-webkit-slider-thumb { background: var(--skyrim-green-bright); }
+.range-input.range-health::-moz-range-thumb { background: var(--skyrim-red-bright); }
+.range-input.range-stamina::-moz-range-thumb { background: var(--skyrim-green-bright); }
+.toggle { width: 44px; height: 24px; appearance: none; -webkit-appearance: none; background: #2a2a2a; border: 1px solid #555; position: relative; cursor: pointer; flex-shrink: 0; }
+.toggle::after { content: ''; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; background: #777; transition: transform 0.2s, background 0.2s; }
+.toggle:checked { border-color: var(--skyrim-gold-bright); }
+.toggle:checked::after { transform: translateX(20px); background: var(--skyrim-gold-bright); }
+
+/* ---------- Cards and rows ---------- */
+.skyrim-card { background: rgba(0, 0, 0, 0.45); border: 1px solid var(--skyrim-border); padding: 1.5rem; color: #fff; }
+.card-title { color: var(--skyrim-gold-bright); margin-bottom: 1rem; font-size: 1rem; font-weight: 500; }
+.stat-row { display: flex; justify-content: space-between; padding: 0.45rem 0; border-bottom: 1px solid rgba(255, 255, 255, 0.06); font-size: 0.95rem; }
+.stat-row span { color: var(--text-muted); }
+.stat-row b { font-weight: 500; color: #fff; }
+
+/* ---------- Full-screen states ---------- */
+.fatal-screen, .route-fallback {
+  min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;
+  padding: 2rem; gap: 1rem; background: radial-gradient(circle at center, #1a0520 0%, #000 100%);
 }
+.fatal-screen h1 { font-size: clamp(2rem, 6vw, 4rem); color: #fff; letter-spacing: 8px; font-weight: 500; }
+.fatal-screen p { color: #bbb; font-size: 1.2rem; max-width: 520px; }
+.route-fallback { color: #555; font-size: 0.8rem; letter-spacing: 4px; }
 
-.btn:active {
-  transform: translateY(0);
+/* ---------- Shared screens ---------- */
+.skills-container { width: 100%; height: 100vh; height: 100dvh; overflow: hidden; position: relative; background: radial-gradient(circle at center, #0a0e14 0%, #000 100%); }
+.magic-screen { background: radial-gradient(circle at center, #050a14 0%, #000 100%); }
+.inventory-screen { background: radial-gradient(circle at center, #140a05 0%, #000 100%); }
+.star-field {
+  position: absolute; inset: 0; pointer-events: none; opacity: 0.35;
+  background-image:
+    radial-gradient(1px 1px at 20px 30px, #fff, transparent),
+    radial-gradient(1px 1px at 90px 140px, #fff, transparent),
+    radial-gradient(1.5px 1.5px at 160px 60px, #e6c278, transparent),
+    radial-gradient(1px 1px at 230px 190px, #fff, transparent),
+    radial-gradient(1px 1px at 300px 40px, #fff, transparent),
+    radial-gradient(1.5px 1.5px at 350px 120px, #fff, transparent);
+  background-size: 380px 220px;
 }
-
-.btn-primary {
-  background: var(--primary-gradient);
-}
-
-.btn-secondary {
-  background: var(--secondary-gradient);
-}
-
-.btn-danger {
-  background-color: #ef4444;
-}
-
-.input-group {
-  margin-bottom: 1.5rem;
-}
-
-.input-label {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 0.75rem;
-  font-weight: 600;
-  color: var(--text-color);
-  font-size: 1.1rem;
-}
-
-.form-input, .form-textarea {
-  width: 100%;
-  padding: 0.75rem 1rem;
-  border: 2px solid var(--border-color);
-  border-radius: 0.75rem;
-  font-size: 1rem;
-  font-family: inherit;
-  transition: border-color 0.2s;
-  background-color: #fff;
-}
-
-.form-input:focus, .form-textarea:focus {
-  outline: none;
-  border-color: var(--primary-color);
-}
-
-.text-center { text-align: center; }
-.mb-4 { margin-bottom: 1rem; }
-.w-full { width: 100%; }
+.nebula-defs { position: absolute; width: 0; height: 0; }

@@ -1,141 +1,35 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { useAuth } from '../context/AuthContext';
+import React from 'react';
 import { useGame } from '../context/GameContext';
 import { useSound } from '../context/SoundContext';
-import '../styles/Dashboard.css';
-import { MapContainer, TileLayer, Marker, Popup, Polyline, useMapEvents } from 'react-leaflet';
-import { fetchLocationHistory } from '../services/locationService';
-import type { UserLocation } from '../services/locationService';
-import L from 'leaflet';
+import { useJourney } from '../hooks/useJourney';
+import JourneyMap from '../components/Skyrim/JourneyMap';
 
-import icon from 'leaflet/dist/images/marker-icon.png';
-import iconShadow from 'leaflet/dist/images/marker-shadow.png';
-const DefaultIcon = L.icon({ iconUrl: icon, shadowUrl: iconShadow, iconSize: [25, 41], iconAnchor: [12, 41] });
-L.Marker.prototype.options.icon = DefaultIcon;
-
-const MapController = ({ onMove }: { onMove: (center: L.LatLng) => void }) => {
-  useMapEvents({
-    move: (e) => onMove(e.target.getCenter()),
-  });
-  return null;
-};
-
+/** Desktop "MAP" screen: the Journey Map with the HUD compass tracking your path. */
 const Dashboard: React.FC = () => {
-  const { currentUser } = useAuth();
-  const { setUI, ui } = useGame();
+  const { setUI } = useGame();
   const { playSound } = useSound();
-  const [locations, setLocations] = useState<UserLocation[]>([]);
-  const [mapCenter, setMapCenter] = useState<[number, number]>([0, 0]);
-  const [hasLocation, setHasLocation] = useState(false);
-
-  const loadHistory = useCallback(async () => {
-    if (!currentUser) return;
-    const history = await fetchLocationHistory(currentUser.uid);
-    setLocations(history);
-    if (history.length > 0) {
-      const last = history[history.length - 1];
-      setMapCenter([last.lat, last.lng]);
-      setHasLocation(true);
-    } else {
-      navigator.geolocation.getCurrentPosition((pos) => {
-        setMapCenter([pos.coords.latitude, pos.coords.longitude]);
-        setHasLocation(true);
-      });
-    }
-  }, [currentUser]);
-
-  useEffect(() => {
-    if (currentUser) {
-      loadHistory();
-      // On the map, we want the compass fixed to North (0)
-      setUI({ heading: 0 });
-    }
-  }, [currentUser, setUI, loadHistory]);
-
-  const updateCompassMarkers = useCallback((center: L.LatLng) => {
-    const newMarkers = locations.map(loc => {
-      const toRad = (deg: number) => deg * Math.PI / 180;
-      const lat1 = toRad(center.lat);
-      const lat2 = toRad(loc.lat);
-      const dLng = toRad(loc.lng - center.lng);
-
-      const y = Math.sin(dLng) * Math.cos(lat2);
-      const x = Math.cos(lat1) * Math.sin(lat2) -
-                Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLng);
-      const bearing = (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
-      const relativeBearing = (bearing - ui.heading + 540) % 360 - 180;
-      
-      return {
-        id: loc.id || Math.random().toString(),
-        offset: relativeBearing * (400 / 360),
-        icon: loc.label?.includes('Quest') ? '📍' : '📜'
-      };
-    }).filter(m => Math.abs(m.offset) < 200);
-
-    setUI({ compassMarkers: newMarkers });
-  }, [locations, ui.heading, setUI]);
-
-  const pathPositions = locations.map(loc => [loc.lat, loc.lng] as [number, number]);
+  const { locations, center, status, error, onMapMove } = useJourney(400);
 
   return (
-    <div className="dashboard-container" style={{ padding: 0, overflow: 'hidden' }}>
-      <style>{`
-        .skyrim-font[style*="top: 1.5rem"], .skyrim-font[style*="top: 2rem"] { top: 1.5rem !important; }
-      `}</style>
-
-      {/* BACK TO MENU ARROW (UP) */}
-      <button 
+    <div className="map-screen">
+      <button
         onClick={() => { setUI({ isMenuOpen: true }); playSound('UI_CLICK'); }}
-        className="skyrim-font"
-        style={{
-          position: 'fixed',
-          top: '4rem',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          background: 'none',
-          border: 'none',
-          color: 'var(--skyrim-gold-bright)',
-          fontSize: '3rem',
-          cursor: 'pointer',
-          zIndex: 100,
-          opacity: 0.6
-        }}
+        className="nav-arrow top"
+        aria-label="Open character menu"
       >
         &uarr;
       </button>
 
-      <div className="map-wrapper" style={{ width: '100vw', height: '100vh', zIndex: 1 }}>
-        {hasLocation ? (
-          <MapContainer 
-            center={mapCenter} 
-            zoom={13} 
-            style={{ width: '100%', height: '100%', filter: 'sepia(0.8) hue-rotate(-15deg) contrast(1.2) brightness(0.8)' }}
-            zoomControl={false}
-          >
-            <TileLayer attribution='&copy; OpenStreetMap' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-            <MapController onMove={updateCompassMarkers} />
-            <Polyline positions={pathPositions} color="#a92929" weight={3} opacity={0.6} dashArray="10, 10" />
-            {locations.map((loc, i) => (
-              <Marker 
-                key={loc.id || i} 
-                position={[loc.lat, loc.lng]}
-                eventHandlers={{
-                  click: () => playSound('UI_CLICK')
-                }}
-              >
-                <Popup><div className="skyrim-serif"><strong>{loc.label}</strong><br/>{loc.timestamp.toDate().toLocaleString()}</div></Popup>
-              </Marker>
-            ))}
-          </MapContainer>
+      <div className="map-wrapper">
+        {center ? (
+          <JourneyMap locations={locations} center={center} onMove={onMapMove} onMarkerClick={() => playSound('UI_CLICK')} zoom={status === 'empty' ? 5 : 13} />
         ) : (
-          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', background: '#1a1a1a', color: '#fff' }} className="skyrim-font">
-            CONSULTING THE MAP...
-          </div>
+          <div className="map-placeholder skyrim-font">{status === 'loading' ? 'CONSULTING THE MAP...' : 'THE MAP IS BLANK'}</div>
         )}
       </div>
 
-      <div style={{ position: 'fixed', bottom: '8rem', left: '50%', transform: 'translateX(-50%)', color: '#fff', zIndex: 10, textShadow: '2px 2px 4px #000', pointerEvents: 'none' }} className="skyrim-font">
-        PAN THE MAP TO DISCOVER YOUR PATH
+      <div className="map-caption skyrim-font">
+        {error ?? (locations.length === 0 ? 'COMPLETE QUESTS AND SCRIBE LOGS TO CHART YOUR PATH' : 'PAN THE MAP TO DISCOVER YOUR PATH')}
       </div>
     </div>
   );

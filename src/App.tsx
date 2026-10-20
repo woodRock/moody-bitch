@@ -1,126 +1,162 @@
-import React, { useEffect, useState } from 'react';
-import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import React, { lazy, Suspense, useEffect, useState } from 'react';
+import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
 import { useGame } from './context/GameContext';
+import { useIsMobile } from './hooks/useIsMobile';
 import HUD from './components/Skyrim/HUD';
-import SkyrimMenu from './components/Skyrim/Menu';
-import PauseMenu from './components/Skyrim/PauseMenu';
 import LoadingScreen from './components/Skyrim/LoadingScreen';
 import WisdomTicker from './components/WisdomTicker';
 import SignUp from './components/Auth/SignUp';
 import SignIn from './components/Auth/SignIn';
 import ForgotPassword from './components/Auth/ForgotPassword';
-import Dashboard from './pages/Dashboard';
-import DailyCheckin from './pages/DailyCheckin';
-import Journal from './pages/Journal';
-import Skills from './pages/Skills';
-import Magic from './pages/Magic';
-import Inventory from './pages/Inventory';
 import NotFound from './pages/NotFound';
+import type { UIState } from './context/GameContext';
 
-interface ProtectedRouteProps {
-  children: React.ReactNode;
-}
+// Heavy screens load on demand so the first paint only needs the shell.
+const SkyrimMenu = lazy(() => import('./components/Skyrim/Menu'));
+const PauseMenu = lazy(() => import('./components/Skyrim/PauseMenu'));
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const Skills = lazy(() => import('./pages/Skills'));
+const Magic = lazy(() => import('./pages/Magic'));
+const Inventory = lazy(() => import('./pages/Inventory'));
+const Tome = lazy(() => import('./pages/Tome'));
+const MobileShell = lazy(() => import('./mobile/MobileShell'));
+const MobileQuests = lazy(() => import('./mobile/MobileQuests'));
+const MobileLog = lazy(() => import('./mobile/MobileLog'));
+const MobileSkills = lazy(() => import('./mobile/MobileSkills'));
+const MobileMagic = lazy(() => import('./mobile/MobileMagic'));
+const MobileItems = lazy(() => import('./mobile/MobileItems'));
+const MobileMap = lazy(() => import('./mobile/MobileMap'));
 
-const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
+/** The loading screen is part of the experience: it always shows, for at least this long. */
+const MIN_LOADING_MS = 2600;
+const AUTH_PATHS = ['/signin', '/signup', '/forgot-password'];
+
+const Fallback = () => <div className="route-fallback skyrim-font">LOADING...</div>;
+
+const Protected: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { currentUser, loading } = useAuth();
-  if (loading) return <div className="skyrim-font" style={{color: '#fff', textAlign: 'center', marginTop: '20vh'}}>LOADING REALM...</div>;
-  if (!currentUser) return <Navigate to="/signin" replace />;
+  const location = useLocation();
+  if (loading) return <Fallback />;
+  if (!currentUser) return <Navigate to="/signin" replace state={{ from: location.pathname }} />;
   return <>{children}</>;
+};
+
+const Public: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { currentUser, loading } = useAuth();
+  if (loading) return <Fallback />;
+  if (currentUser) return <Navigate to="/dashboard" replace />;
+  return <>{children}</>;
+};
+
+/** Desktop: /quests and /journal open the pause menu on the right tab over the map. */
+const OpenPause: React.FC<{ tab: UIState['pauseTab'] }> = ({ tab }) => {
+  const { setUI } = useGame();
+  const navigate = useNavigate();
+  useEffect(() => {
+    setUI({ isPauseMenuOpen: true, isMenuOpen: false, pauseTab: tab });
+    navigate('/dashboard', { replace: true });
+  }, [setUI, navigate, tab]);
+  return <Fallback />;
+};
+
+const isTypingTarget = (t: EventTarget | null) => {
+  const el = t as HTMLElement | null;
+  if (!el) return false;
+  const tag = el.tagName;
+  return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || el.isContentEditable;
 };
 
 function App() {
   const location = useLocation();
-  const { currentUser } = useAuth();
-  const { ui, setUI } = useGame();
-  const [isFirstLoad, setIsFirstLoad] = useState(true);
+  const { currentUser, loading: authLoading } = useAuth();
+  const { ui, setUI, statsLoaded } = useGame();
+  const isMobile = useIsMobile();
+  const [minTimeDone, setMinTimeDone] = useState(false);
 
   useEffect(() => {
-    const timer = setTimeout(() => setIsFirstLoad(false), 3500);
+    const timer = setTimeout(() => setMinTimeDone(true), MIN_LOADING_MS);
     return () => clearTimeout(timer);
   }, []);
 
-  const isAuthPage = ['/signin', '/signup', '/forgot-password'].includes(location.pathname);
-  const showHUD = !!currentUser && !isAuthPage && !isFirstLoad;
+  const dataReady = !authLoading && (!currentUser || statsLoaded);
+  const isFirstLoad = !(minTimeDone && dataReady);
+  const isAuthPage = AUTH_PATHS.includes(location.pathname);
+  const inGame = !!currentUser && !isAuthPage && !isFirstLoad;
   const hideHUDForMenus = ui.isPauseMenuOpen || ui.isMenuOpen;
-  const showMenuButton = !['/magic', '/inventory'].includes(location.pathname);
+  const showMenuButton = !['/magic', '/inventory', '/tome'].includes(location.pathname);
   const isSkillsPage = location.pathname === '/skills';
 
-  // Keyboard Shortcuts
+  // Desktop keyboard shortcuts: Tab for the character menu, Esc for the system menu.
   useEffect(() => {
+    if (!inGame || isMobile) return;
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (isAuthPage || isFirstLoad) return;
+      if (ui.modalDepth > 0 || isTypingTarget(e.target)) return;
       if (e.key === 'Escape') {
+        e.preventDefault();
         setUI({ isPauseMenuOpen: !ui.isPauseMenuOpen, isMenuOpen: false });
-      }
-      if (e.key === 'Tab') {
-        e.preventDefault(); 
+      } else if (e.key === 'Tab') {
+        e.preventDefault();
         setUI({ isMenuOpen: !ui.isMenuOpen, isPauseMenuOpen: false });
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [ui.isPauseMenuOpen, ui.isMenuOpen, setUI, isAuthPage, isFirstLoad]);
+  }, [ui.isPauseMenuOpen, ui.isMenuOpen, ui.modalDepth, setUI, inGame, isMobile]);
+
+  // Close overlays when the route changes.
+  useEffect(() => { setUI({ isMenuOpen: false }); }, [location.pathname, setUI]);
+
+  const routes = (
+    <Routes>
+      <Route path="/signup" element={<Public><SignUp /></Public>} />
+      <Route path="/signin" element={<Public><SignIn /></Public>} />
+      <Route path="/forgot-password" element={<Public><ForgotPassword /></Public>} />
+
+      <Route path="/dashboard" element={<Protected>{isMobile ? <MobileMap /> : <Dashboard />}</Protected>} />
+      <Route path="/quests" element={<Protected>{isMobile ? <MobileQuests /> : <OpenPause tab="QUESTS" />}</Protected>} />
+      <Route path="/journal" element={<Protected>{isMobile ? <MobileLog /> : <OpenPause tab="JOURNAL" />}</Protected>} />
+      <Route path="/checkin" element={<Navigate to="/journal" replace />} />
+      <Route path="/skills" element={<Protected>{isMobile ? <MobileSkills /> : <Skills />}</Protected>} />
+      <Route path="/magic" element={<Protected>{isMobile ? <MobileMagic /> : <Magic />}</Protected>} />
+      <Route path="/inventory" element={<Protected>{isMobile ? <MobileItems /> : <Inventory />}</Protected>} />
+      <Route path="/tome" element={<Protected><Tome /></Protected>} />
+
+      <Route path="/" element={<Navigate to="/dashboard" replace />} />
+      <Route path="*" element={<NotFound />} />
+    </Routes>
+  );
 
   return (
-    <div className="app-root">
+    <div className={`app-root ${isMobile ? 'is-mobile' : 'is-desktop'}`}>
       <LoadingScreen isLoading={isFirstLoad} />
       {currentUser && <WisdomTicker />}
 
-      {showHUD && (
-        <>
-          {!hideHUDForMenus && (
-            <>
-              <HUD 
-                showCompass={location.pathname === '/dashboard' || location.pathname === '/quests'} 
-                showLevel={false} 
-              />
-              <button 
-                onClick={() => setUI({ isPauseMenuOpen: !ui.isPauseMenuOpen, isMenuOpen: false })}
-                className="skyrim-font"
-                style={{
-                  position: 'fixed', 
-                  top: isSkillsPage ? '5rem' : '1.5rem', 
-                  left: '2rem',
-                  background: 'rgba(0,0,0,0.5)', border: '1px solid var(--skyrim-gold-dim)',
-                  color: '#aaa', fontSize: '0.8rem', padding: '0.4rem 0.8rem',
-                  cursor: 'pointer', zIndex: 200, textShadow: '1px 1px 0 #000'
-                }}
-              >
-                SYSTEM [ESC]
-              </button>
-            </>
-          )}
-          <SkyrimMenu 
-            disabledGestures={ui.disabledGestures}
-            hideButton={!showMenuButton || hideHUDForMenus}
-          />
-          <PauseMenu 
-            isOpen={ui.isPauseMenuOpen} 
-            onClose={() => setUI({ isPauseMenuOpen: false })} 
-          />
-        </>
-      )}
-
-      <Routes>
-        <Route path="/signup" element={<SignUp />} />
-        <Route path="/signin" element={<SignIn />} />
-        <Route path="/forgot-password" element={<ForgotPassword />} />
-        
-        <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-        <Route path="/quests" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-        <Route path="/checkin" element={<ProtectedRoute><DailyCheckin /></ProtectedRoute>} />
-        <Route path="/journal" element={<ProtectedRoute><Journal /></ProtectedRoute>} />
-        <Route path="/skills" element={<ProtectedRoute><Skills /></ProtectedRoute>} />
-        <Route path="/magic" element={<ProtectedRoute><Magic /></ProtectedRoute>} />
-        <Route path="/inventory" element={<ProtectedRoute><Inventory /></ProtectedRoute>} />
-        
-        <Route path="/" element={<Navigate to="/dashboard" replace />} />
-        <Route path="*" element={<NotFound />} />
-      </Routes>
+      <Suspense fallback={<Fallback />}>
+        {inGame && isMobile ? (
+          <MobileShell>{routes}</MobileShell>
+        ) : (
+          <>
+            {inGame && (
+              <>
+                {!hideHUDForMenus && (
+                  <>
+                    <HUD showCompass={location.pathname === '/dashboard'} showLevel={false} />
+                    <button onClick={() => setUI({ isPauseMenuOpen: true, isMenuOpen: false })} className={`hud-button left skyrim-font ${isSkillsPage ? 'lowered' : ''}`}>
+                      SYSTEM [ESC]
+                    </button>
+                  </>
+                )}
+                <SkyrimMenu disabledGestures={ui.disabledGestures} hideButton={!showMenuButton || hideHUDForMenus} />
+                <PauseMenu isOpen={ui.isPauseMenuOpen} onClose={() => setUI({ isPauseMenuOpen: false })} />
+              </>
+            )}
+            {routes}
+          </>
+        )}
+      </Suspense>
     </div>
   );
 }
 
 export default App;
-

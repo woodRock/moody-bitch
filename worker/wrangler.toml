@@ -1,0 +1,15 @@
+name = "skyrim-lore"
+main = "src/index.ts"
+compatibility_date = "2026-01-01"
+
+[vars]
+FIREBASE_PROJECT_ID = "your-project-id"
+ALLOWED_ORIGINS = "https://woodrock.github.io,http://localhost:5173"
+GEMINI_MODEL = "gemini-3.1-pro-preview"
+
+# Set the secret with: bunx wrangler secret put GEMINI_API_KEY
+
+# Optional: durable per-user rate limiting across isolates.
+# [[kv_namespaces]]
+# binding = "RATE_LIMIT"
+# id = "<kv namespace id>"
