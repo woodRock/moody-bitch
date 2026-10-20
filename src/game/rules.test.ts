@@ -203,3 +203,25 @@ describe('periodSummary', () => {
     expect(periodSummary([]).current.mood).toBeNull();
   });
 });
+
+describe('perk bonuses and weighted loot', () => {
+  it('each owned perk in a tree speeds that tree by 2%', () => {
+    const con = CONSTELLATIONS[0];
+    const s = { ...initialStats('X'), perks: [con.perks[0].id, con.perks[1].id] };
+    expect(xpMultiplier(s, con.skillKey, 0)).toBeCloseTo(1.04);
+    expect(xpMultiplier(s, 'SPEECH', 0)).toBe(1);
+  });
+
+  it('legendary loot is rarer than common loot', () => {
+    let legendary = 0;
+    for (let i = 0; i < 2000; i++) if (rollLoot().id === 'skeleton_key') legendary += 1;
+    expect(legendary).toBeGreaterThan(0);
+    expect(legendary).toBeLessThan(60); // ~1 in 130 by weight
+  });
+
+  it('existing players skip the first-day guide, new ones get it', () => {
+    expect(normalizeStats({ completedQuestCount: 3 }, 'H').onboarded).toBe(true);
+    expect(normalizeStats({ completedQuestCount: 0 }, 'H').onboarded).toBe(false);
+    expect(normalizeStats({ onboarded: false, completedQuestCount: 9 }, 'H').onboarded).toBe(false);
+  });
+});

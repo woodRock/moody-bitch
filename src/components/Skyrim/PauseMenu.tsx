@@ -139,7 +139,7 @@ const PauseMenu: React.FC<PauseMenuProps> = ({ isOpen, onClose }) => {
   const { stats, ui, setUI } = useGame();
   const { playSound } = useSound();
   const { quests, adding, addQuest, toggleQuest, deleteQuest } = useQuests();
-  const { entries, streak, saving, addEntry, deleteEntry } = useMoodEntries();
+  const { entries, streak, saving, addEntry, deleteEntry, hasMore, loadMore } = useMoodEntries();
   const activeTab = ui.pauseTab;
   const setActiveTab = useCallback((t: Tab) => setUI({ pauseTab: t }), [setUI]);
 
@@ -343,6 +343,7 @@ const PauseMenu: React.FC<PauseMenuProps> = ({ isOpen, onClose }) => {
                         </div>
                       </div>
                     ))}
+                    {hasMore && <button className="btn-ghost small skyrim-font" style={{ margin: '0.8rem 0 0 0.8rem' }} onClick={loadMore}>LOAD OLDER</button>}
                   </div>
                 </div>
                 <div className="quest-details-column">

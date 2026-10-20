@@ -6,17 +6,17 @@ import type { Attribute } from '../../game/types';
 
 const COLORS: Record<Attribute, string> = { magicka: '#3d8de0', health: '#e05a4e', stamina: '#3fae3c' };
 
-/** Skyrim's level-up screen: pick Magicka, Health or Stamina. */
+/** Skyrim's level-up screen: pick Magicka, Health or Stamina. Shown wherever you are when a level is waiting. */
 const LevelUpOverlay: React.FC<{ open: boolean }> = ({ open }) => {
-  const { stats, advanceLevel, bumpModal } = useGame();
+  const { stats, advanceLevel, setUI } = useGame();
   const { playSound } = useSound();
 
   useEffect(() => {
     if (!open) return;
     playSound('LEVEL_UP');
-    bumpModal(1);
-    return () => bumpModal(-1);
-  }, [open, playSound, bumpModal]);
+    setUI({ levelUpShowing: true });
+    return () => setUI({ levelUpShowing: false });
+  }, [open, playSound, setUI]);
 
   const max = (a: Attribute) => (a === 'magicka' ? stats.magickaMax : a === 'health' ? stats.healthMax : stats.staminaMax);
 

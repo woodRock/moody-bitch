@@ -3,7 +3,7 @@ import { addDoc, collection, deleteDoc, doc, onSnapshot, query, Timestamp, updat
 import { db } from '../firebaseConfig';
 import { useAuth } from '../context/AuthContext';
 import { useGame } from '../context/GameContext';
-import { generateQuestLore } from '../services/loreService';
+import { generateQuestLore, fallbackLore } from '../services/loreService';
 import { captureLocation } from '../services/locationService';
 import { isQuestDone, LIMITS, sortQuests } from '../game/rules';
 import type { Quest, QuestType } from '../game/types';
@@ -61,10 +61,14 @@ export function useQuests() {
     if (raw.length >= MAX_QUESTS) { notify('QUEST LOG FULL', 'Abandon an old quest first.'); return null; }
     setAdding(true);
     try {
-      const description = await generateQuestLore(clean, type);
+      const description = fallbackLore(type);
       const ref = await addDoc(collection(db, 'quests'), {
         userId: currentUser.uid, title: clean, description, type, skill, completed: false, createdAt: Timestamp.now(),
       });
+      // The scribe writes in the background; the quest is usable right away.
+      void generateQuestLore(clean, type).then(lore => {
+        if (lore && lore !== description) return updateDoc(ref, { description: lore });
+      }).catch(err => console.warn('Lore arrived late or not at all', err));
       return { id: ref.id, title: clean, description, type, skill, completed: false };
     } catch (error) {
       console.error('Error adding quest:', error);

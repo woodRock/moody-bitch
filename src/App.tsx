@@ -9,6 +9,8 @@ import SignUp from './components/Auth/SignUp';
 import SignIn from './components/Auth/SignIn';
 import ForgotPassword from './components/Auth/ForgotPassword';
 import NotFound from './pages/NotFound';
+import LevelUpOverlay from './components/Skyrim/LevelUpOverlay';
+import { rememberRoute } from './lib/lastRoute';
 
 // Heavy screens load on demand so the first paint only needs the shell.
 const SkyrimMenu = lazy(() => import('./components/Skyrim/Menu'));
@@ -21,7 +23,6 @@ const Magic = lazy(() => import('./pages/Magic'));
 const Inventory = lazy(() => import('./pages/Inventory'));
 const MobileShell = lazy(() => import('./mobile/MobileShell'));
 const MobileQuests = lazy(() => import('./mobile/MobileQuests'));
-const MobileLog = lazy(() => import('./mobile/MobileLog'));
 const MobileSkills = lazy(() => import('./mobile/MobileSkills'));
 const MobileMagic = lazy(() => import('./mobile/MobileMagic'));
 const MobileItems = lazy(() => import('./mobile/MobileItems'));
@@ -58,7 +59,7 @@ const isTypingTarget = (t: EventTarget | null) => {
 function App() {
   const location = useLocation();
   const { currentUser, loading: authLoading } = useAuth();
-  const { ui, setUI, statsLoaded } = useGame();
+  const { ui, setUI, statsLoaded, stats } = useGame();
   const isMobile = useIsMobile();
   const [minTimeDone, setMinTimeDone] = useState(false);
   const skipLoading = useCallback(() => setMinTimeDone(true), []);
@@ -80,7 +81,7 @@ function App() {
   useEffect(() => {
     if (!inGame || isMobile) return;
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (ui.modalDepth > 0 || isTypingTarget(e.target)) return;
+      if (ui.modalDepth > 0 || ui.levelUpShowing || isTypingTarget(e.target)) return;
       if (e.key === 'Escape') {
         e.preventDefault();
         setUI({ isPauseMenuOpen: !ui.isPauseMenuOpen, isMenuOpen: false });
@@ -91,14 +92,14 @@ function App() {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [ui.isPauseMenuOpen, ui.isMenuOpen, ui.modalDepth, setUI, inGame, isMobile]);
+  }, [ui.isPauseMenuOpen, ui.isMenuOpen, ui.modalDepth, ui.levelUpShowing, setUI, inGame, isMobile]);
 
   // Warm the lazy screens once the realm is open so navigation never shows a loading flash.
   useEffect(() => {
     if (!inGame) return;
     const warm = () => {
       const loads = isMobile
-        ? [() => import('./mobile/MobileToday'), () => import('./mobile/MobileQuests'), () => import('./mobile/MobileLog'), () => import('./mobile/MobileSkills'), () => import('./mobile/MobileMagic'), () => import('./mobile/MobileItems')]
+        ? [() => import('./mobile/MobileToday'), () => import('./mobile/MobileQuests'), () => import('./mobile/MobileSkills'), () => import('./mobile/MobileMagic'), () => import('./mobile/MobileItems')]
         : [() => import('./pages/Today'), () => import('./pages/Dashboard'), () => import('./components/Skyrim/Menu'), () => import('./components/Skyrim/PauseMenu'), () => import('./pages/Skills'), () => import('./pages/Magic'), () => import('./pages/Inventory')];
       loads.forEach(l => { void l().catch(() => {}); });
     };
@@ -107,8 +108,8 @@ function App() {
     else setTimeout(warm, 1500);
   }, [inGame, isMobile]);
 
-  // Close overlays when the route changes.
-  useEffect(() => { setUI({ isMenuOpen: false }); }, [location.pathname, setUI]);
+  // Close overlays when the route changes, and remember where the player was.
+  useEffect(() => { setUI({ isMenuOpen: false }); if (inGame) rememberRoute(location.pathname); }, [location.pathname, setUI, inGame]);
 
   const routes = (
     <Routes>
@@ -119,7 +120,7 @@ function App() {
       <Route path="/today" element={<Protected>{isMobile ? <MobileToday /> : <Today />}</Protected>} />
       <Route path="/dashboard" element={<Protected>{isMobile ? <MobileMap /> : <Dashboard />}</Protected>} />
       <Route path="/quests" element={<Protected>{isMobile ? <MobileQuests /> : <Navigate to="/today" replace />}</Protected>} />
-      <Route path="/journal" element={<Protected>{isMobile ? <MobileLog /> : <Navigate to="/today" replace />}</Protected>} />
+      <Route path="/journal" element={<Navigate to="/today" replace />} />
       <Route path="/checkin" element={<Navigate to="/journal" replace />} />
       <Route path="/skills" element={<Protected>{isMobile ? <MobileSkills /> : <Skills />}</Protected>} />
       <Route path="/magic" element={<Protected>{isMobile ? <MobileMagic /> : <Magic />}</Protected>} />
@@ -161,6 +162,7 @@ function App() {
                   <PauseMenu isOpen onClose={() => setUI({ isPauseMenuOpen: false })} />
                 </Suspense>
               )}
+              <LevelUpOverlay open={statsLoaded && stats.pendingLevelUps > 0 && !hideHUDForMenus && ui.modalDepth === 0} />
             </>
           )}
           <Suspense fallback={<Fallback />}>{routes}</Suspense>

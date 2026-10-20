@@ -27,6 +27,8 @@ export interface InventoryItem {
   value: number;
   weight: number;
   icon: string;
+  /** Drop weight: common 10, rare 3, legendary 1. */
+  rarity?: number;
   effectType?: ItemEffect;
   effectValue?: number;
   effectTarget?: string;
@@ -74,6 +76,10 @@ export interface UserStats {
   /** Standing Stone blessing (see game/stones.ts) and when it was last changed. */
   standingStone: string | null;
   stoneChangedAt: number;
+  /** Finished the first-day guide. */
+  onboarded: boolean;
+  /** Shouts share one cooldown, like the Voice itself. */
+  shoutCooldownUntil: number;
 }
 
 export type QuestType = 'daily' | 'weekly' | 'one-off';
@@ -102,4 +108,7 @@ export interface Notification {
   id: number;
   title: string;
   subtitle: string;
+  icon?: string;
+  /** Route to open when the banner is tapped. */
+  to?: string;
 }

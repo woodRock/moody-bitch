@@ -10,7 +10,8 @@ import type { MoodEntry } from '../game/types';
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
 
 /** Live journal entries (newest first) with streak maths and write actions. */
-export function useMoodEntries(max = 120) {
+export function useMoodEntries(initialMax = 120) {
+  const [max, setMax] = useState(initialMax);
   const { currentUser } = useAuth();
   const { submitLog, notify, stats } = useGame();
   const [entries, setEntries] = useState<MoodEntry[]>([]);
@@ -71,5 +72,8 @@ export function useMoodEntries(max = 120) {
     }
   }, [notify]);
 
-  return { entries, loading, saving, streak, loggedToday, addEntry, deleteEntry };
+  const hasMore = entries.length >= max;
+  const loadMore = useCallback(() => setMax(m => m + 60), []);
+
+  return { entries, loading, saving, streak, loggedToday, addEntry, deleteEntry, hasMore, loadMore };
 }

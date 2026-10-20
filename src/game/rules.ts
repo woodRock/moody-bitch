@@ -6,6 +6,7 @@
 import type { InventoryItem, MoodEntry, Quest, QuestType, SkillData, UserStats } from './types';
 import { SKILL_KEYS } from './types';
 import { stoneById } from './stones';
+import { CONSTELLATIONS } from '../data/constellations';
 
 export const XP = {
   QUEST: 40,
@@ -31,6 +32,12 @@ export const LIMITS = {
 
 export const LOOT_EVERY_N_QUESTS = 5;
 
+/** Each unlocked perk in a tree makes that tree train this much faster. */
+export const PERK_XP_BONUS = 0.02;
+
+/** All shouts share one cooldown. */
+export const SHOUT_COOLDOWN_MS = 10 * 60 * 1000;
+
 /** Vitals drift down between logs: points per hour, never below the floor. */
 export const DECAY_PER_HOUR = 2;
 export const DECAY_FLOOR = 5;
@@ -53,7 +60,18 @@ export const LOOT_TABLE: Omit<InventoryItem, 'uid'>[] = [
   { id: 'scribe_gauntlets', name: 'Gauntlets of the Scribe', category: 'APPAREL', description: 'Journaling (Speech) grants 25% more XP.', value: 300, weight: 2.0, icon: '🧤', effectType: 'XP_BOOST', effectValue: 1.25, effectTarget: 'SPEECH' },
   { id: 'tome_restoration', name: 'The Book of Ancient Peace', category: 'BOOKS', description: 'Reading it grants 60 XP to Restoration.', value: 120, weight: 1.0, icon: '📖', effectType: 'GRANT_XP', effectValue: 60, effectTarget: 'RESTORATION' },
   { id: 'tome_alteration', name: 'Mystery of Talara', category: 'BOOKS', description: 'Reading it grants 60 XP to Alteration.', value: 120, weight: 1.0, icon: '📕', effectType: 'GRANT_XP', effectValue: 60, effectTarget: 'ALTERATION' },
+  { id: 'mead', name: 'Honningbrew Mead', category: 'POTIONS', description: 'Brewed in Whiterun. Restores 15 Stamina.', value: 20, weight: 0.5, icon: '🍺', effectType: 'RESTORE_STAMINA', effectValue: 15 },
+  { id: 'soup', name: 'Vegetable Soup', category: 'MISC', description: 'A warm bowl from the inn. Restores 15 Health.', value: 8, weight: 0.5, icon: '🍲', effectType: 'RESTORE_HEALTH', effectValue: 15 },
+  { id: 'lusty_maid', name: 'The Lusty Argonian Maid', category: 'BOOKS', description: 'A notorious volume. Reading it grants 60 XP to Speech.', value: 60, weight: 1.0, icon: '📗', effectType: 'GRANT_XP', effectValue: 60, effectTarget: 'SPEECH' },
+  { id: 'smith_manual', name: 'The Armorer\'s Challenge', category: 'BOOKS', description: 'Reading it grants 60 XP to Smithing.', value: 120, weight: 1.0, icon: '📙', effectType: 'GRANT_XP', effectValue: 60, effectTarget: 'SMITHING' },
+  { id: 'grand_soul_gem', name: 'Grand Soul Gem', category: 'MISC', description: 'Filled and humming. Grants 150 XP to Enchanting.', value: 400, weight: 0.5, icon: '💠', rarity: 3, effectType: 'GRANT_XP', effectValue: 150, effectTarget: 'ENCHANTING' },
+  { id: 'nightingale_hood', name: 'Nightingale Hood', category: 'APPAREL', description: 'Nocturnal\'s favour. Alchemy grants 25% more XP.', value: 800, weight: 1.5, icon: '🪶', rarity: 3, effectType: 'XP_BOOST', effectValue: 1.25, effectTarget: 'ALCHEMY' },
+  { id: 'mara_amulet', name: 'Amulet of Mara', category: 'APPAREL', description: 'A token of devotion. Speech grants 25% more XP.', value: 500, weight: 1.0, icon: '💍', rarity: 3, effectType: 'XP_BOOST', effectValue: 1.25, effectTarget: 'SPEECH' },
+  { id: 'skeleton_key', name: 'Skeleton Key', category: 'APPAREL', description: 'The Daedric artifact of Nocturnal. Every skill grants 30% more XP while equipped.', value: 5000, weight: 0.1, icon: '🗝️', rarity: 1, effectType: 'XP_BOOST', effectValue: 1.3 },
 ];
+
+/** Drop weight: common items are ten times as likely as legendary ones. */
+export const DEFAULT_RARITY = 10;
 
 const num = (v: unknown, fallback: number): number =>
   typeof v === 'number' && Number.isFinite(v) ? v : fallback;
@@ -81,6 +99,8 @@ export function initialStats(name: string): UserStats {
     vitalsUpdatedAt: Date.now(),
     standingStone: null,
     stoneChangedAt: 0,
+    onboarded: false,
+    shoutCooldownUntil: 0,
   };
 }
 
@@ -136,6 +156,9 @@ export function normalizeStats(data: Record<string, unknown> | undefined, fallba
     vitalsUpdatedAt: num(d.vitalsUpdatedAt, 0),
     standingStone: typeof d.standingStone === 'string' && stoneById(d.standingStone) ? d.standingStone : null,
     stoneChangedAt: num(d.stoneChangedAt, 0),
+    // Players who existed before the guide have nothing to be guided through.
+    onboarded: d.onboarded === true || (d.onboarded === undefined && num(d.completedQuestCount, 0) > 0),
+    shoutCooldownUntil: num(d.shoutCooldownUntil, 0),
   };
 }
 
@@ -162,6 +185,11 @@ export function xpMultiplier(stats: UserStats, skill: string | undefined, now: n
   }
   const stone = stoneById(stats.standingStone);
   if (stone && skill && (stone.skills.length === 0 || (stone.skills as string[]).includes(skill))) m *= stone.multiplier;
+  if (skill) {
+    const con = CONSTELLATIONS.find(c => c.skillKey === skill);
+    const owned = con ? con.perks.filter(p => stats.perks.includes(p.id)).length : 0;
+    if (owned > 0) m *= 1 + PERK_XP_BONUS * owned;
+  }
   return m;
 }
 
@@ -233,7 +261,13 @@ export function streakBonus(streak: number): number {
 }
 
 export function rollLoot(random = Math.random): InventoryItem {
-  const template = LOOT_TABLE[Math.floor(random() * LOOT_TABLE.length)];
+  const total = LOOT_TABLE.reduce((n, i) => n + (i.rarity ?? DEFAULT_RARITY), 0);
+  let r = random() * total;
+  let template = LOOT_TABLE[0];
+  for (const item of LOOT_TABLE) {
+    r -= item.rarity ?? DEFAULT_RARITY;
+    if (r < 0) { template = item; break; }
+  }
   return { ...template, uid: newUid(random) };
 }
 

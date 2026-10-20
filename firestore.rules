@@ -66,7 +66,7 @@ service cloud.firestore {
       return onlyKeys(['name', 'level', 'xp', 'xpToNextLevel', 'health', 'magicka', 'stamina', 'healthMax', 'magickaMax',
                        'staminaMax', 'skillPoints', 'pendingLevelUps', 'race', 'perks', 'skills', 'inventory', 'equippedItemId',
                        'completedQuestCount', 'surgeEndTime', 'slowTimeEndTime', 'zenMode', 'trackLocation', 'bestStreak',
-                       'questCompletions', 'vitalsUpdatedAt', 'standingStone', 'stoneChangedAt'])
+                       'questCompletions', 'vitalsUpdatedAt', 'standingStone', 'stoneChangedAt', 'onboarded', 'shoutCooldownUntil'])
         && isStr(d.name, 24)
         && isNum(d.level, 1, 1000)
         && isNum(d.xp, 0, 10000000) && isNum(d.xpToNextLevel, 1, 100000000)
@@ -85,7 +85,9 @@ service cloud.firestore {
         && d.questCompletions is map && d.questCompletions.size() <= 32
         && isNum(d.vitalsUpdatedAt, 0, 10000000000000)
         && (d.standingStone == null || isStr(d.standingStone, 24))
-        && isNum(d.stoneChangedAt, 0, 10000000000000);
+        && isNum(d.stoneChangedAt, 0, 10000000000000)
+        && d.onboarded is bool
+        && isNum(d.shoutCooldownUntil, 0, 10000000000000);
     }
     match /userStats/{userId} {
       allow read, delete: if isOwner(userId);

@@ -71,12 +71,14 @@ async function askScribe(kind: LoreKind, prompt: string): Promise<string | null>
 const sanitize = (s: string, max: number) =>
   Array.from(s).map(c => (c.charCodeAt(0) < 32 ? ' ' : c)).join('').trim().slice(0, max);
 
+export const fallbackLore = (type: QuestType): string => type === 'daily'
+  ? 'This task repeats with the rising of each new sun. The gods demand consistency from the Dragonborn.'
+  : type === 'weekly'
+    ? 'A bounty posted by the Jarl, to be claimed once each week. The reward is generous; the deadline is not.'
+    : 'A singular challenge for the Dragonborn to overcome. The scrolls foretold of this day.';
+
 export const generateQuestLore = async (title: string, type: QuestType): Promise<string> => {
-  const fallback = type === 'daily'
-    ? 'This task repeats with the rising of each new sun. The gods demand consistency from the Dragonborn.'
-    : type === 'weekly'
-      ? 'A bounty posted by the Jarl, to be claimed once each week. The reward is generous; the deadline is not.'
-      : 'A singular challenge for the Dragonborn to overcome. The scrolls foretold of this day.';
+  const fallback = fallbackLore(type);
 
   const safeTitle = sanitize(title, LIMITS.QUEST_TITLE);
   const prompt = `You are an ancient scribe documenting the deeds of the Dragonborn.

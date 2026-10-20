@@ -5,21 +5,23 @@ import { useSound } from '../../context/SoundContext';
 import { useQuests } from '../../hooks/useQuests';
 import { useMoodEntries } from '../../hooks/useMoodEntries';
 import { stoneById } from '../../game/stones';
-import { skillMeaning } from '../../game/skills';
+import QuestRow from './QuestRow';
+import Onboarding from './Onboarding';
+import ChronicleHistory from './ChronicleHistory';
+import { DECAY_PER_HOUR } from '../../game/rules';
 import LogForm, { energyEmoji, moodEmoji } from './LogForm';
 import Modal from './Modal';
 import QuestForm from './QuestForm';
-import type { Quest } from '../../game/types';
 
 /**
  * The daily loop on one screen: scribe the log, tick the dailies, watch the
  * bars. Shared by the desktop Today page and the mobile Today tab.
  */
 const TodayContent: React.FC = () => {
-  const { stats } = useGame();
+  const { stats, statsLoaded } = useGame();
   const { playSound } = useSound();
   const { quests, loading: questsLoading, adding, addQuest, toggleQuest } = useQuests();
-  const { entries, loading: logLoading, saving, streak, loggedToday, addEntry } = useMoodEntries(30);
+  const { entries, loading: logLoading, saving, streak, loggedToday, addEntry, deleteEntry, hasMore, loadMore } = useMoodEntries(60);
   const [writing, setWriting] = useState(false);
   const [adderOpen, setAdderOpen] = useState(false);
 
@@ -30,18 +32,8 @@ const TodayContent: React.FC = () => {
   const todayEntry = entries[0];
   const stone = stoneById(stats.standingStone);
   const pct = (v: number, max: number) => `${Math.max(0, Math.min(100, (v / max) * 100))}%`;
-
-  const Row: React.FC<{ q: Quest }> = ({ q }) => (
-    <div className={`today-quest ${q.completed ? 'done' : ''}`}>
-      <button className="m-quest-check" onClick={() => { playSound('UI_CLICK'); void toggleQuest(q); }} aria-pressed={q.completed} aria-label={q.completed ? 'Mark incomplete' : 'Complete quest'}>
-        <span className={`quest-diamond ${q.completed ? 'filled' : ''}`} />
-      </button>
-      <div className="today-quest-text">
-        <span className="skyrim-font">{q.title}</span>
-        <span className="skyrim-serif quest-meta">{q.type === 'weekly' ? 'BOUNTY · ' : ''}{q.skill} <span className="meaning">· {skillMeaning(q.skill)}</span></span>
-      </div>
-    </div>
-  );
+  const hoursSince = stats.vitalsUpdatedAt ? (Date.now() - stats.vitalsUpdatedAt) / 3_600_000 : 0;
+  const drained = Math.floor(hoursSince * DECAY_PER_HOUR);
 
   return (
     <div className="today">
@@ -61,7 +53,7 @@ const TodayContent: React.FC = () => {
         <div className="vital-row"><span className="skyrim-font" style={{ color: '#e05a4e' }}>HEALTH</span><div className="stat-bar-bg"><div className="stat-bar-fill bar-health" style={{ width: pct(stats.health, stats.healthMax) }} /></div><b>{stats.health}/{stats.healthMax}</b></div>
         <div className="vital-row"><span className="skyrim-font" style={{ color: '#3d8de0' }}>MAGICKA</span><div className="stat-bar-bg"><div className="stat-bar-fill bar-magicka" style={{ width: pct(stats.magicka, stats.magickaMax) }} /></div><b>{stats.magicka}/{stats.magickaMax}</b></div>
         <div className="vital-row"><span className="skyrim-font" style={{ color: '#3fae3c' }}>STAMINA</span><div className="stat-bar-bg"><div className="stat-bar-fill bar-stamina" style={{ width: pct(stats.stamina, stats.staminaMax) }} /></div><b>{stats.stamina}/{stats.staminaMax}</b></div>
-        <p className="skyrim-serif muted small">Vitals drift down through the day. A log resets them; potions and Heal Self restore them.{stone ? ` ${stone.icon} ${stone.name} blesses your training this week.` : ''}</p>
+        <p className="skyrim-serif muted small">{drained > 0 ? <span className="draining-note">Draining · −{drained} since your last log{hoursSince >= 24 ? ' (over a day ago)' : ''}. </span> : 'Vitals drift down through the day. '}A log resets them; potions and Heal Self restore them.{stone ? ` ${stone.icon} ${stone.name} blesses your training this week.` : ''}</p>
       </section>
 
       <section className="today-card">
@@ -87,19 +79,23 @@ const TodayContent: React.FC = () => {
         </div>
         {questsLoading && <p className="skyrim-serif muted">Consulting the scrolls...</p>}
         {!questsLoading && recurring.length === 0 && <p className="skyrim-serif muted">No dailies yet. A daily resets at dawn, a bounty every Monday. Add one and make tomorrow easier.</p>}
-        {recurring.map(q => <Row key={q.id} q={q} />)}
+        {recurring.map(q => <QuestRow key={q.id} quest={q} onToggle={toggleQuest} />)}
         {sides.length > 0 && (
           <>
             <div className="quest-category-title" style={{ marginTop: '1rem' }}>Open side quests</div>
-            {sides.slice(0, 5).map(q => <Row key={q.id} q={q} />)}
+            {sides.slice(0, 5).map(q => <QuestRow key={q.id} quest={q} onToggle={toggleQuest} />)}
             {sides.length > 5 && <Link to="/quests" className="skyrim-serif muted small">and {sides.length - 5} more in the quest log</Link>}
           </>
         )}
       </section>
 
+      <ChronicleHistory entries={entries} hasMore={hasMore} loadMore={loadMore} deleteEntry={deleteEntry} />
+
       <Modal open={adderOpen} onClose={() => setAdderOpen(false)} title="NEW QUEST" className="sheet">
         <QuestForm adding={adding} onSubmit={addQuest} onDone={q => { if (q) setAdderOpen(false); }} onCancel={() => setAdderOpen(false)} />
       </Modal>
+
+      <Onboarding open={statsLoaded && !stats.onboarded && !questsLoading && quests.length === 0} />
     </div>
   );
 };

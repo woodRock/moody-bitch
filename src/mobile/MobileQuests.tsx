@@ -5,6 +5,7 @@ import Modal from '../components/Skyrim/Modal';
 import QuestForm from '../components/Skyrim/QuestForm';
 import type { Quest } from '../game/types';
 import { skillMeaning } from '../game/skills';
+import QuestRow from '../components/Skyrim/QuestRow';
 
 const MobileQuests: React.FC = () => {
   const { quests, loading, adding, addQuest, toggleQuest, deleteQuest } = useQuests();
@@ -15,19 +16,12 @@ const MobileQuests: React.FC = () => {
 
   const current = open ? quests.find(q => q.id === open.id) ?? null : null;
   const dailies = quests.filter(q => q.type === 'daily');
-  const sides = quests.filter(q => q.type !== 'daily');
+  const bounties = quests.filter(q => q.type === 'weekly');
+  const sides = quests.filter(q => q.type === 'one-off');
   const doneToday = dailies.filter(q => q.completed).length;
 
   const Row: React.FC<{ q: Quest }> = ({ q }) => (
-    <div className={`m-quest ${q.completed ? 'done' : ''}`}>
-      <button className="m-quest-check" onClick={() => { playSound('UI_CLICK'); void toggleQuest(q); }} aria-label={q.completed ? 'Mark incomplete' : 'Complete quest'} aria-pressed={q.completed}>
-        <span className={`quest-diamond ${q.completed ? 'filled' : ''}`} />
-      </button>
-      <button className="m-quest-body" onClick={() => { setOpen(q); setConfirm(false); playSound('UI_CLICK'); }}>
-        <span className="skyrim-font m-quest-title">{q.title}</span>
-        <span className="skyrim-serif m-quest-meta">{q.skill} <span className="meaning">· {skillMeaning(q.skill)}</span></span>
-      </button>
-    </div>
+    <QuestRow quest={q} onToggle={toggleQuest} onOpen={quest => { setOpen(quest); setConfirm(false); playSound('UI_CLICK'); }} />
   );
 
   return (
@@ -44,6 +38,8 @@ const MobileQuests: React.FC = () => {
 
       {dailies.length > 0 && <div className="quest-category-title">Daily</div>}
       {dailies.map(q => <Row key={q.id} q={q} />)}
+      {bounties.length > 0 && <div className="quest-category-title" style={{ marginTop: '1rem' }}>Bounties</div>}
+      {bounties.map(q => <Row key={q.id} q={q} />)}
       {sides.length > 0 && <div className="quest-category-title" style={{ marginTop: '1rem' }}>Side Quests</div>}
       {sides.map(q => <Row key={q.id} q={q} />)}
 

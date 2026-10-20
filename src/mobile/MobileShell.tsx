@@ -8,12 +8,13 @@ import Compass from '../components/Skyrim/Compass';
 import { compassStore, useCompass } from '../context/compassStore';
 import Modal from '../components/Skyrim/Modal';
 import { SystemSettings } from '../components/Skyrim/PauseMenu';
+import LevelUpOverlay from '../components/Skyrim/LevelUpOverlay';
+import ShoutMeter from '../components/Skyrim/ShoutMeter';
 import '../styles/Mobile.css';
 
 const TABS = [
   { to: '/today', label: 'TODAY', icon: '☀' },
   { to: '/quests', label: 'QUESTS', icon: '◆' },
-  { to: '/journal', label: 'LOG', icon: '✎' },
   { to: '/skills', label: 'SKILLS', icon: '✦' },
   { to: '/magic', label: 'MAGIC', icon: '✧' },
   { to: '/inventory', label: 'ITEMS', icon: '⚱' },
@@ -24,7 +25,7 @@ const TABS = [
  * thumb-friendly tab bar instead of trackpad gestures and the diamond menu.
  */
 const MobileShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { stats, worldMessages } = useGame();
+  const { stats, worldMessages, ui, statsLoaded } = useGame();
   const compass = useCompass();
   const { playSound } = useSound();
   const navigate = useNavigate();
@@ -79,6 +80,7 @@ const MobileShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       <main className={`mobile-content ${onMap ? 'flush' : ''}`}>{children}</main>
 
       <footer className="mobile-bottom">
+        <ShoutMeter compact />
         {!stats.zenMode && <StatBars compact />}
         <nav className="mobile-tabs" aria-label="Main">
           {TABS.map(t => (
@@ -89,6 +91,8 @@ const MobileShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           ))}
         </nav>
       </footer>
+
+      <LevelUpOverlay open={statsLoaded && stats.pendingLevelUps > 0 && ui.modalDepth === 0 && !systemOpen} />
 
       <Modal open={systemOpen} onClose={() => setSystemOpen(false)} title="SYSTEM" width={520} className="sheet">
         <div className="mobile-hero skyrim-font">

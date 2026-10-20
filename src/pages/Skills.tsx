@@ -6,7 +6,6 @@ import { CONSTELLATIONS } from '../data/constellations';
 import type { Constellation, Perk } from '../data/constellations';
 import { RACES } from '../game/spells';
 import { LIMITS } from '../game/rules';
-import LevelUpOverlay from '../components/Skyrim/LevelUpOverlay';
 import { perkStatus } from '../game/perks';
 import { skillMeaning } from '../game/skills';
 
@@ -162,8 +161,6 @@ const Skills: React.FC = () => {
           )}
         </>
       )}
-
-      <LevelUpOverlay open={stats.pendingLevelUps > 0 && !selectedSkill && !overlaysOpen} />
 
       <AnimatePresence>
         {selectedSkill && (

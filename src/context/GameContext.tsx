@@ -9,7 +9,7 @@ import { STONE_COOLDOWN_MS, stoneById } from '../game/stones';
 import { WISDOM_QUOTES } from '../game/spells';
 import {
   applyDecay, applyXP, attributesFromLog, computeActiveEffects, initialStats, LIMITS, logGrants,
-  LOOT_EVERY_N_QUESTS, MAX_INVENTORY, normalizeStats, rollLoot, streakBonus, XP,
+  LOOT_EVERY_N_QUESTS, MAX_INVENTORY, normalizeStats, rollLoot, SHOUT_COOLDOWN_MS, streakBonus, XP,
 } from '../game/rules';
 import type { XPEvent, XPGrant } from '../game/rules';
 
@@ -22,6 +22,8 @@ export interface UIState {
   isMenuOpen: boolean;
   /** Number of modal layers currently open; keyboard shortcuts pause while > 0. */
   modalDepth: number;
+  /** The level-up screen is showing; shortcuts and other overlays wait. */
+  levelUpShowing: boolean;
   pauseTab: 'QUESTS' | 'STATS' | 'JOURNAL' | 'SYSTEM';
 }
 
@@ -35,7 +37,10 @@ interface GameContextType {
   setUI: (updates: Partial<UIState>) => void;
   /** Modals call this with +1 on open and -1 on close so global shortcuts pause. */
   bumpModal: (delta: number) => void;
-  notify: (title: string, subtitle?: string) => void;
+  notify: (title: string, subtitle?: string, opts?: { icon?: string; to?: string }) => void;
+  /** Try to use the Voice. Returns false (and says so) if it is still recharging. */
+  spendShout: () => Promise<boolean>;
+  setOnboarded: () => Promise<void>;
   addWorldMessage: (text: string) => void;
   grantXP: (grants: XPGrant[]) => Promise<void>;
   completeQuest: (skillName: string, type?: QuestType) => Promise<void>;
@@ -87,6 +92,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     isPauseMenuOpen: false,
     isMenuOpen: false,
     modalDepth: 0,
+    levelUpShowing: false,
     pauseTab: 'QUESTS',
   });
 
@@ -108,10 +114,10 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUIState(prev => ({ ...prev, modalDepth: Math.max(0, prev.modalDepth + delta) }));
   }, []);
 
-  const notify = useCallback((title: string, subtitle = '') => {
+  const notify = useCallback((title: string, subtitle = '', opts?: { icon?: string; to?: string }) => {
     if (statsRef.current.slowTimeEndTime > Date.now()) return; // Slow Time silences banners
     counter.current += 1;
-    setQueue(q => [...q.slice(-4), { id: counter.current, title, subtitle }]);
+    setQueue(q => [...q.slice(-4), { id: counter.current, title, subtitle, ...opts }]);
   }, [statsRef]);
 
   // Pop the banner queue one at a time.
@@ -217,8 +223,22 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return { next, events };
     });
     if (bounty) notify('BOUNTY COLLECTED', `+${XP.BOUNTY} ${skillName} XP`);
-    if (loot) notify('NEW ITEM ACQUIRED', (loot as InventoryItem).name.toUpperCase());
+    if (loot) { const l = loot as InventoryItem; notify('NEW ITEM ACQUIRED', l.name.toUpperCase(), { icon: l.icon, to: '/inventory' }); }
   }, [mutate, notify, playSound]);
+
+  const spendShout = useCallback(async () => {
+    const now = Date.now();
+    if (statsRef.current.shoutCooldownUntil > now) {
+      const s = Math.ceil((statsRef.current.shoutCooldownUntil - now) / 1000);
+      notify('THE VOICE IS SPENT', `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')} UNTIL IT RETURNS`);
+      return false;
+    }
+    return mutate(cur => cur.shoutCooldownUntil > now ? null : { next: { ...cur, shoutCooldownUntil: now + SHOUT_COOLDOWN_MS } });
+  }, [mutate, notify, statsRef]);
+
+  const setOnboarded = useCallback(async () => {
+    await mutate(cur => cur.onboarded ? null : { next: { ...cur, onboarded: true } });
+  }, [mutate]);
 
   const restore = useCallback(async (delta: Partial<Record<Attribute, number>>) => {
     await mutate(cur => ({ next: {
@@ -391,11 +411,11 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [mutate]);
 
   const value = useMemo<GameContextType>(() => ({
-    stats, statsLoaded, notification, worldMessages, activeEffects, ui, setUI, bumpModal, notify, addWorldMessage,
+    stats, statsLoaded, notification, worldMessages, activeEffects, ui, setUI, bumpModal, notify, spendShout, setOnboarded, addWorldMessage,
     grantXP, completeQuest, restore, setStandingStone, submitLog, spendSkillPoint, castSpell, consumeItem, toggleEquip, advanceLevel,
     updateDisplayName, updateRace, startSurge, startSlowTime, toggleZenMode, setTrackLocation,
   }), [
-    stats, statsLoaded, notification, worldMessages, activeEffects, ui, setUI, bumpModal, notify, addWorldMessage,
+    stats, statsLoaded, notification, worldMessages, activeEffects, ui, setUI, bumpModal, notify, spendShout, setOnboarded, addWorldMessage,
     grantXP, completeQuest, restore, setStandingStone, submitLog, spendSkillPoint, castSpell, consumeItem, toggleEquip, advanceLevel,
     updateDisplayName, updateRace, startSurge, startSlowTime, toggleZenMode, setTrackLocation,
   ]);

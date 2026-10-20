@@ -349,3 +349,46 @@
 .skill-stat-head b { color: var(--skyrim-gold-bright); font-family: var(--font-ui); font-weight: 500; font-size: 1rem; }
 .skill-stat .skill-progress-bar-container { width: 100%; margin: 0; }
 .skill-stat .meaning { font-size: 0.8rem; }
+
+/* --- Quest rows: completion celebration --- */
+.quest-row { position: relative; display: flex; align-items: stretch; border-bottom: 1px solid rgba(255, 255, 255, 0.06); }
+.quest-row.done .quest-row-title { color: #666; text-decoration: line-through; }
+.quest-row-body { flex: 1; background: none; border: none; text-align: left; padding: 0.7rem 0.4rem; display: flex; flex-direction: column; gap: 2px; cursor: pointer; min-height: 52px; color: inherit; }
+.quest-row-body:disabled { cursor: default; }
+.quest-row-title { font-size: 0.85rem; color: #eee; letter-spacing: 1px; }
+.quest-row.celebrate { animation: row-flash 1.2s ease-out; }
+.quest-row.celebrate .quest-diamond.filled { animation: diamond-pop 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+.xp-float { position: absolute; right: 0.6rem; top: 50%; color: var(--skyrim-gold-bright); font-size: 0.7rem; letter-spacing: 1px; pointer-events: none; text-shadow: 0 0 8px rgba(230, 194, 120, 0.6); animation: xp-float 1.6s ease-out forwards; }
+@keyframes row-flash { 0% { background: rgba(230, 194, 120, 0.35); } 100% { background: transparent; } }
+@keyframes diamond-pop { 0% { transform: rotate(45deg) scale(0.4); } 60% { transform: rotate(45deg) scale(1.5); } 100% { transform: rotate(45deg) scale(1); } }
+@keyframes xp-float { 0% { opacity: 0; transform: translateY(0); } 15% { opacity: 1; } 100% { opacity: 0; transform: translateY(-34px); } }
+
+/* --- Banner with an item --- */
+.skyrim-banner.tappable { pointer-events: auto; cursor: pointer; }
+.banner-icon { font-size: 2.6rem; margin-bottom: 0.3rem; filter: drop-shadow(0 0 14px rgba(255, 255, 255, 0.5)); }
+.banner-hint { font-size: 0.6rem; color: #888; margin-top: 0.4rem; letter-spacing: 3px; }
+
+/* --- Vitals draining --- */
+.stat-bar-bg.draining .stat-bar-fill { animation: bar-drain 3s ease-in-out infinite; }
+@keyframes bar-drain { 0%, 100% { filter: brightness(1); } 50% { filter: brightness(0.6); } }
+.draining-note { color: var(--skyrim-gold-dim); }
+.bar-letter { font-size: 0.55rem; color: #888; width: 10px; text-align: center; margin-right: 4px; }
+.hud-container.compact .stat-bar-group { flex-direction: row; align-items: center; }
+
+/* --- Shout meter --- */
+.shout-meter { position: fixed; bottom: 4.2rem; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 0.6rem; font-size: 0.6rem; color: #aaa; z-index: 1000; pointer-events: none; }
+.shout-meter-track { width: 160px; height: 4px; background: rgba(0, 0, 0, 0.6); border: 1px solid #555; }
+.shout-meter-fill { height: 100%; background: linear-gradient(90deg, #3d8de0, #9fd0ff); box-shadow: 0 0 8px rgba(61, 141, 224, 0.7); transition: width 1s linear; }
+.shout-meter-time { color: #ddd; }
+.shout-meter.compact { position: static; transform: none; justify-content: center; padding: 0.3rem 0 0; }
+
+/* --- First day --- */
+.starter-list { display: flex; flex-direction: column; gap: 0.3rem; margin-bottom: 0.5rem; }
+.starter { display: grid; grid-template-columns: auto 1fr auto; gap: 0.7rem; align-items: center; padding: 0.5rem 0.6rem; border: 1px solid rgba(255, 255, 255, 0.08); cursor: pointer; color: #bbb; }
+.starter.on { border-color: var(--skyrim-gold-dim); color: #fff; background: rgba(230, 194, 120, 0.06); }
+.starter input { accent-color: var(--skyrim-gold-bright); width: 16px; height: 16px; }
+.starter-skill { font-size: 0.6rem; color: #888; text-align: right; }
+.skyrim-modal-content.onboarding .stones-grid { grid-template-columns: repeat(2, 1fr); }
+.is-mobile .starter { grid-template-columns: auto 1fr; }
+.is-mobile .starter-skill { grid-column: 2; text-align: left; }
+.is-mobile .mobile-tab { font-size: 0.66rem; }

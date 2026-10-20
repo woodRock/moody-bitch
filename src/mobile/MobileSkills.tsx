@@ -9,10 +9,9 @@ import { skillMeaning } from '../game/skills';
 import { RACES } from '../game/spells';
 import { LIMITS } from '../game/rules';
 import Modal from '../components/Skyrim/Modal';
-import LevelUpOverlay from '../components/Skyrim/LevelUpOverlay';
 
 const MobileSkills: React.FC = () => {
-  const { stats, spendSkillPoint, notify, updateDisplayName, updateRace, ui } = useGame();
+  const { stats, spendSkillPoint, notify, updateDisplayName, updateRace } = useGame();
   const { playSound } = useSound();
   const [open, setOpen] = useState<Constellation | null>(null);
   const [editing, setEditing] = useState(false);
@@ -38,8 +37,6 @@ const MobileSkills: React.FC = () => {
 
   return (
     <div className="m-page">
-      <LevelUpOverlay open={stats.pendingLevelUps > 0 && ui.modalDepth === 0} />
-
       <div className="m-page-head">
         <h1 className="skyrim-font">{stats.name}</h1>
         <button className="btn-ghost small skyrim-font" onClick={() => { setName(stats.name); setRace(stats.race); setEditing(true); }}>EDIT</button>
@@ -64,7 +61,7 @@ const MobileSkills: React.FC = () => {
             <div className="m-skill-text">
               <div className="skyrim-font m-skill-name">{con.name} <span className="gold">{skill.level}</span> <span className="meaning">· {skillMeaning(con.skillKey)}</span></div>
               <div className="skill-progress-bar-container"><div className="skill-progress-bar-fill" style={{ width: `${(skill.xp / skill.xpToNextLevel) * 100}%` }} /></div>
-              <div className="skyrim-serif muted small">{owned}/{con.perks.length} perks · {con.description}</div>
+              <div className="skyrim-serif muted small">{owned}/{con.perks.length} perks · {stats.questCompletions[con.skillKey] ?? 0} quests</div>
             </div>
           </button>
         );
@@ -73,7 +70,7 @@ const MobileSkills: React.FC = () => {
       <Modal open={!!open} onClose={() => setOpen(null)} title={open?.name} className="sheet">
         {open && (
           <>
-            <p className="skyrim-serif muted">{open.description}</p>
+            <p className="skyrim-serif muted">{open.description} <span className="meaning">· {skillMeaning(open.skillKey)}</span></p>
             <div className="skyrim-font" style={{ marginBottom: '1rem' }}>AVAILABLE POINTS: <span className="gold">{stats.skillPoints}</span></div>
             {open.perks.map(p => {
               const st = perkStatus(open, p, stats);

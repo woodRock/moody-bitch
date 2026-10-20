@@ -1,4 +1,5 @@
 import React from 'react';
+import { lastRoute } from '../lib/lastRoute';
 
 interface State { error: Error | null }
 
@@ -20,7 +21,7 @@ export class ErrorBoundary extends React.Component<{ children: React.ReactNode }
         <h1 className="skyrim-font">YOU DIED</h1>
         <div className="menu-separator" style={{ margin: '1rem auto', width: '260px' }} />
         <p className="skyrim-serif">The realm stumbled. Your progress is safe in the cloud.</p>
-        <button className="btn-ghost skyrim-font" onClick={() => window.location.reload()}>LOAD LAST SAVE</button>
+        <button className="btn-ghost skyrim-font" onClick={() => { window.location.href = `${import.meta.env.BASE_URL.replace(/\/$/, '')}${lastRoute()}`; }}>LOAD LAST SAVE</button>
       </div>
     );
   }
