@@ -337,3 +337,15 @@
 
 .evidence { font-size: 0.6rem; color: var(--skyrim-gold-dim); margin-top: 0.2rem; }
 .m-perk.available .evidence { color: var(--skyrim-gold-bright); }
+
+/* --- Pause menu refinements --- */
+.quest-group { margin-bottom: 0.8rem; }
+.quest-group-head { font-size: 0.65rem; color: #666; letter-spacing: 2px; padding: 0.3rem 0.8rem; border-bottom: 1px solid rgba(255, 255, 255, 0.06); display: flex; justify-content: space-between; }
+.quest-group-head span { color: #999; }
+.quest-reward { margin-top: 1.5rem; font-size: 0.7rem; color: var(--skyrim-gold-dim); }
+.skills-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem 2rem; }
+.skill-stat { display: flex; flex-direction: column; gap: 0.3rem; }
+.skill-stat-head { display: flex; justify-content: space-between; align-items: baseline; font-size: 0.8rem; }
+.skill-stat-head b { color: var(--skyrim-gold-bright); font-family: var(--font-ui); font-weight: 500; font-size: 1rem; }
+.skill-stat .skill-progress-bar-container { width: 100%; margin: 0; }
+.skill-stat .meaning { font-size: 0.8rem; }

@@ -4,6 +4,7 @@ import { useSound } from '../context/SoundContext';
 import Modal from '../components/Skyrim/Modal';
 import QuestForm from '../components/Skyrim/QuestForm';
 import type { Quest } from '../game/types';
+import { skillMeaning } from '../game/skills';
 
 const MobileQuests: React.FC = () => {
   const { quests, loading, adding, addQuest, toggleQuest, deleteQuest } = useQuests();
@@ -24,7 +25,7 @@ const MobileQuests: React.FC = () => {
       </button>
       <button className="m-quest-body" onClick={() => { setOpen(q); setConfirm(false); playSound('UI_CLICK'); }}>
         <span className="skyrim-font m-quest-title">{q.title}</span>
-        <span className="skyrim-serif m-quest-meta">{q.skill}</span>
+        <span className="skyrim-serif m-quest-meta">{q.skill} <span className="meaning">· {skillMeaning(q.skill)}</span></span>
       </button>
     </div>
   );
@@ -57,7 +58,7 @@ const MobileQuests: React.FC = () => {
           <>
             <p className="quest-description">{current.description}</p>
             <div className="quest-category-title">Objective</div>
-            <p className="skyrim-serif">{current.type === 'daily' ? 'Resets each dawn. ' : ''}Invest in the {current.skill} skill by completing this task.</p>
+            <p className="skyrim-serif">{current.type === 'daily' ? 'Resets each dawn. ' : current.type === 'weekly' ? 'A bounty: triple XP and loot, once a week. ' : ''}Invest in the {current.skill} skill <span className="meaning">({skillMeaning(current.skill)})</span> by completing this task.</p>
             <div className="form-actions">
               <button className="btn-primary skyrim-font" onClick={() => { void toggleQuest(current); setOpen(null); }}>{current.completed ? 'MARK INCOMPLETE' : 'COMPLETE QUEST'}</button>
               {confirm

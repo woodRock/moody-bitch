@@ -3,9 +3,9 @@ import type { MoodEntry } from '../../game/types';
 
 /** Palette validated for the dark surface (lightness band, chroma, CVD separation, contrast). */
 const SERIES = [
-  { key: 'mood', label: 'Health', color: '#e05a4e' },
-  { key: 'energy', label: 'Stamina', color: '#3fae3c' },
-  { key: 'sleep', label: 'Magicka', color: '#3d8de0' },
+  { key: 'mood', label: 'Health', real: 'mood', color: '#e05a4e' },
+  { key: 'energy', label: 'Stamina', real: 'energy', color: '#3fae3c' },
+  { key: 'sleep', label: 'Magicka', real: 'rest', color: '#3d8de0' },
 ] as const;
 
 type SeriesKey = typeof SERIES[number]['key'];
@@ -68,7 +68,7 @@ const StatsChart: React.FC<{ entries: MoodEntry[]; maxPoints?: number }> = ({ en
       <div className="chart-header">
         <div className="chart-legend" aria-hidden="true">
           {SERIES.map(s => (
-            <span key={s.key} className="legend-item"><i style={{ background: s.color }} />{s.label}</span>
+            <span key={s.key} className="legend-item"><i style={{ background: s.color }} />{s.label} <span className="legend-real">({s.real})</span></span>
           ))}
         </div>
         <button type="button" className="btn-ghost small skyrim-font" onClick={() => setTable(t => !t)}>{table ? 'CHART' : 'TABLE'}</button>
@@ -77,7 +77,7 @@ const StatsChart: React.FC<{ entries: MoodEntry[]; maxPoints?: number }> = ({ en
       {table ? (
         <div className="chart-table-wrap">
           <table className="chart-table skyrim-serif">
-            <thead><tr><th>Day</th>{SERIES.map(s => <th key={s.key}>{s.label}</th>)}</tr></thead>
+            <thead><tr><th>Day</th>{SERIES.map(s => <th key={s.key}>{s.label} ({s.real})</th>)}</tr></thead>
             <tbody>
               {[...points].reverse().map((p, i) => (
                 <tr key={i}><td>{p.label}</td><td>{p.mood}</td><td>{p.energy}</td><td>{p.sleep}</td></tr>
@@ -113,7 +113,7 @@ const StatsChart: React.FC<{ entries: MoodEntry[]; maxPoints?: number }> = ({ en
               <foreignObject x={tooltipLeft ? x(hover) - 150 : x(hover) + 10} y={PAD.t} width={140} height={90}>
                 <div className="chart-tooltip skyrim-serif">
                   <div className="chart-tooltip-date">{hp.label}</div>
-                  {SERIES.map(s => <div key={s.key}><i style={{ background: s.color }} />{s.label} <b>{hp[s.key]}</b></div>)}
+                  {SERIES.map(s => <div key={s.key}><i style={{ background: s.color }} />{s.label} <span className="legend-real">({s.real})</span> <b>{hp[s.key]}</b></div>)}
                 </div>
               </foreignObject>
             </g>

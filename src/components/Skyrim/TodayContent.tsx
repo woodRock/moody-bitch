@@ -5,6 +5,7 @@ import { useSound } from '../../context/SoundContext';
 import { useQuests } from '../../hooks/useQuests';
 import { useMoodEntries } from '../../hooks/useMoodEntries';
 import { stoneById } from '../../game/stones';
+import { skillMeaning } from '../../game/skills';
 import LogForm, { energyEmoji, moodEmoji } from './LogForm';
 import Modal from './Modal';
 import QuestForm from './QuestForm';
@@ -37,7 +38,7 @@ const TodayContent: React.FC = () => {
       </button>
       <div className="today-quest-text">
         <span className="skyrim-font">{q.title}</span>
-        <span className="skyrim-serif quest-meta">{q.type === 'weekly' ? 'BOUNTY · ' : ''}{q.skill}</span>
+        <span className="skyrim-serif quest-meta">{q.type === 'weekly' ? 'BOUNTY · ' : ''}{q.skill} <span className="meaning">· {skillMeaning(q.skill)}</span></span>
       </div>
     </div>
   );

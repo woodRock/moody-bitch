@@ -5,6 +5,7 @@ import { CONSTELLATIONS } from '../data/constellations';
 import type { Constellation } from '../data/constellations';
 import { perkStatus } from '../game/perks';
 import StandingStones from '../components/Skyrim/StandingStones';
+import { skillMeaning } from '../game/skills';
 import { RACES } from '../game/spells';
 import { LIMITS } from '../game/rules';
 import Modal from '../components/Skyrim/Modal';
@@ -61,7 +62,7 @@ const MobileSkills: React.FC = () => {
               {con.perks.map(p => <circle key={p.id} cx={p.x} cy={p.y} r={stats.perks.includes(p.id) ? 14 : 8} className={stats.perks.includes(p.id) ? 'on' : ''} />)}
             </svg>
             <div className="m-skill-text">
-              <div className="skyrim-font m-skill-name">{con.name} <span className="gold">{skill.level}</span></div>
+              <div className="skyrim-font m-skill-name">{con.name} <span className="gold">{skill.level}</span> <span className="meaning">· {skillMeaning(con.skillKey)}</span></div>
               <div className="skill-progress-bar-container"><div className="skill-progress-bar-fill" style={{ width: `${(skill.xp / skill.xpToNextLevel) * 100}%` }} /></div>
               <div className="skyrim-serif muted small">{owned}/{con.perks.length} perks · {con.description}</div>
             </div>

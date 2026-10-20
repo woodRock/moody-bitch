@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { Timestamp } from 'firebase/firestore';
 import {
   applyDecay, applyXP, attributesFromLog, computeStreak, hasLoggedToday, initialStats,
-  isQuestDone, normalizeStats, rollLoot, sortQuests, streakBonus, weekKey, xpMultiplier,
+  isQuestDone, normalizeStats, periodSummary, rollLoot, sortQuests, streakBonus, weekKey, xpMultiplier,
 } from './rules';
 import { perkStatus } from './perks';
 import { CONSTELLATIONS } from '../data/constellations';
@@ -191,5 +191,15 @@ describe('bounties, decay, stones, evidence', () => {
     s.perks = [con.perks[0].id];
     expect(perkStatus(con, con.perks[1], s)).toMatchObject({ linked: true, need: 4, available: true });
     expect(perkStatus(con, con.perks[2], s)).toMatchObject({ linked: false, need: 7, available: false });
+  });
+});
+
+describe('periodSummary', () => {
+  it('averages the last seven days and the seven before', () => {
+    const e = (n: number, mood: number) => ({ timestamp: ts(daysAgo(n)), mood, energy: 5, sleep: 7 });
+    const { current, previous } = periodSummary([e(0, 8), e(3, 6), e(9, 4), e(12, 2), e(20, 10)]);
+    expect(current).toEqual({ logs: 2, mood: 7, energy: 5, sleep: 7 });
+    expect(previous).toEqual({ logs: 2, mood: 3, energy: 5, sleep: 7 });
+    expect(periodSummary([]).current.mood).toBeNull();
   });
 });

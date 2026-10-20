@@ -328,6 +328,22 @@ export function computeStreak(entries: Pick<MoodEntry, 'timestamp'>[], now = new
   return streak;
 }
 
+export interface WeekSummary { logs: number; mood: number | null; energy: number | null; sleep: number | null }
+
+/** Averages over the last `days` days and the `days` before that, for trend arrows. */
+export function periodSummary(entries: Pick<MoodEntry, 'timestamp' | 'mood' | 'energy' | 'sleep'>[], days = 7, now = new Date()): { current: WeekSummary; previous: WeekSummary } {
+  const end = new Date(now); end.setHours(23, 59, 59, 999);
+  const cut1 = addDays(end, -days); const cut2 = addDays(end, -2 * days);
+  const summarise = (list: typeof entries): WeekSummary => {
+    if (list.length === 0) return { logs: 0, mood: null, energy: null, sleep: null };
+    const avg = (f: (e: typeof entries[number]) => number) => Math.round((list.reduce((a, e) => a + f(e), 0) / list.length) * 10) / 10;
+    return { logs: list.length, mood: avg(e => e.mood), energy: avg(e => e.energy), sleep: avg(e => e.sleep) };
+  };
+  const cur = entries.filter(e => { const t = e.timestamp.toDate(); return t > cut1 && t <= end; });
+  const prev = entries.filter(e => { const t = e.timestamp.toDate(); return t > cut2 && t <= cut1; });
+  return { current: summarise(cur), previous: summarise(prev) };
+}
+
 export function hasLoggedToday(entries: Pick<MoodEntry, 'timestamp'>[], now = new Date()): boolean {
   const today = dayKey(now);
   return entries.some(e => dayKey(e.timestamp.toDate()) === today);

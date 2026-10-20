@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { LIMITS } from '../../game/rules';
 import { SKILL_KEYS } from '../../game/types';
+import { skillMeaning } from '../../game/skills';
 import type { Quest, QuestType } from '../../game/types';
 
 interface QuestFormProps {
@@ -32,8 +33,9 @@ const QuestForm: React.FC<QuestFormProps> = ({ onSubmit, onDone, onCancel, addin
       <div className="input-group">
         <label className="skyrim-font field-label" htmlFor="quest-skill"><span>TARGET SKILL</span></label>
         <select id="quest-skill" className="parchment-input dark" value={skill} onChange={e => setSkill(e.target.value)}>
-          {SKILL_KEYS.map(s => <option key={s} value={s}>{s}</option>)}
+          {SKILL_KEYS.map(s => <option key={s} value={s}>{s} · {skillMeaning(s)}</option>)}
         </select>
+        <div className="skyrim-serif field-hint">In real life: <em>{skillMeaning(skill)}</em>. Completing this quest trains that.</div>
       </div>
       <div className="input-group">
         <label className="skyrim-font field-label" htmlFor="quest-type"><span>FREQUENCY</span></label>

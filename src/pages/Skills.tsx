@@ -8,6 +8,7 @@ import { RACES } from '../game/spells';
 import { LIMITS } from '../game/rules';
 import LevelUpOverlay from '../components/Skyrim/LevelUpOverlay';
 import { perkStatus } from '../game/perks';
+import { skillMeaning } from '../game/skills';
 
 const NebulaFilters = () => (
   <svg className="nebula-defs" aria-hidden="true">
@@ -144,6 +145,7 @@ const Skills: React.FC = () => {
                   </svg>
                   <div className="constellation-caption">
                     <div className="skyrim-font constellation-name">{con.name} <span>{skill.level}</span></div>
+                    <div className="skyrim-serif meaning" style={{ fontSize: '0.95rem' }}>{skillMeaning(con.skillKey)}</div>
                     <div className="skill-progress-bar-container"><div className="skill-progress-bar-fill" style={{ width: `${(skill.xp / skill.xpToNextLevel) * 100}%` }} /></div>
                     <div className="skyrim-serif constellation-desc">{con.description}</div>
                   </div>

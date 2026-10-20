@@ -164,3 +164,9 @@ textarea.parchment-input { resize: vertical; min-height: 90px; }
   background-size: 380px 220px;
 }
 .nebula-defs { position: absolute; width: 0; height: 0; }
+
+/* Real-life meaning beside a lore name: present, but never louder than the lore. */
+.meaning { color: #6f6f6f; font-family: var(--font-serif); text-transform: none; letter-spacing: 0; font-size: 0.9em; font-style: italic; }
+.field-hint { color: #777; font-size: 0.9rem; margin-top: 0.2rem; }
+.field-hint em { color: #aaa; }
+.legend-real { color: #777; text-transform: none; letter-spacing: 0; font-family: var(--font-serif); font-size: 0.85rem; }

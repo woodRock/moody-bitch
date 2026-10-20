@@ -8,6 +8,10 @@ import { useMoodEntries } from '../../hooks/useMoodEntries';
 import { clearLocationHistory } from '../../services/locationService';
 import { purgeUserData } from '../../services/accountService';
 import StandingStones from './StandingStones';
+import { skillMeaning } from '../../game/skills';
+import { periodSummary, XP } from '../../game/rules';
+import { CONSTELLATIONS } from '../../data/constellations';
+import { stoneById } from '../../game/stones';
 import { describeAuthError } from '../../context/AuthContext';
 import Modal from './Modal';
 import LogForm from './LogForm';
@@ -174,15 +178,25 @@ const PauseMenu: React.FC<PauseMenuProps> = ({ isOpen, onClose }) => {
                   </div>
                   <div className="scroll-list">
                     {quests.length === 0 && <p className="skyrim-serif muted">No quests yet. Press + to accept your first.</p>}
-                    {quests.map(q => (
-                      <div key={q.id} className={`quest-list-item ${selectedQuest?.id === q.id ? 'active' : ''}`} onClick={() => { setSelectedQuestId(q.id); playSound('UI_CLICK'); }}>
-                        <div className={`quest-diamond ${q.completed ? 'filled' : ''}`} />
-                        <div className="quest-list-text">
-                          <span className="skyrim-font" style={{ opacity: q.completed ? 0.5 : 1 }}>{q.title}</span>
-                          <span className="skyrim-serif quest-meta">{q.type === 'daily' ? 'DAILY · ' : ''}{q.skill}</span>
+                    {([['daily', 'Daily'], ['weekly', 'Bounties'], ['one-off', 'Side Quests']] as const).map(([type, heading]) => {
+                      const group = quests.filter(q => q.type === type);
+                      if (group.length === 0) return null;
+                      const done = group.filter(q => q.completed).length;
+                      return (
+                        <div key={type} className="quest-group">
+                          <div className="quest-group-head skyrim-font">{heading} <span>{done}/{group.length}</span></div>
+                          {group.map(q => (
+                            <div key={q.id} className={`quest-list-item ${selectedQuest?.id === q.id ? 'active' : ''}`} onClick={() => { setSelectedQuestId(q.id); playSound('UI_CLICK'); }}>
+                              <div className={`quest-diamond ${q.completed ? 'filled' : ''}`} />
+                              <div className="quest-list-text">
+                                <span className="skyrim-font" style={{ opacity: q.completed ? 0.5 : 1 }}>{q.title}</span>
+                                <span className="skyrim-serif quest-meta">{q.skill} <span className="meaning">· {skillMeaning(q.skill)}</span></span>
+                              </div>
+                            </div>
+                          ))}
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
                 <div className="quest-details-column">
@@ -195,9 +209,14 @@ const PauseMenu: React.FC<PauseMenuProps> = ({ isOpen, onClose }) => {
                       <button className="objective-item" onClick={() => void toggleQuest(selectedQuest)}>
                         <div className={`objective-marker ${selectedQuest.completed ? 'completed' : ''}`} />
                         <span className="skyrim-serif" style={{ color: selectedQuest.completed ? '#777' : '#fff' }}>
-                          {selectedQuest.completed ? 'Completed. ' : ''}Invest in the {selectedQuest.skill} skill by completing this task.
+                          {selectedQuest.completed ? (selectedQuest.type === 'one-off' ? 'Completed. ' : selectedQuest.type === 'daily' ? 'Done today. ' : 'Done this week. ') : ''}
+                          Invest in the {selectedQuest.skill} skill <span className="meaning">({skillMeaning(selectedQuest.skill)})</span> by completing this task.
                         </span>
                       </button>
+                      <div className="quest-reward skyrim-font">
+                        REWARD · +{selectedQuest.type === 'weekly' ? XP.BOUNTY : XP.QUEST} {selectedQuest.skill} XP{selectedQuest.type === 'weekly' ? ' · GUARANTEED LOOT' : ''}
+                        <span className="meaning"> · {selectedQuest.type === 'daily' ? 'resets at dawn' : selectedQuest.type === 'weekly' ? 'resets monday' : 'once'}</span>
+                      </div>
                       <div style={{ marginTop: '3rem' }}>
                         {confirmAbandon ? (
                           <span className="inline-actions">
@@ -230,6 +249,8 @@ const PauseMenu: React.FC<PauseMenuProps> = ({ isOpen, onClose }) => {
                     <div className="stat-row"><span>Race</span><b>{stats.race}</b></div>
                     <div className="stat-row"><span>Log Streak</span><b className="gold">{streak} days</b></div>
                     <div className="stat-row"><span>Best Streak</span><b>{Math.max(stats.bestStreak, streak)} days</b></div>
+                    <div className="stat-row"><span>Chronicles</span><b>{entries.length}</b></div>
+                    <div className="stat-row"><span>Dailies today</span><b>{quests.filter(q => q.type === 'daily' && q.completed).length} / {quests.filter(q => q.type === 'daily').length}</b></div>
                   </div>
                   <div className="skyrim-card">
                     <h3 className="skyrim-font card-title">VITALS</h3>
@@ -240,15 +261,64 @@ const PauseMenu: React.FC<PauseMenuProps> = ({ isOpen, onClose }) => {
                     <div className="stat-row"><span>Inventory</span><b>{stats.inventory.length}</b></div>
                   </div>
                 </div>
+                <div className="stats-grid">
+                  <div className="skyrim-card">
+                    <h3 className="skyrim-font card-title">LAST 7 DAYS</h3>
+                    {(() => {
+                      const { current, previous } = periodSummary(entries);
+                      const arrow = (a: number | null, b: number | null) => a === null || b === null ? '' : a > b ? ' ▲' : a < b ? ' ▼' : ' ·';
+                      const col = (a: number | null, b: number | null) => a === null || b === null ? '#fff' : a > b ? '#3fae3c' : a < b ? '#e05a4e' : '#fff';
+                      return (
+                        <>
+                          <div className="stat-row"><span>Logs scribed</span><b>{current.logs} <span className="meaning">(prev {previous.logs})</span></b></div>
+                          <div className="stat-row"><span>Health <span className="meaning">(mood)</span></span><b style={{ color: col(current.mood, previous.mood) }}>{current.mood ?? '—'}{arrow(current.mood, previous.mood)}</b></div>
+                          <div className="stat-row"><span>Stamina <span className="meaning">(energy)</span></span><b style={{ color: col(current.energy, previous.energy) }}>{current.energy ?? '—'}{arrow(current.energy, previous.energy)}</b></div>
+                          <div className="stat-row"><span>Magicka <span className="meaning">(rest, hours)</span></span><b style={{ color: col(current.sleep, previous.sleep) }}>{current.sleep ?? '—'}{arrow(current.sleep, previous.sleep)}</b></div>
+                          <p className="skyrim-serif meaning" style={{ marginTop: '0.8rem' }}>Averages of your logs, compared with the seven days before.</p>
+                        </>
+                      );
+                    })()}
+                  </div>
+                  <div className="skyrim-card">
+                    <h3 className="skyrim-font card-title">MASTERY</h3>
+                    {(() => {
+                      const totalPerks = CONSTELLATIONS.reduce((n, c) => n + c.perks.length, 0);
+                      const best = Object.entries(stats.skills).sort((a, b) => b[1].level - a[1].level)[0];
+                      const trained = Object.entries(stats.questCompletions).sort((a, b) => b[1] - a[1])[0];
+                      const stone = stoneById(stats.standingStone);
+                      return (
+                        <>
+                          <div className="stat-row"><span>Highest skill</span><b>{best ? `${best[0]} ${best[1].level}` : '—'}</b></div>
+                          <div className="stat-row"><span>Most trained</span><b>{trained ? `${trained[0]} · ${trained[1]} quests` : '—'}</b></div>
+                          <div className="stat-row"><span>Total skill levels</span><b>{Object.values(stats.skills).reduce((n, s) => n + s.level, 0)}</b></div>
+                          <div className="stat-row"><span>Perks unlocked</span><b className="gold">{stats.perks.length} / {totalPerks}</b></div>
+                          <div className="stat-row"><span>Standing stone</span><b>{stone ? `${stone.icon} ${stone.name.replace('The ', '').replace(' Stone', '')}` : 'None'}</b></div>
+                          <div className="stat-row"><span>Equipped</span><b>{stats.inventory.find(i => i.uid === stats.equippedItemId)?.name ?? 'Nothing'}</b></div>
+                        </>
+                      );
+                    })()}
+                  </div>
+                </div>
                 <div className="skyrim-card">
                   <StandingStones />
                 </div>
                 <div className="skyrim-card">
                   <h3 className="skyrim-font card-title">SKILLS</h3>
-                  <div className="stats-grid">
-                    {Object.entries(stats.skills).map(([name, data]) => (
-                      <div key={name} className="stat-row"><span>{name}</span><b>LVL {data.level}</b></div>
-                    ))}
+                  <div className="skills-grid">
+                    {CONSTELLATIONS.map(con => {
+                      const data = stats.skills[con.skillKey] ?? { level: 0, xp: 0, xpToNextLevel: 100 };
+                      const owned = con.perks.filter(p => stats.perks.includes(p.id)).length;
+                      return (
+                        <div key={con.skillKey} className="skill-stat">
+                          <div className="skill-stat-head">
+                            <span className="skyrim-font">{con.name} <span className="meaning">· {skillMeaning(con.skillKey)}</span></span>
+                            <b>{data.level}</b>
+                          </div>
+                          <div className="skill-progress-bar-container"><div className="skill-progress-bar-fill" style={{ width: `${(data.xp / data.xpToNextLevel) * 100}%` }} /></div>
+                          <div className="skyrim-serif meaning">{data.xp}/{data.xpToNextLevel} XP · {owned}/{con.perks.length} perks · {stats.questCompletions[con.skillKey] ?? 0} quests</div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               </div>
@@ -267,7 +337,10 @@ const PauseMenu: React.FC<PauseMenuProps> = ({ isOpen, onClose }) => {
                     {entries.map(e => (
                       <div key={e.id} className={`quest-list-item ${selectedEntry?.id === e.id ? 'active' : ''}`} onClick={() => { setSelectedEntryId(e.id); playSound('UI_CLICK'); }}>
                         <div className="quest-diamond filled small" />
-                        <span className="skyrim-font">{e.timestamp.toDate().toLocaleDateString()}</span>
+                        <div className="quest-list-text">
+                          <span className="skyrim-font">{e.timestamp.toDate().toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' })}</span>
+                          <span className="skyrim-serif quest-meta">mood {e.mood} · energy {e.energy} · {e.sleep}h{e.highlights?.filter(Boolean).length ? ` · ${e.highlights.filter(Boolean).length} triumph${e.highlights.filter(Boolean).length === 1 ? '' : 's'}` : ''}</span>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -278,9 +351,9 @@ const PauseMenu: React.FC<PauseMenuProps> = ({ isOpen, onClose }) => {
                       <h1 className="skyrim-font detail-title">{selectedEntry.timestamp.toDate().toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }).toUpperCase()}</h1>
                       <div className="menu-separator wide" />
                       <div className="entry-vitals skyrim-font">
-                        <div style={{ color: '#e05a4e' }}>HEALTH {selectedEntry.mood}/10</div>
-                        <div style={{ color: '#3d8de0' }}>MAGICKA {selectedEntry.sleep}h</div>
-                        <div style={{ color: '#3fae3c' }}>STAMINA {selectedEntry.energy}/10</div>
+                        <div style={{ color: '#e05a4e' }}>HEALTH {selectedEntry.mood}/10 <span className="meaning">mood</span></div>
+                        <div style={{ color: '#3d8de0' }}>MAGICKA {selectedEntry.sleep}h <span className="meaning">rest</span></div>
+                        <div style={{ color: '#3fae3c' }}>STAMINA {selectedEntry.energy}/10 <span className="meaning">energy</span></div>
                       </div>
                       <div className="quest-category-title">Daily Triumphs</div>
                       <ul className="skyrim-serif triumph-list">
