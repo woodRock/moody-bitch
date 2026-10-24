@@ -189,7 +189,13 @@ export default {
         generationConfig: { maxOutputTokens: 1024, temperature: 0.9 },
       }),
     });
-    if (!res.ok) return json({ error: 'upstream', status: res.status }, 502, cors);
+    if (!res.ok) {
+      // Surface Google's reason (quota, billing, model access); it never contains the key.
+      let reason = '';
+      try { const e = (await res.json()) as { error?: { message?: string; status?: string } }; reason = `${e.error?.status ?? ''} ${e.error?.message ?? ''}`.trim(); } catch { /* not json */ }
+      console.error('Gemini upstream error', res.status, reason);
+      return json({ error: 'upstream', status: res.status, reason: reason.slice(0, 300) }, 502, cors);
+    }
     const data = (await res.json()) as { candidates?: { content?: { parts?: { text?: string; thought?: boolean }[] } }[] };
     // Reasoning models may return several parts; keep the visible text and drop any thought parts.
     const text = (data.candidates?.[0]?.content?.parts ?? []).filter(p => !p.thought && typeof p.text === 'string').map(p => p.text).join('').trim();
