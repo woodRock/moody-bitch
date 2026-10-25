@@ -69,3 +69,13 @@ describe('loreService (proxy)', () => {
     expect(JSON.parse(String(init?.body)).kind).toBe('reframe');
   });
 });
+
+describe('completeSentences', () => {
+  it('drops a trailing fragment and keeps whole sentences', async () => {
+    const { completeSentences } = await import('./loreService');
+    expect(completeSentences('A wandering mariner begged me. It is said this')).toBe('A wandering mariner begged me.');
+    expect(completeSentences('Ends cleanly.')).toBe('Ends cleanly.');
+    expect(completeSentences('"Quoted end." And a frag')).toBe('"Quoted end."');
+    expect(completeSentences('no terminator at all')).toBe('no terminator at all');
+  });
+});

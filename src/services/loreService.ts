@@ -49,7 +49,7 @@ async function askScribe(kind: LoreKind, prompt: string): Promise<string | null>
     const res = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
-      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
+      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { maxOutputTokens: 4096, temperature: 0.9, thinkingConfig: { thinkingLevel: 'low' } } }),
       signal: controller.signal,
     });
     if (!res.ok) {
@@ -57,8 +57,10 @@ async function askScribe(kind: LoreKind, prompt: string): Promise<string | null>
       return null;
     }
     const data = await res.json();
-    const parts: { text?: unknown; thought?: boolean }[] = data?.candidates?.[0]?.content?.parts ?? [];
-    const text = parts.filter(p => !p.thought && typeof p.text === 'string').map(p => p.text as string).join('').trim();
+    const candidate = data?.candidates?.[0];
+    const parts: { text?: unknown; thought?: boolean }[] = candidate?.content?.parts ?? [];
+    let text = parts.filter(p => !p.thought && typeof p.text === 'string').map(p => p.text as string).join('').trim();
+    if (candidate?.finishReason === 'MAX_TOKENS') text = completeSentences(text);
     return text || null;
   } catch (error) {
     console.error('Failed to reach the scribe:', error);
@@ -67,6 +69,12 @@ async function askScribe(kind: LoreKind, prompt: string): Promise<string | null>
     clearTimeout(timer);
   }
 }
+
+/** If a reply was cut off, keep only its complete sentences. */
+export const completeSentences = (text: string): string => {
+  const m = text.match(/^[\s\S]*[.!?…]["'”’)]*(?=\s|$)/);
+  return m ? m[0].trim() : text;
+};
 
 const sanitize = (s: string, max: number) =>
   Array.from(s).map(c => (c.charCodeAt(0) < 32 ? ' ' : c)).join('').trim().slice(0, max);

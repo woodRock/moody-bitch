@@ -149,6 +149,12 @@ async function rateLimited(uid: string, env: Env): Promise<boolean> {
   return b.n > RATE_PER_HOUR;
 }
 
+/** If a reply was cut off, keep only its complete sentences. */
+function completeSentences(text: string): string {
+  const m = text.match(/^[\s\S]*[.!?…]["'”’)]*(?=\s|$)/);
+  return m ? m[0].trim() : text;
+}
+
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const origin = request.headers.get('origin');
@@ -186,7 +192,9 @@ export default {
       },
       body: JSON.stringify({
         contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { maxOutputTokens: 1024, temperature: 0.9 },
+        // Reasoning models spend hidden thinking tokens from the same budget, so leave plenty
+        // of room and ask for brief thinking; the prose itself is three sentences.
+        generationConfig: { maxOutputTokens: 4096, temperature: 0.9, thinkingConfig: { thinkingLevel: 'low' } },
       }),
     });
     if (!res.ok) {
@@ -196,9 +204,11 @@ export default {
       console.error('Gemini upstream error', res.status, reason);
       return json({ error: 'upstream', status: res.status, reason: reason.slice(0, 300) }, 502, cors);
     }
-    const data = (await res.json()) as { candidates?: { content?: { parts?: { text?: string; thought?: boolean }[] } }[] };
+    const data = (await res.json()) as { candidates?: { finishReason?: string; content?: { parts?: { text?: string; thought?: boolean }[] } }[] };
+    const candidate = data.candidates?.[0];
     // Reasoning models may return several parts; keep the visible text and drop any thought parts.
-    const text = (data.candidates?.[0]?.content?.parts ?? []).filter(p => !p.thought && typeof p.text === 'string').map(p => p.text).join('').trim();
-    return json({ text }, 200, { ...cors, 'cache-control': 'no-store' });
+    let text = (candidate?.content?.parts ?? []).filter(p => !p.thought && typeof p.text === 'string').map(p => p.text).join('').trim();
+    if (candidate?.finishReason === 'MAX_TOKENS') text = completeSentences(text);
+    return json({ text, finishReason: candidate?.finishReason ?? null }, 200, { ...cors, 'cache-control': 'no-store' });
   },
 };
