@@ -108,6 +108,31 @@ service cloud.firestore {
       allow update: if false;
     }
 
+    // ---- Skyrim Quests saves: one document per save slot ----------------
+    // The rewrite at github.com/woodRock/skyrim-quests shares this project.
+    function validSave(slot) {
+      let d = request.resource.data;
+      return d.size() <= 40
+        && string(d.slot) == slot
+        && isStr(d.name, 24) && d.name.size() > 0
+        && isStr(d.race, 24)
+        && isInt(d.level, 1, 1000)
+        && isNum(d.xp, 0, 100000000)
+        && isNum(d.gold, 0, 100000000)
+        && isNum(d.health, 0, 10000) && isNum(d.magicka, 0, 10000) && isNum(d.stamina, 0, 10000)
+        && d.perks is list && d.perks.size() <= 200
+        && d.skills is map && d.skills.size() <= 16
+        && d.quests is list && d.quests.size() <= 500
+        && d.chronicles is list && d.chronicles.size() <= 5000
+        && d.items is list && d.items.size() <= 100
+        && d.holds is list && d.holds.size() <= 16
+        && d.hold is string;
+    }
+    match /users/{uid}/saves/{slot} {
+      allow read, delete: if isOwner(uid);
+      allow create, update: if isOwner(uid) && slot in ['1', '2', '3'] && validSave(slot);
+    }
+
     // Everything else is closed.
     match /{document=**} {
       allow read, write: if false;
